@@ -1313,17 +1313,10 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
     }
 
     // Clear
+    std::list<BaseVobInfo*> list = VobsByVisual[visual];
     if ( _canClearVobsByVisual ) {
-        std::list<BaseVobInfo*> list = VobsByVisual[visual];
         for ( auto const& it : list ) {
             OnRemovedVob( it->Vob, LoadedWorldInfo->MainWorld );
-        }
-        if ( list.size() > 0 ) {
-            if ( RendererState.RendererSettings.EnableDebugLog )
-                LogInfo() << std::string( className ) << " had " + std::to_string( list.size() ) << " vobs";
-
-            VobsByVisual[visual].clear();
-            VobsByVisual.erase( visual );
         }
     } else {
         // TODO: #8 - Figure out why exactly we don't get notified that a VOB is re-added after being removed.
@@ -1336,6 +1329,13 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
                 OnRemovedVob(it->Vob, LoadedWorldInfo->MainWorld);
             }
         }*/
+    }
+    if ( list.size() > 0 ) {
+        if ( RendererState.RendererSettings.EnableDebugLog )
+            LogInfo() << std::string( className ) << " had " + std::to_string( list.size() ) << " vobs";
+
+        VobsByVisual[visual].clear();
+        VobsByVisual.erase( visual );
     }
 }
 /** Draws a MeshInfo */

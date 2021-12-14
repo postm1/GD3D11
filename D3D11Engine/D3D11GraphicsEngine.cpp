@@ -6238,8 +6238,11 @@ void D3D11GraphicsEngine::UpdateOcclusion() {
 
     // Do occlusiontests for the BSP-Tree
     Occlusion->DoOcclusionForBSP( Engine::GAPI->GetNewRootNode() );
-
+    
     Occlusion->EndOcclusionPass();
+
+    // Setup default renderstates
+    SetDefaultStates();
 }
 
 /** Saves a screenshot */

@@ -5757,9 +5757,6 @@ void D3D11GraphicsEngine::DrawQuadMarks() {
                 break;
 
             case zMAT_ALPHA_FUNC_MUL:
-                MulQuadMarks.emplace_back( it.first, &it.second );
-                continue;
-
             case zMAT_ALPHA_FUNC_MUL2:
                 MulQuadMarks.emplace_back( it.first, &it.second );
                 continue;

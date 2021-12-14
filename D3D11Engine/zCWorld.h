@@ -32,22 +32,22 @@ public:
         XHook( HookedFunctions::OriginalFunctions.original_oCWorldRemoveVob, GothicMemoryLocations::oCWorld::RemoveVob, zCWorld::hooked_oCWorldRemoveVob );
     }
 
-    static void __fastcall hooked_oCWorldEnableVob( void* thisptr, void* unknwn, zCVob* vob, zCVob* parent ) {
+    static void __fastcall hooked_oCWorldEnableVob( zCWorld* thisptr, void* unknwn, zCVob* vob, zCVob* parent ) {
         hook_infunc
 
             HookedFunctions::OriginalFunctions.original_oCWorldEnableVob( thisptr, vob, parent );
 
         // Re-Add it
-        Engine::GAPI->OnAddVob( vob, (zCWorld*)thisptr );
+        Engine::GAPI->OnAddVob( vob, thisptr );
 
         hook_outfunc
     }
 
-    static void __fastcall hooked_oCWorldDisableVob( void* thisptr, void* unknwn, zCVob* vob ) {
+    static void __fastcall hooked_oCWorldDisableVob( zCWorld* thisptr, void* unknwn, zCVob* vob ) {
         hook_infunc
 
             // Remove it
-            Engine::GAPI->OnRemovedVob( vob, (zCWorld*)thisptr );
+            Engine::GAPI->OnRemovedVob( vob, thisptr );
 
         HookedFunctions::OriginalFunctions.original_oCWorldDisableVob( thisptr, vob );
         hook_outfunc
@@ -61,11 +61,11 @@ public:
         hook_outfunc
     }
 
-    static void __fastcall hooked_oCWorldRemoveFromLists( void* thisptr, zCVob* vob ) {
+    static void __fastcall hooked_oCWorldRemoveFromLists( zCWorld* thisptr, zCVob* vob ) {
         hook_infunc
 
             // Remove it
-            Engine::GAPI->OnRemovedVob( vob, (zCWorld*)thisptr );
+            Engine::GAPI->OnRemovedVob( vob, thisptr );
 
         HookedFunctions::OriginalFunctions.original_oCWorldRemoveFromLists( thisptr, vob );
         hook_outfunc
@@ -76,24 +76,24 @@ public:
         HookedFunctions::OriginalFunctions.original_zCWorldDisposeWorld( thisptr );
     }
 
-    static void __fastcall hooked_zCWorldDisposeVobs( void* thisptr, void* unknwn, zCTree<zCVob>* tree ) {
+    static void __fastcall hooked_zCWorldDisposeVobs( zCWorld* thisptr, void* unknwn, zCTree<zCVob>* tree ) {
         // Reset only if this is the main world, inventory worlds are handled differently
-        if ( (zCWorld*)thisptr == Engine::GAPI->GetLoadedWorldInfo()->MainWorld )
+        if ( thisptr == Engine::GAPI->GetLoadedWorldInfo()->MainWorld )
             Engine::GAPI->ResetVobs();
 
         HookedFunctions::OriginalFunctions.original_zCWorldDisposeVobs( thisptr, tree );
     }
 
-    static void __fastcall hooked_zCWorldVobRemovedFromWorld( void* thisptr, void* unknwn, zCVob* vob ) {
+    static void __fastcall hooked_zCWorldVobRemovedFromWorld( zCWorld* thisptr, void* unknwn, zCVob* vob ) {
         hook_infunc
             // Remove it first, before it becomes invalid
-            Engine::GAPI->OnRemovedVob( vob, (zCWorld*)thisptr );
+            Engine::GAPI->OnRemovedVob( vob, thisptr );
 
         HookedFunctions::OriginalFunctions.original_zCWorldVobRemovedFromWorld( thisptr, vob );
         hook_outfunc
     }
 
-    static void __fastcall hooked_LoadWorld( void* thisptr, void* unknwn, const zSTRING& fileName, const int loadMode ) {
+    static void __fastcall hooked_LoadWorld( zCWorld* thisptr, void* unknwn, const zSTRING& fileName, const int loadMode ) {
         //hook_infunc
         //LogInfo() << "Loading: " << fileName.ToChar();
 
@@ -104,7 +104,7 @@ public:
 
         HookedFunctions::OriginalFunctions.original_zCWorldLoadWorld( thisptr, fileName, loadMode );
 
-        Engine::GAPI->GetLoadedWorldInfo()->MainWorld = (zCWorld*)thisptr;
+        Engine::GAPI->GetLoadedWorldInfo()->MainWorld = thisptr;
 
         //LogInfo() << "Loaded world: " << fileName.ToChar();
 
@@ -112,20 +112,20 @@ public:
         //hook_outfunc
     }
 
-    static void __fastcall hooked_VobAddedToWorld( void* thisptr, void* unknwn, zCVob* vob ) {
+    static void __fastcall hooked_VobAddedToWorld( zCWorld* thisptr, void* unknwn, zCVob* vob ) {
         hook_infunc
 
             HookedFunctions::OriginalFunctions.original_zCWorldVobAddedToWorld( thisptr, vob );
 
         if ( vob->GetVisual() ) {
             //LogInfo() << vob->GetVisual()->GetFileExtension(0);
-            Engine::GAPI->OnAddVob( vob, (zCWorld*)thisptr );
+            Engine::GAPI->OnAddVob( vob, thisptr );
         }
         hook_outfunc
     }
 
     // Get around C2712
-    static void Do_hooked_Render( void* thisptr, zCCamera& camera ) {
+    static void Do_hooked_Render( zCWorld* thisptr, zCCamera& camera ) {
         Engine::GAPI->SetTextureTestBindMode( false, "" );
 
         //HookedFunctions::OriginalFunctions.original_zCWorldRender(thisptr, camera);
@@ -155,11 +155,11 @@ public:
             HookedFunctions::OriginalFunctions.original_zCWorldRender( thisptr, camera );
 
             // Inventory
-            Engine::GAPI->DrawInventory( (zCWorld*)thisptr, camera );
+            Engine::GAPI->DrawInventory( thisptr, camera );
         }
     }
 
-    static void __fastcall hooked_Render( void* thisptr, void* unknwn, zCCamera& camera ) {
+    static void __fastcall hooked_Render( zCWorld* thisptr, void* unknwn, zCCamera& camera ) {
         hook_infunc
             Do_hooked_Render( thisptr, camera );
         hook_outfunc

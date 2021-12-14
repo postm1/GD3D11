@@ -16,21 +16,21 @@ public:
         XHook( HookedFunctions::OriginalFunctions.original_zCQuadMarkDestructor, GothicMemoryLocations::zCQuadMark::Destructor, zCQuadMark::Hooked_Destructor );
     }
 
-    static void __fastcall Hooked_CreateQuadMark( void* thisptr, void* unknwn, zCPolygon* poly, const float3& position, const float2& size, struct zTEffectParams* params ) {
+    static void __fastcall Hooked_CreateQuadMark( zCQuadMark* thisptr, void* unknwn, zCPolygon* poly, const float3& position, const float2& size, struct zTEffectParams* params ) {
         hook_infunc
 
-            if ( ((zCQuadMark*)thisptr)->GetDontRepositionConnectedVob() )
+            if ( thisptr->GetDontRepositionConnectedVob() )
                 return; // Don't create quad-marks for particle-effects because it's kinda slow at the moment
                         // And even for the original game using some emitters? (L'Hiver Light, Swampdragon)
 
         HookedFunctions::OriginalFunctions.original_zCQuadMarkCreateQuadMark( thisptr, poly, position, size, params );
 
-        QuadMarkInfo* info = Engine::GAPI->GetQuadMarkInfo( (zCQuadMark*)thisptr );
+        QuadMarkInfo* info = Engine::GAPI->GetQuadMarkInfo( thisptr );
 
-        WorldConverter::UpdateQuadMarkInfo( info, (zCQuadMark*)thisptr, position );
+        WorldConverter::UpdateQuadMarkInfo( info, thisptr, position );
 
         if ( !info->Mesh )
-            Engine::GAPI->RemoveQuadMark( (zCQuadMark*)thisptr );
+            Engine::GAPI->RemoveQuadMark( thisptr );
 
         hook_outfunc
     }
@@ -43,12 +43,12 @@ public:
         hook_outfunc
     }
 
-    static void __fastcall Hooked_Destructor( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_Destructor( zCQuadMark* thisptr, void* unknwn ) {
         hook_infunc
 
             HookedFunctions::OriginalFunctions.original_zCQuadMarkDestructor( thisptr );
 
-        Engine::GAPI->RemoveQuadMark( (zCQuadMark*)thisptr );
+        Engine::GAPI->RemoveQuadMark( thisptr );
 
         hook_outfunc
     }

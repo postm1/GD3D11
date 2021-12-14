@@ -45,47 +45,47 @@ public:
     
     /** Called when this vob got it's world-matrix changed */
 #ifdef BUILD_GOTHIC_1_08k
-    static void __fastcall Hooked_EndMovement( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_EndMovement( zCVob* thisptr, void* unknwn ) {
         hook_infunc
 
         bool vobHasMoved = false;
-        if ( (*reinterpret_cast<unsigned char*>(reinterpret_cast<DWORD>(thisptr) + 0xE8) & 0x03) && reinterpret_cast<zCVob*>(thisptr)->GetHomeWorld() ) {
+        if ( (*reinterpret_cast<unsigned char*>(reinterpret_cast<DWORD>(thisptr) + 0xE8) & 0x03) && thisptr->GetHomeWorld() ) {
             vobHasMoved = (*reinterpret_cast<unsigned char*>(*reinterpret_cast<DWORD*>(reinterpret_cast<DWORD>(thisptr) + 0xFC) + 0x88) & 0x03);
         }
 
         HookedFunctions::OriginalFunctions.original_zCVobEndMovement( thisptr );
 
         if ( Engine::GAPI && vobHasMoved )
-                Engine::GAPI->OnVobMoved( (zCVob*)thisptr );
+                Engine::GAPI->OnVobMoved( thisptr );
 
         hook_outfunc
     }
 #else
-    static void __fastcall Hooked_EndMovement( void* thisptr, void* unknwn, int transformChanged_hint ) // G2 has one parameter more
+    static void __fastcall Hooked_EndMovement( zCVob* thisptr, void* unknwn, int transformChanged_hint ) // G2 has one parameter more
     {
         hook_infunc
 
         bool vobHasMoved = false;
-        if ( (*reinterpret_cast<unsigned char*>(reinterpret_cast<DWORD>(thisptr) + 0x108) & 0x03) && reinterpret_cast<zCVob*>(thisptr)->GetHomeWorld() ) {
+        if ( (*reinterpret_cast<unsigned char*>(reinterpret_cast<DWORD>(thisptr) + 0x108) & 0x03) && thisptr->GetHomeWorld() ) {
             vobHasMoved = (*reinterpret_cast<unsigned char*>(*reinterpret_cast<DWORD*>(reinterpret_cast<DWORD>(thisptr) + 0x11C) + 0x88) & 0x03);
         }
 
         HookedFunctions::OriginalFunctions.original_zCVobEndMovement( thisptr, transformChanged_hint );
 
         if ( Engine::GAPI && vobHasMoved && transformChanged_hint )
-            Engine::GAPI->OnVobMoved( (zCVob*)thisptr );
+            Engine::GAPI->OnVobMoved( thisptr );
 
         hook_outfunc
     }
 #endif
 
     /** Called on destruction */
-    static void __fastcall Hooked_Destructor( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_Destructor( zCVob* thisptr, void* unknwn ) {
         hook_infunc
 
             // Notify the world. We are doing this here for safety so nothing possibly deleted remains in our world.
             if ( Engine::GAPI )
-                Engine::GAPI->OnRemovedVob( (zCVob*)thisptr, ((zCVob*)thisptr)->GetHomeWorld() );
+                Engine::GAPI->OnRemovedVob( thisptr, thisptr->GetHomeWorld() );
 
         HookedFunctions::OriginalFunctions.original_zCVobDestructor( thisptr );
 
@@ -93,14 +93,14 @@ public:
     }
 
     /** Called when this vob is about to change the visual */
-    static void __fastcall Hooked_SetVisual( void* thisptr, void* unknwn, zCVisual* visual ) {
+    static void __fastcall Hooked_SetVisual( zCVob* thisptr, void* unknwn, zCVisual* visual ) {
         hook_infunc
 
             HookedFunctions::OriginalFunctions.original_zCVobSetVisual( thisptr, visual );
 
         // Notify the world
         if ( Engine::GAPI )
-            Engine::GAPI->OnSetVisual( (zCVob*)thisptr );
+            Engine::GAPI->OnSetVisual( thisptr );
 
         hook_outfunc
     }

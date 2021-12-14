@@ -139,11 +139,11 @@ public:
         XHook( HookedFunctions::OriginalFunctions.original_zCParticleFXDestructor, GothicMemoryLocations::zCParticleFX::Destructor, zCParticleFX::Hooked_Destructor );
     }
 
-    static void __fastcall Hooked_Destructor( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_Destructor( zCParticleFX* thisptr, void* unknwn ) {
         hook_infunc
             // Notify the world
             if ( Engine::GAPI )
-                Engine::GAPI->OnParticleFXDeleted( (zCParticleFX*)thisptr );
+                Engine::GAPI->OnParticleFXDeleted( thisptr );
 
         HookedFunctions::OriginalFunctions.original_zCParticleFXDestructor( thisptr );
 

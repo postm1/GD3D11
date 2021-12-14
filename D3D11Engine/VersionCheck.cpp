@@ -8,6 +8,8 @@
 
 #include "Logger.h"
 
+//#define DISABLE_EXECUTABLE_CHECKSUM_CHECK
+
 namespace VersionCheck {
 
 	static const int CHECKSUM_G2_2_6_FIX = 0x008a3e89;
@@ -28,6 +30,7 @@ namespace VersionCheck {
 
 	/** Checks the executable checksum for the right version */
 	void CheckExecutable() {
+#ifndef DISABLE_EXECUTABLE_CHECKSUM_CHECK
 		// Get checksum from header
 		DWORD checksum;
 		DWORD headersum;
@@ -87,6 +90,7 @@ namespace VersionCheck {
                                 "Not everything is working yet and it may crash frequently. You don't need to report every bug you see, because I likely have seen it myself by now.\n";
         #endif*/
 #endif
+#endif
 
 		// Check for game data
 		// Do this by checking one file in the folder which should always be there
@@ -99,5 +103,4 @@ namespace VersionCheck {
 			exit( 0 );
 		}
 	}
-
 }

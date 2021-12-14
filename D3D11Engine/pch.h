@@ -27,7 +27,7 @@
 #define stdext std
 #endif
 
-#define VERSION_NUMBER "17.8-dev1"
+#define VERSION_NUMBER "17.8-dev2"
 __declspec(selectany) const char* VERSION_NUMBER_STR = VERSION_NUMBER;
 
 extern bool FeatureLevel10Compatibility;

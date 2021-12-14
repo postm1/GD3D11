@@ -28,7 +28,7 @@ struct BspInfo {
         OcclusionInfo.LastVisitedFrameID = 0;
         OcclusionInfo.QueryID = -1;
         OcclusionInfo.QueryInProgress = false;
-        OcclusionInfo.LastCameraClipType = 0;
+        OcclusionInfo.LastCameraClipType = ZTCAM_CLIPTYPE_OUT;
 
         OcclusionInfo.NodeMesh = nullptr;
     }
@@ -748,7 +748,7 @@ private:
     std::unordered_map<std::string, SkeletalMeshVisualInfo*> SkeletalMeshVisuals;
 
     /** Set of all vobs we registered by now */
-    std::set<zCVob*> RegisteredVobs;
+    std::unordered_set<zCVob*> RegisteredVobs;
 
     /** List of dynamically added vobs */
     std::list<VobInfo*> DynamicallyAddedVobs;

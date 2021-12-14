@@ -180,12 +180,11 @@ void BaseVisualInfo::LoadMeshVisualInfo( const std::string& name ) {
         return;
     }
 
-    // Read the version first
-    int version;
-    fread( &version, sizeof( version ), 1, f );
+    char ReadBuffer[sizeof( int ) + sizeof( TesselationInfo )];
+    fread( ReadBuffer, 1, sizeof( ReadBuffer ), f );
 
-    // Then the TesselationInfo
-    fread( &TesselationInfo.buffer, sizeof( TesselationInfo ), 1, f );
+    // Read the TesselationInfo
+    memcpy( &TesselationInfo.buffer, ReadBuffer + sizeof( int ), sizeof( TesselationInfo ) );
     TesselationInfo.TesselationShader = Toolbox::LoadStringFromFILE( f );
 
     TesselationInfo.UpdateConstantbuffer();

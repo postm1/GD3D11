@@ -79,13 +79,16 @@ void MaterialInfo::LoadFromFile( const std::string& name ) {
     if ( !f )
         return;
 
+    char ReadBuffer[sizeof( int ) + sizeof( MaterialInfo::Buffer ) + sizeof( VisualTesselationSettings::Buffer )];
+    fread( ReadBuffer, 1, sizeof( ReadBuffer ), f );
+
     // Write the version first
     int version;
-    fread( &version, sizeof( int ), 1, f );
+    memcpy( &version, ReadBuffer, sizeof( int ) );
 
     // Then the data
     ZeroMemory( &buffer, sizeof( MaterialInfo::Buffer ) );
-    fread( &buffer, sizeof( MaterialInfo::Buffer ), 1, f );
+    memcpy( &buffer, ReadBuffer + sizeof( int ), sizeof( MaterialInfo::Buffer ) );
 
     if ( version < 2 ) {
         if ( buffer.DisplacementFactor == 0.0f ) {
@@ -94,7 +97,7 @@ void MaterialInfo::LoadFromFile( const std::string& name ) {
     }
 
     if ( version >= 4 ) {
-        fread( &TextureTesselationSettings.buffer, sizeof( VisualTesselationSettings::Buffer ), 1, f );
+        memcpy( &TextureTesselationSettings.buffer, ReadBuffer + sizeof( int ) + sizeof( MaterialInfo::Buffer ), sizeof( VisualTesselationSettings::Buffer ) );
     }
 
     fclose( f );
@@ -1373,7 +1376,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
     //LogInfo() << "Removing vob: " << vob;
     Engine::GraphicsEngine->OnVobRemovedFromWorld( vob );
 
-    std::set<zCVob*>::iterator it = RegisteredVobs.find( vob );
+    auto it = RegisteredVobs.find( vob );
     if ( it == RegisteredVobs.end() ) {
         // Not registered
         return;
@@ -1831,6 +1834,11 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
 
     if ( !((SkeletalMeshVisualInfo*)vi->VisualInfo)->SkeletalMeshes.empty() ) {
         Engine::GraphicsEngine->DrawSkeletalMesh( vi, transforms, modelColor, fatness );
+    } else {
+        if ( model->GetMeshSoftSkinList()->NumInArray > 0 ) {
+            // Just in case somehow we end up without skeletal meshes and they are available
+            WorldConverter::ExtractSkeletalMeshFromVob( model, (SkeletalMeshVisualInfo*)vi->VisualInfo );
+        }
     }
 
     if ( g->GetRenderingStage() == DES_SHADOWMAP_CUBE )
@@ -2606,7 +2614,7 @@ DirectX::XMFLOAT4X4& GothicAPI::GetProjectionMatrix() {
 
     // Reverse depth buffer
     float NearZ = RendererState.RendererSettings.SectionDrawRadius * WORLD_SECTION_SIZE;
-    float FarZ = 0.001f;
+    float FarZ = 1.0f;
     float zRange = FarZ / (FarZ - NearZ);
     RendererState.TransformState.TransformProj._33 = zRange;
     RendererState.TransformState.TransformProj._34 = -zRange * NearZ;
@@ -3219,7 +3227,7 @@ void GothicAPI::CollectVisibleVobsHelper( BspInfo* base, zTBBox3D boxCell, int c
                             }
 
                             VobLightInfo* vi = vit->second;
-                            if ( !vi->VisibleInRenderPass && vi->Vob->IsEnabled() /*&& vi->Vob->GetShowVisual()*/ ) {
+                            if ( !vi->VisibleInRenderPass && vob->IsEnabled() /*&& vob->GetShowVisual()*/ ) {
                                 vi->VisibleInRenderPass = true;
 
                                 // Update the lights shadows if: Light is dynamic or full shadow-updates are set
@@ -3227,7 +3235,7 @@ void GothicAPI::CollectVisibleVobsHelper( BspInfo* base, zTBBox3D boxCell, int c
                                     || (RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_UPDATE_DYNAMIC && !vob->IsStatic()) ) {
                                     // Now check for distances, etc
                                     float lightPlayerDist;
-                                    XMStoreFloat( &lightPlayerDist, DirectX::XMVector3Length( playerPosition - leaf->LightVobList.Array[i]->GetPositionWorldXM() ) );
+                                    XMStoreFloat( &lightPlayerDist, DirectX::XMVector3Length( playerPosition - vob->GetPositionWorldXM() ) );
                                     if ( vob->GetLightRange() > minDynamicUpdateLightRange && lightPlayerDist < vob->GetLightRange() * 1.5f )
                                         vi->UpdateShadows = true;
                                 }
@@ -3473,8 +3481,8 @@ void GothicAPI::ResetMaterialInfo() {
 
 /** Returns the material info associated with the given material */
 MaterialInfo* GothicAPI::GetMaterialInfoFrom( zCTexture* tex ) {
-    std::unordered_map<zCTexture*, MaterialInfo>::iterator f = MaterialInfos.find( tex );
-    if ( f == MaterialInfos.end() && tex ) {
+    auto it = MaterialInfos.find( tex );
+    if ( it == MaterialInfos.end() && tex ) {
         // Make a new one and try to load it
         MaterialInfos[tex].LoadFromFile( tex->GetNameWithoutExt() );
     }

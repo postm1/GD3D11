@@ -109,37 +109,6 @@ D3D11GraphicsEngine::~D3D11GraphicsEngine() {
     // MemTrackerFinalReport();
 }
 
-HRESULT CheckD3D11FeatureLevel( D3D_FEATURE_LEVEL* maxFeatureLevel ) {
-    D3D_FEATURE_LEVEL featureLevels[] = {
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0,
-        D3D_FEATURE_LEVEL_10_1,
-        D3D_FEATURE_LEVEL_10_0,
-        D3D_FEATURE_LEVEL_9_3,
-        D3D_FEATURE_LEVEL_9_2,
-        D3D_FEATURE_LEVEL_9_1
-    };
-
-    *maxFeatureLevel = D3D_FEATURE_LEVEL_9_1;
-
-    // Check featurelevel
-
-    HRESULT hr = D3D11CreateDevice( nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
-        featureLevels, ARRAYSIZE( featureLevels ), D3D11_SDK_VERSION, nullptr, maxFeatureLevel, nullptr );
-    // Assume E_INVALIDARG occurs because D3D_FEATURE_LEVEL_11_1 is not supported on current platform
-    // retry with just 9.1-11.0
-    if ( hr == E_INVALIDARG ) {
-        hr = D3D11CreateDevice( nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
-            &featureLevels[1], ARRAYSIZE( featureLevels ) - 1, D3D11_SDK_VERSION, nullptr, maxFeatureLevel, nullptr );
-    }
-
-    if ( FAILED( hr ) ) {
-        return hr;
-    }
-
-    return hr;
-}
-
 void PrintD3DFeatureLevel( D3D_FEATURE_LEVEL lvl ) {
     std::map<D3D_FEATURE_LEVEL, std::string> dxFeatureLevelsMap = {
         {D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1, "D3D_FEATURE_LEVEL_11_1"},
@@ -227,11 +196,36 @@ XRESULT D3D11GraphicsEngine::Init() {
     LogInfo() << "Rendering on: " << deviceDescription.c_str();
 
     D3D_FEATURE_LEVEL maxFeatureLevel = D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_9_1;
-    if ( FAILED( hr = CheckD3D11FeatureLevel( &maxFeatureLevel ) ) ) {
-        LogInfo() << "Could not determine D3D_FEATURE_LEVEL";
-    } else {
-        PrintD3DFeatureLevel( maxFeatureLevel );
+    D3D_FEATURE_LEVEL featureLevels[] = {
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
+        D3D_FEATURE_LEVEL_9_3,
+        D3D_FEATURE_LEVEL_9_2,
+        D3D_FEATURE_LEVEL_9_1
+    };
+
+    // Create D3D11-Device
+    int flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+#ifdef DEBUG_D3D11
+    flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+    hr = D3D11CreateDevice( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, featureLevels, ARRAYSIZE( featureLevels ),
+        D3D11_SDK_VERSION, Device11.GetAddressOf(), &maxFeatureLevel, Context11.GetAddressOf() );
+    // Assume E_INVALIDARG occurs because D3D_FEATURE_LEVEL_11_1 is not supported on current platform
+    // retry with just 9.1-11.0
+    if ( hr == E_INVALIDARG ) {
+        hr = D3D11CreateDevice( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, &featureLevels[1], ARRAYSIZE( featureLevels ) - 1,
+            D3D11_SDK_VERSION, Device11.GetAddressOf(), &maxFeatureLevel, Context11.GetAddressOf() );
     }
+    if ( FAILED( hr ) ) {
+        LE( hr );
+        exit( 2 );
+    }
+
+    PrintD3DFeatureLevel( maxFeatureLevel );
     if ( maxFeatureLevel < D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_10_0 ) {
         LogErrorBox() << "Your GPU (" << deviceDescription.c_str()
             << ") does not support Direct3D 11, so it can't run GD3D11!\n"
@@ -243,13 +237,6 @@ XRESULT D3D11GraphicsEngine::Init() {
         exit( 2 );
     }
 
-    // Create D3D11-Device
-    int flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#ifndef DEBUG_D3D11
-    LE( D3D11CreateDevice( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, &maxFeatureLevel, 1, D3D11_SDK_VERSION, Device11.GetAddressOf(), nullptr, Context11.GetAddressOf() ) );
-#else
-    LE( D3D11CreateDevice( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags | D3D11_CREATE_DEVICE_DEBUG, &maxFeatureLevel, 1, D3D11_SDK_VERSION, Device11.GetAddressOf(), nullptr, Context11.GetAddressOf() ) );
-#endif
     Device11.As( &Device );
     Context11.As( &Context );
 
@@ -1087,7 +1074,7 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
 
     UINT numModes = 0;
     hr = output->GetDisplayModeList1( DXGI_FORMAT_R8G8B8A8_UNORM, 0, &numModes, nullptr );
-    if ( FAILED( hr ) ) {
+    if ( FAILED( hr ) || numModes == 0 ) {
         CachedDisplayModes.emplace_back( Resolution.x, Resolution.y );
         return XR_FAILED;
     }
@@ -1099,7 +1086,8 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
         return XR_FAILED;
     }
 
-    DEVMODEA devMode;
+    DEVMODEA devMode = {};
+    devMode.dmSize = sizeof( DEVMODEA );
     DWORD currentRefreshRate = 0;
     if ( EnumDisplaySettingsA( nullptr, ENUM_CURRENT_SETTINGS, &devMode ) ) {
         currentRefreshRate = devMode.dmDisplayFrequency;
@@ -1109,7 +1097,7 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
         DXGI_MODE_DESC1& displayMode = displayModes[i];
         if ( static_cast<UINT>(Resolution.x) == displayMode.Width && static_cast<UINT>(Resolution.y) == displayMode.Height ) {
             DWORD displayRefreshRate = static_cast<DWORD>(displayMode.RefreshRate.Numerator / displayMode.RefreshRate.Denominator);
-            if ( (displayRefreshRate - 2) >= currentRefreshRate && (displayRefreshRate + 2) <= currentRefreshRate ) {
+            if ( currentRefreshRate >= (displayRefreshRate - 2) && currentRefreshRate <= (displayRefreshRate + 2) ) {
                 CachedRefreshRate.Numerator = displayMode.RefreshRate.Numerator;
                 CachedRefreshRate.Denominator = displayMode.RefreshRate.Denominator;
             }

@@ -55,12 +55,12 @@ struct BspInfo {
 
     /** Occlusion info for this node */
     struct OcclusionInfo_s {
-        unsigned int LastVisitedFrameID;
-        bool VisibleLastFrame;
-        int QueryID;
-        bool QueryInProgress;
         MeshInfo* NodeMesh;
+        unsigned int LastVisitedFrameID;
         int LastCameraClipType;
+        int QueryID;
+        bool VisibleLastFrame;
+        bool QueryInProgress;
     } OcclusionInfo;
 
     // Original bsp-node

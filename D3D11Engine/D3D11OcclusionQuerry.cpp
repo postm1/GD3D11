@@ -100,25 +100,36 @@ void D3D11OcclusionQuerry::DoOcclusionForBSP( BspInfo* root ) {
         
         // Query is done. Save the result!
         UINT32 data = 0;
-        g->GetContext()->GetData( p, &data, sizeof( UINT32 ), D3D11_ASYNC_GETDATA_DONOTFLUSH );
-        root->OcclusionInfo.VisibleLastFrame = (data > 0); // data contains visible pixels of the object
+        if ( g->GetContext()->GetData( p, &data, sizeof( UINT32 ), D3D11_ASYNC_GETDATA_DONOTFLUSH ) == S_OK ) {
+            root->OcclusionInfo.VisibleLastFrame = (data > 0); // data contains visible pixels of the object
 
-        if ( data == 0 ) {
-            // Mark entire subtree invisible and don't waste draw-calls for it
-            MarkTreeVisible( root->Front, false );
-            MarkTreeVisible( root->Back, false );
+            if ( data == 0 ) {
+                // Mark entire subtree invisible and don't waste draw-calls for it
+                MarkTreeVisible( root->Front, false );
+                MarkTreeVisible( root->Back, false );
+            } else {
+                // Try to check the next nodes as well
+                DoOcclusionForBSP( root->Front );
+                DoOcclusionForBSP( root->Back );
+            }
+
+            root->OcclusionInfo.QueryInProgress = false;
         } else {
             // Try to check the next nodes as well
             DoOcclusionForBSP( root->Front );
             DoOcclusionForBSP( root->Back );
         }
 
-        // Issue the new query
-        MeshInfo* mi = root->OcclusionInfo.NodeMesh;
+        if ( !root->OcclusionInfo.QueryInProgress ) {
+            // Issue the new query
+            MeshInfo* mi = root->OcclusionInfo.NodeMesh;
 
-        g->GetContext()->Begin( p );
-        g->DrawVertexBufferIndexed( mi->MeshVertexBuffer, mi->MeshIndexBuffer, mi->Indices.size() );
-        g->GetContext()->End( p );
+            g->GetContext()->Begin( p );
+            g->DrawVertexBufferIndexed( mi->MeshVertexBuffer, mi->MeshIndexBuffer, mi->Indices.size() );
+            g->GetContext()->End( p );
+
+            root->OcclusionInfo.QueryInProgress = true;
+        }
 
         root->OcclusionInfo.LastVisitedFrameID = FrameID;
     }

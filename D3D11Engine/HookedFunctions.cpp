@@ -89,6 +89,9 @@ void HookedFunctionInfo::InitHooks() {
     LogInfo() << "Patching: Disable dx7 window transitions";
     PatchAddr( 0x0075CA7B, "\x90\x90" );
     PatchAddr( 0x0074DAD0, "\x90\x90" );
+
+    LogInfo() << "Patching: Fix dx7 zbuffer possible crash";
+    PatchAddr( 0x007A4B08, "\xB8\x00\x00\x00\x00\x90\x90\x90\x90\x90\x90\x90\x90\x90" );
 #else
     LogInfo() << "Patching: BroadCast fix";
     {
@@ -138,6 +141,9 @@ void HookedFunctionInfo::InitHooks() {
     LogInfo() << "Patching: Disable dx7 window transitions";
     PatchAddr( 0x0072018B, "\x90\x90" );
     PatchAddr( 0x00711F70, "\x90\x90" );
+
+    LogInfo() << "Patching: Fix dx7 zbuffer possible crash";
+    PatchAddr( 0x0075F907, "\xB8\x00\x00\x00\x00\x90\x90\x90\x90\x90\x90\x90\x90\x90" );
 
     LogInfo() << "Patching: Show correct tris on toggle frame";
     {
@@ -238,6 +244,9 @@ void HookedFunctionInfo::InitHooks() {
     LogInfo() << "Patching: Disable dx7 window transitions";
     PatchAddr( 0x00658BCB, "\x90\x90" );
     PatchAddr( 0x006483A2, "\x90\x90" );
+
+    LogInfo() << "Patching: Fix dx7 zbuffer possible crash";
+    PatchAddr( 0x007B8FFB, "\xB8\x00\x00\x00\x00\x90\x90\x90\x90\x90\x90\x90\x90\x90" );
 
     LogInfo() << "Patching: Show correct tris on toggle frame";
     {

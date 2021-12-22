@@ -470,9 +470,12 @@ XRESULT D3D11GraphicsEngine::SetWindow( HWND hWnd ) {
 #endif
         if ( res.x != 0 && res.y != 0 ) OnResize( res );
 
+       
+#ifndef BUILD_SPACER_NET
+
         // We need to update clip cursor here because we hook the window too late to receive proper window message
         UpdateClipCursor( hWnd );
-#ifndef BUILD_SPACER_NET
+
         // Force hide mouse cursor
         while ( ShowCursor( false ) >= 0 );
 #endif

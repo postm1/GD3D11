@@ -136,6 +136,24 @@ GothicAPI::~GothicAPI() {
     SAFE_DELETE( WrappedWorldMesh );
 }
 
+int stof_safe( const std::string& str, float& p_value, std::size_t* pos = 0 ) {
+    // wrapping std::stof because it may throw an exception
+
+    try {
+        p_value = std::stof( str, pos );
+        return 0;
+    } catch ( const std::invalid_argument& ia ) {
+        LogWarn() << "parsing float failed with invalid argument: " << ia.what();
+        return -1;
+    } catch ( const std::out_of_range& oor ) {
+        LogWarn() << "parsing float failed with out of range: " << oor.what();
+        return -2;
+    } catch ( const std::exception& e ) {
+        LogWarn() << "parsing float failed with unknown error: " << e.what();
+        return -3;
+    }
+}
+
 float GetPrivateProfileFloatA(
     const LPCSTR lpAppName,
     const LPCSTR lpKeyName,
@@ -144,8 +162,12 @@ float GetPrivateProfileFloatA(
 ) {
     const int float_str_max = 30;
     TCHAR nFloat[float_str_max];
-    if ( GetPrivateProfileStringA( lpAppName, lpKeyName, nullptr, nFloat, float_str_max, lpFileName.c_str() ) ) {
-        return std::stof( std::string( nFloat ) );
+    auto nRead = GetPrivateProfileStringA( lpAppName, lpKeyName, nullptr, nFloat, float_str_max, lpFileName.c_str() );
+    if ( nRead ) {
+        float value;
+        if ( 0 == stof_safe( std::string( nFloat, nRead ), value )) {
+            return value;
+        }
     }
     return nDefault;
 }

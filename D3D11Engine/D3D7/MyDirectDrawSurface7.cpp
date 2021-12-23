@@ -1,7 +1,7 @@
 #include "MyDirectDrawSurface7.h"
 #include "../Engine.h"
 #include "../GothicAPI.h"
-#include "../BaseGraphicsEngine.h"
+#include "../D3D11GraphicsEngineBase.h"
 #include "../D3D11Texture.h"
 #include "../zCTexture.h"
 
@@ -325,8 +325,8 @@ HRESULT MyDirectDrawSurface7::Lock( LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurf
         // Assume 32-bit
         byte* data;
         int pixelSize;
-        Engine::GraphicsEngine->Present(); // Get the old frame out, since the draw-function still waits for "PresentPending"
-        Engine::GraphicsEngine->OnStartWorldRendering(); // Render a frame without menus on the screen first
+        reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->ResetPresentPending();
+        Engine::GraphicsEngine->OnStartWorldRendering();
         Engine::GraphicsEngine->GetBackbufferData( &data, pixelSize );
 
         lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = 32;

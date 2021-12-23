@@ -92,6 +92,13 @@ void HookedFunctionInfo::InitHooks() {
 
     LogInfo() << "Patching: Fix dx7 zbuffer possible crash";
     PatchAddr( 0x007A4B08, "\xB8\x00\x00\x00\x00\x90\x90\x90\x90\x90\x90\x90\x90\x90" );
+
+    LogInfo() << "Patching: Show correct savegame thumbnail";
+    PatchAddr( 0x0042B4A7, "\x8B\xF8\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90" );//
+    PatchAddr( 0x00438057, "\x89\x6C\x24\x10\xEB\x21" );//
+    PatchAddr( 0x004381D6, "\xEB\x07" );//
+    PatchAddr( 0x004381E1, "\x55" );//
+    PatchAddr( 0x00438218, "\xEB\x15" );//
 #else
     LogInfo() << "Patching: BroadCast fix";
     {
@@ -172,6 +179,13 @@ void HookedFunctionInfo::InitHooks() {
 
         XHook( 0x0071F5D9, HookedFunctionInfo::hooked_GetNumDevices );
     }
+
+    LogInfo() << "Patching: Show correct savegame thumbnail";
+    PatchAddr( 0x004289F4, "\x8B\xF8\x90\x90\x90\x90\x90\x90\x90\x90" );
+    PatchAddr( 0x00434167, "\x8B\xEE\xEB\x21" );
+    PatchAddr( 0x004342AA, "\xEB\x07" );
+    PatchAddr( 0x004342B5, "\x55" );
+    PatchAddr( 0x004342E0, "\xEB\x15" );
 #endif
 #endif
 
@@ -273,6 +287,13 @@ void HookedFunctionInfo::InitHooks() {
 
         XHook( 0x00657EA9, HookedFunctionInfo::hooked_GetNumDevices );
     }
+
+    LogInfo() << "Patching: Show correct savegame thumbnail";
+    PatchAddr( 0x0042A5A9, "\x8B\xF8\x90\x90\x90\x90\x90\x90\x90\x90" );
+    PatchAddr( 0x00437157, "\x8B\xEE\xEB\x21" );
+    PatchAddr( 0x00437283, "\xEB\x07" );
+    PatchAddr( 0x0043728E, "\x55" );
+    PatchAddr( 0x004372B9, "\xEB\x15" );
 
     // HACK Workaround to fix debuglines in godmode
     LogInfo() << "Patching: Godmode Debuglines";

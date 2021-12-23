@@ -470,7 +470,6 @@ XRESULT D3D11GraphicsEngine::SetWindow( HWND hWnd ) {
 #endif
         if ( res.x != 0 && res.y != 0 ) OnResize( res );
 
-       
 #ifndef BUILD_SPACER_NET
 
         // We need to update clip cursor here because we hook the window too late to receive proper window message
@@ -1061,6 +1060,24 @@ XRESULT D3D11GraphicsEngine::CreateConstantBuffer( D3D11ConstantBuffer** outCB,
 
 /** Fetches a list of available display modes */
 XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
+#pragma warning(push)
+#pragma warning(disable: 6320)
+    // First try to get display resolutions through DXGI
+    // if it for some reason fails get resolutions through WinApi
+    __try {
+        XRESULT result = FetchDisplayModeListDXGI();
+        if ( result == XR_FAILED || CachedDisplayModes.size() <= 1 ) {
+            CachedDisplayModes.clear();
+            result = FetchDisplayModeListWindows();
+        }
+        return result;
+    } __except ( EXCEPTION_EXECUTE_HANDLER ) {
+        return FetchDisplayModeListWindows();
+    }
+#pragma warning(pop)
+}
+
+XRESULT D3D11GraphicsEngine::FetchDisplayModeListDXGI() {
     if ( !DXGIAdapter2 ) {
         CachedDisplayModes.emplace_back( Resolution.x, Resolution.y );
         return XR_FAILED;
@@ -1115,6 +1132,27 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
         }
     }
     CachedDisplayModes.shrink_to_fit();
+    return XR_SUCCESS;
+}
+
+XRESULT D3D11GraphicsEngine::FetchDisplayModeListWindows() {
+    for ( DWORD i = 0;; ++i ) {
+        DEVMODEA devmode = {};
+        devmode.dmSize = sizeof( DEVMODEA );
+        devmode.dmDriverExtra = 0;
+        if ( !EnumDisplaySettingsA( nullptr, i, &devmode ) || (devmode.dmFields & DM_BITSPERPEL) != DM_BITSPERPEL )
+            break;
+
+        if ( devmode.dmBitsPerPel < 24 )
+            continue;
+
+        DisplayModeInfo info( static_cast<int>(devmode.dmPelsWidth), static_cast<int>(devmode.dmPelsHeight) );
+        auto it = std::find_if( CachedDisplayModes.begin(), CachedDisplayModes.end(),
+            [&info]( DisplayModeInfo& a ) { return (a.Width == info.Width && a.Height == info.Height); } );
+        if ( it == CachedDisplayModes.end() ) {
+            CachedDisplayModes.push_back( info );
+        }
+    }
     return XR_SUCCESS;
 }
 
@@ -2660,7 +2698,7 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
 
     ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &XMMatrixIdentity() );
     ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
-
+    
     InfiniteRangeConstantBuffer->BindToPixelShader( 3 );
 
     static std::vector<WorldMeshSectionInfo*> renderList; renderList.clear();
@@ -3265,6 +3303,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
     bool colorWritesEnabled =
         Engine::GAPI->GetRendererState().BlendState.ColorWritesEnabled;
     float alphaRef = Engine::GAPI->GetRendererState().GraphicsState.FF_AlphaRef;
+    bool isOutdoor = (Engine::GAPI->GetLoadedWorldInfo()->BspTree->GetBspTreeMode() == zBSP_MODE_OUTDOOR);
 
     std::vector<WorldMeshSectionInfo*> drawnSections;
 
@@ -3389,7 +3428,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
 
                     // Check for inside vob. Don't render inside-vobs when the light is
                     // outside and vice-versa.
-                    if ( !it->IsIndoorVob && indoor || it->IsIndoorVob && !indoor ) {
+                    if ( isOutdoor && it->IsIndoorVob != indoor ) {
                         continue;
                     }
                     rndVob.emplace_back( it );
@@ -3454,8 +3493,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
 
                 // Check for inside vob. Don't render inside-vobs when the light is
                 // outside and vice-versa.
-                if ( !it->Vob->IsIndoorVob() && indoor ||
-                    it->Vob->IsIndoorVob() && !indoor ) {
+                if ( isOutdoor && it->Vob->IsIndoorVob() != indoor ) {
                     continue;
                 }
 
@@ -3506,8 +3544,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
                 }
                 // Check for inside vob. Don't render inside-vobs when the light is
                 // outside and vice-versa.
-                if ( !skeletalMeshVob->Vob->IsIndoorVob() && indoor ||
-                    skeletalMeshVob->Vob->IsIndoorVob() && !indoor ) {
+                if ( isOutdoor && skeletalMeshVob->Vob->IsIndoorVob() != indoor ) {
                     continue;
                 }
 
@@ -5506,6 +5543,7 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     // Downscale to 256x256
     PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), INT2( width, width ),
         true );
+    GetContext()->Flush();
 
     D3D11_TEXTURE2D_DESC texDesc;
     texDesc.ArraySize = 1;
@@ -5528,11 +5566,25 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
         return;
     }
     GetContext()->CopyResource( texture.Get(), rt->GetTexture().Get() );
+    GetContext()->Flush();
 
     // Get data
     D3D11_MAPPED_SUBRESOURCE res;
     if ( SUCCEEDED( GetContext()->Map( texture.Get(), 0, D3D11_MAP_READ, 0, &res ) ) ) {
-        memcpy( d, res.pData, width * width * 4 );
+        unsigned char* dstData = reinterpret_cast<unsigned char*>(res.pData);
+        unsigned char* srcData = reinterpret_cast<unsigned char*>(d);
+        UINT length = width * 4;
+        if ( length == res.RowPitch ) {
+            memcpy( srcData, dstData, length * width );
+        } else {
+            if ( length > res.RowPitch )
+                length = res.RowPitch;
+            for ( int row = 0; row < width; ++row ) {
+                memcpy( srcData, dstData, length );
+                srcData += length;
+                dstData += res.RowPitch;
+            }
+        }
         GetContext()->Unmap( texture.Get(), 0 );
     } else {
         LogInfo() << "Thumbnail failed";

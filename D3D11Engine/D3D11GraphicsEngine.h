@@ -91,6 +91,8 @@ public:
 
     /** Fetches a list of available display modes */
     XRESULT FetchDisplayModeList();
+    XRESULT FetchDisplayModeListDXGI();
+    XRESULT FetchDisplayModeListWindows();
 
     /** Returns a list of available display modes */
     virtual XRESULT GetDisplayModeList( std::vector<DisplayModeInfo>* modeList, bool includeSuperSampling = false );

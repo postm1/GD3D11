@@ -148,10 +148,15 @@ float GetPrivateProfileFloatA(
     const int float_str_max = 30;
     TCHAR nFloat[float_str_max];
     if ( GetPrivateProfileStringA( lpAppName, lpKeyName, nullptr, nFloat, float_str_max, lpFileName.c_str() ) ) {
-        return std::stof( std::string( nFloat ) );
+        try {
+            return std::stof( std::string( nFloat ) );
+        } catch ( const std::exception& ) {
+            return nDefault;
+        }
     }
     return nDefault;
 }
+
 std::string GetPrivateProfileStringA(
     const LPCSTR lpAppName,
     const LPCSTR lpKeyName,

@@ -718,4 +718,7 @@ void D2DSettingsDialog::SetHidden( bool hidden ) {
 		OnOpenedSettings(); // Changed visibility from hidden to non-hidden
 
 	D2DDialog::SetHidden( hidden );
+    if ( hidden ) {
+        Engine::GraphicsEngine->OnUIEvent( BaseGraphicsEngine::EUIEvent::UI_ClosedSettings );
+    }
 }

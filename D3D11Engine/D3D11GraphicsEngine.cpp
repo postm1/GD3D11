@@ -470,11 +470,15 @@ XRESULT D3D11GraphicsEngine::SetWindow( HWND hWnd ) {
 #endif
         if ( res.x != 0 && res.y != 0 ) OnResize( res );
 
+       
+#ifndef BUILD_SPACER_NET
+
         // We need to update clip cursor here because we hook the window too late to receive proper window message
         UpdateClipCursor( hWnd );
 
         // Force hide mouse cursor
         while ( ShowCursor( false ) >= 0 );
+#endif
     }
 
     return XR_SUCCESS;
@@ -3954,13 +3958,13 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
                         if ( showHelpers ) {
                             WhiteTexture->BindToPixelShader( 0 );
-                            PS_Diffuse->Apply();
+                            PS_DiffuseAlphatest->Apply();
 
                             MaterialInfo::Buffer b = {};
 
                             b.Color = itt.first.Material->GetColor();
-                            PS_Diffuse->GetConstantBuffer()[2]->UpdateBuffer( &b );
-                            PS_Diffuse->GetConstantBuffer()[2]->BindToPixelShader( 2 );
+                            PS_DiffuseAlphatest->GetConstantBuffer()[2]->UpdateBuffer( &b );
+                            PS_DiffuseAlphatest->GetConstantBuffer()[2]->BindToPixelShader( 2 );
 
                         } else {
                             continue;

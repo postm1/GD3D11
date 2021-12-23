@@ -422,6 +422,7 @@ void GothicAPI::SetEnableGothicInput( bool value ) {
     }
 
 #ifndef BUILD_SPACER
+#ifndef BUILD_SPACER_NET
     // zMouse, false
     input->SetDeviceEnabled( 2, value ? 1 : 0 );
     input->SetDeviceEnabled( 1, value ? 1 : 0 );
@@ -468,6 +469,7 @@ void GothicAPI::SetEnableGothicInput( bool value ) {
     }
 
 #endif*/
+#endif
 #endif
 
 }

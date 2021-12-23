@@ -5503,6 +5503,7 @@ void D3D11GraphicsEngine::OnUIEvent( EUIEvent uiEvent ) {
             Engine::GAPI->SetEnableGothicInput(
                 UIView->GetSettingsDialog()->IsHidden() );
         }
+        UpdateClipCursor( OutputWindow );
     } else if ( uiEvent == UI_ClosedSettings ) {
         // Settings can be closed in multiple ways
         UpdateClipCursor( OutputWindow );

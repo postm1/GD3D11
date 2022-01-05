@@ -19,7 +19,7 @@ jobs:
     - name: Set tag and directory name env
       run: |
         $tagName = $Env:GITHUB_REF -replace 'refs/tags/', ''
-        $dirName = "Gothic2-GD3D11-${tagName}_SpacerNET"
+        $dirName = "SpacerNET-GD3D11-${tagName}"
         echo "Tag: ${tagName}"
         echo "Directory: ${dirName}"
         echo "RELEASE_VERSION=${tagName}" >> $Env:GITHUB_ENV

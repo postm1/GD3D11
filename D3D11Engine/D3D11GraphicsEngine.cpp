@@ -5277,7 +5277,9 @@ void D3D11GraphicsEngine::UpdateClipCursor( HWND hWnd )
 {
     RECT rect;
     static RECT last_clipped_rect;
-    if ( m_isWindowActive ) {
+ 
+    // People use open settings window to navigate to other screens
+    if ( m_isWindowActive && !HasSettingsWindow() ) {
         GetClientRect( hWnd, &rect );
         ClientToScreen( hWnd, reinterpret_cast<LPPOINT>(&rect) + 0 );
         ClientToScreen( hWnd, reinterpret_cast<LPPOINT>(&rect) + 1 );
@@ -5501,7 +5503,12 @@ void D3D11GraphicsEngine::OnUIEvent( EUIEvent uiEvent ) {
             Engine::GAPI->SetEnableGothicInput(
                 UIView->GetSettingsDialog()->IsHidden() );
         }
-    } else if ( uiEvent == UI_OpenEditor ) {
+        UpdateClipCursor( OutputWindow );
+    } else if ( uiEvent == UI_ClosedSettings ) {
+        // Settings can be closed in multiple ways
+        UpdateClipCursor( OutputWindow );
+    }
+    else if ( uiEvent == UI_OpenEditor ) {
         if ( UIView ) {
             // Show settings
             Engine::GAPI->GetRendererState().RendererSettings.EnableEditorPanel =

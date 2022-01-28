@@ -32,9 +32,18 @@
 
 #include "StackWalker.h"
 
+bool IsRunningUnderUnion = false;
+
 /** Init all hooks here */
 void HookedFunctionInfo::InitHooks() {
     LogInfo() << "Initializing hooks";
+
+    HMODULE shw32dll = GetModuleHandleA("shw32.dll");
+    if ( shw32dll ) {
+        if ( GetProcAddress( shw32dll, "InitPatch" ) ) {
+            IsRunningUnderUnion = true;
+        }
+    }
 
     oCGame::Hook();
     zCBspTree::Hook();
@@ -94,11 +103,11 @@ void HookedFunctionInfo::InitHooks() {
     PatchAddr( 0x007A4B08, "\xB8\x00\x00\x00\x00\x90\x90\x90\x90\x90\x90\x90\x90\x90" );
 
     LogInfo() << "Patching: Show correct savegame thumbnail";
-    PatchAddr( 0x0042B4A7, "\x8B\xF8\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90" );//
-    PatchAddr( 0x00438057, "\x89\x6C\x24\x10\xEB\x21" );//
-    PatchAddr( 0x004381D6, "\xEB\x07" );//
-    PatchAddr( 0x004381E1, "\x55" );//
-    PatchAddr( 0x00438218, "\xEB\x15" );//
+    PatchAddr( 0x0042B4A7, "\x8B\xF8\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90" );
+    PatchAddr( 0x00438057, "\x89\x6C\x24\x10\xEB\x21" );
+    PatchAddr( 0x004381D6, "\xEB\x07" );
+    PatchAddr( 0x004381E1, "\x55" );
+    PatchAddr( 0x00438218, "\xEB\x15" );
 #else
     LogInfo() << "Patching: BroadCast fix";
     {
@@ -186,6 +195,20 @@ void HookedFunctionInfo::InitHooks() {
     PatchAddr( 0x004342AA, "\xEB\x07" );
     PatchAddr( 0x004342B5, "\x55" );
     PatchAddr( 0x004342E0, "\xEB\x15" );
+
+    if ( !IsRunningUnderUnion ) {
+        LogInfo() << "Patching: Fix zFILE_VDFS class \"B: VFILE:\" error message due to LAAHack(4GB patch)";
+        PatchAddr( 0x004451CF, "\xE9\xCF\x7E\x0A\x00\x90\x0F\x85\xFF\x00\x00\x00" );
+        PatchAddr( 0x004ED0A3, "\x83\xBE\xFC\x29\x00\x00\xFF\xE9\x26\x81\xF5\xFF" );
+        PatchAddr( 0x0044572C, "\x83\xBE\xFC\x29\x00\x00\xFF\x74\x3F\x90" );
+        PatchAddr( 0x0044542B, "\x83\xBE\xFC\x29\x00\x00\xFF\x0F\x84\xBF\x02\x00\x00\x90" );
+        PatchAddr( 0x004453E9, "\x83\xB9\xFC\x29\x00\x00\xFF\x74\x08\x90" );
+        PatchAddr( 0x0044538C, "\x83\xBE\xFC\x29\x00\x00\xFF\x74\x3F\x90" );
+        PatchAddr( 0x00445321, "\x83\xBE\xFC\x29\x00\x00\xFF\x74\x41\x90" );
+        PatchAddr( 0x00444F70, "\x33\xC0\x83\xB9\xFC\x29\x00\x00\xFF\x0F\x95\xC0\x90" );
+        PatchAddr( 0x004450CE, "\x83\xBE\xFC\x29\x00\x00\xFF\xEB\xAC\x90\x90\x90" );
+        PatchAddr( 0x00445083, "\x0F\x84\xD6\x00\x00\x00\xEB\x4F" );
+    }
 #endif
 #endif
 
@@ -294,6 +317,22 @@ void HookedFunctionInfo::InitHooks() {
     PatchAddr( 0x00437283, "\xEB\x07" );
     PatchAddr( 0x0043728E, "\x55" );
     PatchAddr( 0x004372B9, "\xEB\x15" );
+
+    if ( !IsRunningUnderUnion ) {
+        LogInfo() << "Patching: Fix zFILE_VDFS class \"B: VFILE:\" error message due to LAAHack(4GB patch)";
+        PatchAddr( 0x0044925F, "\xE9\x70\x8D\xFB\xFF\x90\x0F\x85\xFF\x00\x00\x00" );
+        PatchAddr( 0x00401FD4, "\x83\xBE\xFC\x29\x00\x00\xFF\xE9\x85\x72\x04\x00" );
+        PatchAddr( 0x00449A5C, "\x83\xBE\xFC\x29\x00\x00\xFF\x74\x3F\x90" );
+        PatchAddr( 0x004494BB, "\x83\xBE\xFC\x29\x00\x00\xFF\x0F\x84\x7B\x03\x00\x00\x90" );
+        PatchAddr( 0x00449479, "\x83\xB9\xFC\x29\x00\x00\xFF\x74\x08\x90" );
+        PatchAddr( 0x0044941C, "\x83\xBE\xFC\x29\x00\x00\xFF\x74\x3F\x90" );
+        PatchAddr( 0x004493B1, "\x83\xBE\xFC\x29\x00\x00\xFF\x74\x41\x90" );
+        PatchAddr( 0x00449000, "\x33\xC0\x83\xB9\xFC\x29\x00\x00\xFF\x0F\x95\xC0\x90" );
+        PatchAddr( 0x0044989F, "\x83\xBE\xFC\x29\x00\x00\xFF\xE9\xC9\x87\xFB\xFF" );
+        PatchAddr( 0x00402074, "\x0F\x84\xAC\x79\x04\x00\xE9\x2C\x78\x04\x00" );
+        PatchAddr( 0x0044915E, "\x83\xBE\xFC\x29\x00\x00\xFF\xEB\xAF\x90\x90\x90" );
+        PatchAddr( 0x00449116, "\x0F\x84\xD3\x00\x00\x00\xEB\x4C" );
+    }
 
     // HACK Workaround to fix debuglines in godmode
     LogInfo() << "Patching: Godmode Debuglines";

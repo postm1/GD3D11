@@ -35,9 +35,6 @@ public:
     /** Converts the worldmesh into a more usable format */
     static HRESULT ConvertWorldMesh( zCPolygon** polys, unsigned int numPolygons, std::map<int, std::map<int, WorldMeshSectionInfo>>* outSections, WorldInfo* info, MeshInfo** outWrappedMesh, bool indoorLocation );
 
-    /** Converts the worldmesh into a PNAEN-buffer */
-    static HRESULT ConvertWorldMeshPNAEN( zCPolygon** polys, unsigned int numPolygons, std::map<int, std::map<int, WorldMeshSectionInfo>>* outSections, WorldInfo* info, MeshInfo** outWrappedMesh );
-
     /** Converts a loaded custommesh to be the worldmesh */
     static XRESULT LoadWorldMeshFromFile( const std::string& file, std::map<int, std::map<int, WorldMeshSectionInfo>>* outSections, WorldInfo* info, MeshInfo** outWrappedMesh );
 
@@ -58,7 +55,6 @@ public:
 
     /** Extracts a 3DS-Mesh from a zCVisual */
     static void Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVisualInfo* meshInfo );
-    static void Extract3DSMeshFromVisual2PNAEN( zCProgMeshProto* visual, MeshVisualInfo* meshInfo );
 
     /** Updates a Morph-Mesh visual */
     static void UpdateMorphMeshVisual( void* visual, MeshVisualInfo* meshInfo );
@@ -71,7 +67,6 @@ public:
 
     /** Extracts a zCProgMeshProto from a zCMesh */
     static void ExtractProgMeshProtoFromMesh( zCMesh* mesh, MeshVisualInfo* meshInfo );
-
 
     /** Extracts a node-visual */
     static void ExtractNodeVisual( int index, zCModelNodeInst* node, std::map<int, std::vector<MeshVisualInfo*>>& attachments );
@@ -92,8 +87,10 @@ public:
     /** Creates the FullSectionMesh for the given section */
     static void GenerateFullSectionMesh( WorldMeshSectionInfo& section );
 
+#if ENABLE_TESSELATION > 0
     /** Tesselates the given triangle and adds the values to the list */
     static void TesselateTriangle( ExVertexStruct* tri, std::vector<ExVertexStruct>& tesselated, int amount );
+#endif
 
     /** Builds a big vertexbuffer from the world sections */
     static void WrapVertexBuffers( const std::list<std::vector<ExVertexStruct>*>& vertexBuffers, const std::list<std::vector<VERTEX_INDEX>*>& indexBuffers, std::vector<ExVertexStruct>& outVertices, std::vector<unsigned int>& outIndices, std::vector<unsigned int>& outOffsets );
@@ -101,15 +98,19 @@ public:
     /** Caches a mesh */
     static void CacheMesh( const std::map<std::string, std::vector<std::pair<std::vector<ExVertexStruct>, std::vector<VERTEX_INDEX>>>> geometry, const std::string& file );
 
+#if ENABLE_TESSELATION > 0
     /** Turns a MeshInfo into PNAEN */
     static void CreatePNAENInfoFor( MeshInfo* mesh, bool softNormals = false );
     static void CreatePNAENInfoFor( SkeletalMeshInfo* mesh, MeshInfo* bindPoseMesh, bool softNormals = false );
     static void CreatePNAENInfoFor( WorldMeshInfo* mesh, bool softNormals = false );
+#endif
 
     /** Converts ExVertexStruct into a zCPolygon*-Attay */
     static void ConvertExVerticesTozCPolygons( const std::vector<ExVertexStruct>& vertices, const std::vector<VERTEX_INDEX>& indices, zCMaterial* material, std::vector<zCPolygon*>& polyArray );
 
+#if ENABLE_TESSELATION > 0
     /** Tesselates the given mesh the given amount of times */
     static void TesselateMesh( WorldMeshInfo* mesh, int amount = 1 );
+#endif
 };
 

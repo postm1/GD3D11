@@ -104,7 +104,9 @@ XRESULT BaseAntTweakBar::Init() {
     TwAddVarRW( Bar_General, "Draw ParticleEffects", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects, nullptr );
     //TwAddVarRW(Bar_General, "Draw Sky", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawSky, nullptr);
     TwAddVarRW( Bar_General, "Draw Fog", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawFog, nullptr );
+#if ENABLE_TESSELATION > 0
     TwAddVarRW( Bar_General, "Tesselation", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation, nullptr );
+#endif
 
     TwAddVarRW( Bar_General, "HDR", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.EnableHDR, nullptr );
     TwEnumVal hdrToneMapValues[] = { {0, "ToneMap_jafEq4"}, {1, "Uncharted2Tonemap"}, {2, "ACESFilmTonemap"}, {3, "PerceptualQuantizerTonemap"}, {4, "ToneMap_Simple"}, {5, "ACESFittedTonemap"} };
@@ -129,8 +131,10 @@ XRESULT BaseAntTweakBar::Init() {
     TwAddVarRW( Bar_General, "Sort RenderQueue", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.SortRenderQueue, nullptr );
     TwAddVarRW( Bar_General, "Draw Threaded", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawThreaded, nullptr );
 
+#if ENABLE_TESSELATION > 0
     TwAddVarRW( Bar_General, "AllowWorldMeshTesselation", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.AllowWorldMeshTesselation, nullptr );
     TwAddVarRW( Bar_General, "TesselationFrustumCulling", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.TesselationFrustumCulling, nullptr );
+#endif
     TwAddVarRW( Bar_General, "AtmosphericScattering", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.AtmosphericScattering, nullptr );
     TwAddVarRW( Bar_General, "SkeletalVertexNormals", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.ShowSkeletalVertexNormals, nullptr );
 

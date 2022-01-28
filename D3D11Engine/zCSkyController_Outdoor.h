@@ -36,7 +36,6 @@ public:
     DirectX::XMFLOAT2 TexSpeed;
 };
 
-
 class zCSkyState {
 public:
     float Time;
@@ -146,6 +145,62 @@ public:
 
         return s_contMasterTime;
     }*/
+
+    float GetTimeStartRain() {
+        return *(float*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_TimeStartRain);
+    }
+
+    void SetTimeStartRain( float timeStartRain ) {
+        *(float*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_TimeStartRain) = timeStartRain;
+    }
+
+    float GetTimeStopRain() {
+        return *(float*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_TimeStopRain);
+    }
+
+    void SetTimeStopRain( float timeStopRain ) {
+        *(float*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_TimeStopRain) = timeStopRain;
+    }
+
+    int GetRenderLighting() {
+#ifndef BUILD_GOTHIC_1_08k
+        return *(int*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_RenderLightning);
+#else
+        return 0;
+#endif
+    }
+
+    void SetRenderLighting( int renderLighting ) {
+#ifndef BUILD_GOTHIC_1_08k
+        *(int*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_RenderLightning) = renderLighting;
+#else
+        (void)renderLighting;
+#endif
+    }
+
+    int GetRainingCounter() {
+#ifndef BUILD_GOTHIC_1_08k
+        return *(int*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_RainingCounter);
+#else
+        return 0;
+#endif
+    }
+
+    void SetRainingCounter( int rainCtr ) {
+#ifndef BUILD_GOTHIC_1_08k
+        *(int*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_RainingCounter) = rainCtr;
+#else
+        (void)rainCtr;
+#endif
+    }
+
+    float GetLastMasterTime() {
+        return *(float*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_LastMasterTime);
+    }
+
+    void SetLastMasterTime( float lastMasterTime ) {
+        *(float*)(((char*)this) + GothicMemoryLocations::zCSkyController_Outdoor::Offset_LastMasterTime) = lastMasterTime;
+    }
 
     /** Returns the master-time wrapped between 0 and 1 */
     float GetMasterTime() {

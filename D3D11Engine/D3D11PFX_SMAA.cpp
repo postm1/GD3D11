@@ -102,7 +102,7 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 	vp.TopLeftX = 0.0f;
 	vp.TopLeftY = 0.0f;
 	vp.MinDepth = 0.0f;
-	vp.MaxDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
 	vp.Width = (float)FxRenderer->GetTempBuffer().GetSizeX();
 	vp.Height = (float)FxRenderer->GetTempBuffer().GetSizeY();
 
@@ -134,8 +134,6 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 
 	//FxRenderer->CopyTextureToRTV(renderTargetSRV, RTV, INT2(0, 0), true);
 
-	SMAAShader->GetVariableByName( "colorTexGamma" )->AsShaderResource()->SetResource( nullptr );
-
 	engine->GetContext()->PSSetShaderResources( 0, 3, NoSRV );
 
 	/** Second pass - BlendingWeightCalculation */
@@ -146,19 +144,10 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 	BlendingWeightCalculation->GetPassByIndex( 0 )->Apply( 0, engine->GetContext().Get() );
 	FxRenderer->DrawFullScreenQuad();
 
-	/** Copy back to main RTV */
-	/*DXUTGetD3D11DeviceContext()->OMSetRenderTargets(1, OldRTV.GetAddressOf(), nullptr);
-	CopyShader->SetBackBufferVar(BlendTex->GetShaderResView());
-	CmplxScreenQuad.SetShader(CopyShader);
-	CmplxScreenQuad.Render(6);
-
-	goto end;*/
-
-
+    engine->GetContext()->PSSetShaderResources( 0, 3, NoSRV );
 
 	/** Third pass - NeighborhoodBlending */
 	engine->GetContext()->OMSetRenderTargets( 1, TempRTV.GetRenderTargetView().GetAddressOf(), OldDSV.Get() );
-
 
 	SMAAShader->GetVariableByName( "colorTex" )->AsShaderResource()->SetResource( renderTargetSRV.Get() );
 	SMAAShader->GetVariableByName( "blendTex" )->AsShaderResource()->SetResource( BlendTex->GetShaderResView().Get() );
@@ -166,17 +155,11 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 	NeighborhoodBlending->GetPassByIndex( 0 )->Apply( 0, engine->GetContext().Get() );
 	FxRenderer->DrawFullScreenQuad();
 
-	SMAAShader->GetVariableByName( "colorTex" )->AsShaderResource()->SetResource( nullptr );
+    engine->GetContext()->PSSetShaderResources( 0, 3, NoSRV );
 
 	/** Copy back to main RTV */
 	engine->GetContext()->OMSetRenderTargets( 1, OldRTV.GetAddressOf(), nullptr );
-	/*engine->GetContext()->OMSetRenderTargets(1, OldRTV.GetAddressOf(), nullptr);
-	engine->DrawSRVToBackbuffer(TempRTV->GetShaderResView());
-	goto end;*/
-
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv = TempRTV.GetShaderResView().Get();
-	engine->GetContext()->PSSetShaderResources( 0, 1, srv.GetAddressOf() );
-
+    engine->GetContext()->PSSetShaderResources( 0, 1, TempRTV.GetShaderResView().GetAddressOf() );
 
 	if ( Engine::GAPI->GetRendererState().RendererSettings.SharpenFactor > 0.0f ) {
 		auto sharpenPS = engine->GetShaderManager().GetPShader( "PS_PFX_Sharpen" );

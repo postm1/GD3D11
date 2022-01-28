@@ -50,6 +50,11 @@ XRESULT D3D11NVHBAO::Render( Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pOut
     Input.DepthData.ProjectionMatrix.Layout = GFSDK_SSAO_COLUMN_MAJOR_ORDER;
     Input.DepthData.MetersToViewSpaceUnits = settings.MetersToViewSpaceUnits;
 
+    Input.NormalData.Enable = true;
+    Input.NormalData.pFullResNormalTextureSRV = engine->GetGBuffer1().GetShaderResView().Get();
+    Input.NormalData.WorldToViewMatrix.Data = GFSDK_SSAO_Float4x4( (float*)&XMMatrixIdentity() ); // We already have them in view-space
+    Input.NormalData.WorldToViewMatrix.Layout = GFSDK_SSAO_COLUMN_MAJOR_ORDER;
+
     GFSDK_SSAO_Parameters Params;
     Params.Radius = settings.Radius;
     Params.Bias = settings.Bias;

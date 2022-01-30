@@ -138,6 +138,9 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstance ) );
 
+    Shaders.push_back( ShaderInfo( "VS_Lines_XYZRHW", "VS_Lines_XYZRHW.hlsl", "v", 6 ) );
+    Shaders.back().cBufferSizes.push_back( 2 * sizeof( float2 ) );
+
     Shaders.push_back( ShaderInfo( "PS_Lines", "PS_Lines.hlsl", "p" ) );
     Shaders.push_back( ShaderInfo( "PS_LinesSel", "PS_LinesSel.hlsl", "p" ) );
 

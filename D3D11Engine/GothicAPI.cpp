@@ -2571,30 +2571,6 @@ void XM_CALLCONV GothicAPI::UnprojectXM( FXMVECTOR p, XMVECTOR& worldPos, XMVECT
     worldDir = XMVector3TransformCoord( XMVector3Normalize( u ), invView );
 }
 
-void XM_CALLCONV GothicAPI::UnprojectLinesIntoLineVerticies( const std::vector<ScreenSpaceLine>& lines, std::vector<LineVertex>& lineVerticies )
-{
-    auto cam = zCCamera::GetCamera();
-    XMMATRIX proj = XMMatrixTranspose( XMLoadFloat4x4( &cam->trafoProjection ) );
-    XMMATRIX invView = XMMatrixTranspose( XMLoadFloat4x4( &cam->trafoViewInv ) );
-
-    // Convert to screenspace
-    auto res = Engine::GraphicsEngine->GetResolution();
-    XMFLOAT3 pos;
-    for ( auto& l : lines ) {
-        FXMVECTOR u = XMVectorSet(
-            (((2.0f * l.Position.x) / res.x) - 1) / proj.r[0].m128_f32[0],
-            -(((2.0f * l.Position.y) / res.y) - 1) / proj.r[1].m128_f32[1],
-            1,
-            0 );
-
-        // Transform and output
-        //auto worldPos = XMVector3TransformCoord( u, invView );
-        auto worldPos = XMVector3TransformCoord( XMVector3Normalize( u ), invView );
-        XMStoreFloat3( &pos, worldPos );
-        lineVerticies.push_back( LineVertex( pos, l.Color ) );
-    }
-}
-
 /** Unprojects the current cursor */
 XMVECTOR GothicAPI::UnprojectCursorXM() {
     XMVECTOR mPos, mDir;

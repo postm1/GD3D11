@@ -129,7 +129,12 @@ XRESULT D3D11GraphicsEngine::Init() {
     LogInfo() << "Initializing Device...";
 
     // Create DXGI factory
-    LE( CreateDXGIFactory1( __uuidof(IDXGIFactory2), &DXGIFactory2 ) );
+    hr = CreateDXGIFactory1( __uuidof(IDXGIFactory2), &DXGIFactory2 );
+    if ( FAILED( hr ) ) {
+        LogErrorBox() << "CreateDXGIFactory1 failed with code: " << hr << "!\n"
+            "Minimum supported Operating System by GD3D11 is Windows 7 SP1 with Platform Update.";
+        exit( 2 );
+    }
 
     bool haveAdapter = false;
     Microsoft::WRL::ComPtr<IDXGIFactory6> DXGIFactory6;
@@ -221,7 +226,7 @@ XRESULT D3D11GraphicsEngine::Init() {
             D3D11_SDK_VERSION, Device11.GetAddressOf(), &maxFeatureLevel, Context11.GetAddressOf() );
     }
     if ( FAILED( hr ) ) {
-        LE( hr );
+        LogErrorBox() << "D3D11CreateDevice failed with code: " << hr << "!";
         exit( 2 );
     }
 
@@ -470,7 +475,6 @@ XRESULT D3D11GraphicsEngine::SetWindow( HWND hWnd ) {
 #endif
         if ( res.x != 0 && res.y != 0 ) OnResize( res );
 
-       
 #ifndef BUILD_SPACER_NET
 
         // We need to update clip cursor here because we hook the window too late to receive proper window message
@@ -842,7 +846,10 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
 
     PfxRenderer->OnResize( Resolution );
 
-    GBuffer1_Normals_SpecIntens_SpecPower = std::make_unique<RenderToTextureBuffer>(
+    GBuffer2_SpecIntens_SpecPower = std::make_unique<RenderToTextureBuffer>(
+        GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_R16G16_FLOAT );
+
+    GBuffer1_Normals = std::make_unique<RenderToTextureBuffer>(
         GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_R16G16B16A16_FLOAT );
 
     GBuffer0_Diffuse = std::make_unique<RenderToTextureBuffer>(
@@ -1007,11 +1014,18 @@ XRESULT D3D11GraphicsEngine::OnBeginFrame() {
     SetActivePixelShader( "PS_Simple" );
     SetActiveVertexShader( "VS_Ex" );
 
-    PS_DiffuseNormalmappedFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedFxMap" );
-    PS_DiffuseNormalmappedAlphatestFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphatestFxMap" );
-    PS_DiffuseNormalmapped = ShaderManager->GetPShader( "PS_DiffuseNormalmapped" );
+    if ( Engine::GAPI->GetRendererState().RendererSettings.AllowNormalmaps ) {
+        PS_DiffuseNormalmappedFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedFxMap" );
+        PS_DiffuseNormalmappedAlphatestFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphatestFxMap" );
+        PS_DiffuseNormalmapped = ShaderManager->GetPShader( "PS_DiffuseNormalmapped" );
+        PS_DiffuseNormalmappedAlphatest = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphaTest" );
+    } else {
+        PS_DiffuseNormalmappedFxMap = ShaderManager->GetPShader( "PS_Diffuse" );
+        PS_DiffuseNormalmappedAlphatestFxMap = ShaderManager->GetPShader( "PS_DiffuseAlphaTest" );
+        PS_DiffuseNormalmapped = ShaderManager->GetPShader( "PS_Diffuse" );
+        PS_DiffuseNormalmappedAlphatest = ShaderManager->GetPShader( "PS_DiffuseAlphaTest" );
+    }
     PS_Diffuse = ShaderManager->GetPShader( "PS_Diffuse" );
-    PS_DiffuseNormalmappedAlphatest = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphaTest" );
     PS_DiffuseAlphatest = ShaderManager->GetPShader( "PS_DiffuseAlphaTest" );
     PS_Simple = ShaderManager->GetPShader( "PS_Simple" );
     GS_Billboard = ShaderManager->GetGShader( "GS_Billboard" );
@@ -1034,7 +1048,8 @@ XRESULT D3D11GraphicsEngine::Clear( const float4& color ) {
         D3D11_CLEAR_DEPTH, 0, 0 );
 
     GetContext()->ClearRenderTargetView( GBuffer0_Diffuse->GetRenderTargetView().Get(), (float*)&color );
-    GetContext()->ClearRenderTargetView( GBuffer1_Normals_SpecIntens_SpecPower->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
+    GetContext()->ClearRenderTargetView( GBuffer1_Normals->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
+    GetContext()->ClearRenderTargetView( GBuffer2_SpecIntens_SpecPower->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
     GetContext()->ClearRenderTargetView( HDRBackBuffer->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
 
     return XR_SUCCESS;
@@ -1061,6 +1076,24 @@ XRESULT D3D11GraphicsEngine::CreateConstantBuffer( D3D11ConstantBuffer** outCB,
 
 /** Fetches a list of available display modes */
 XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
+#pragma warning(push)
+#pragma warning(disable: 6320)
+    // First try to get display resolutions through DXGI
+    // if it for some reason fails get resolutions through WinApi
+    __try {
+        XRESULT result = FetchDisplayModeListDXGI();
+        if ( result == XR_FAILED || CachedDisplayModes.size() <= 1 ) {
+            CachedDisplayModes.clear();
+            result = FetchDisplayModeListWindows();
+        }
+        return result;
+    } __except ( EXCEPTION_EXECUTE_HANDLER ) {
+        return FetchDisplayModeListWindows();
+    }
+#pragma warning(pop)
+}
+
+XRESULT D3D11GraphicsEngine::FetchDisplayModeListDXGI() {
     if ( !DXGIAdapter2 ) {
         CachedDisplayModes.emplace_back( Resolution.x, Resolution.y );
         return XR_FAILED;
@@ -1115,6 +1148,27 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeList() {
         }
     }
     CachedDisplayModes.shrink_to_fit();
+    return XR_SUCCESS;
+}
+
+XRESULT D3D11GraphicsEngine::FetchDisplayModeListWindows() {
+    for ( DWORD i = 0;; ++i ) {
+        DEVMODEA devmode = {};
+        devmode.dmSize = sizeof( DEVMODEA );
+        devmode.dmDriverExtra = 0;
+        if ( !EnumDisplaySettingsA( nullptr, i, &devmode ) || (devmode.dmFields & DM_BITSPERPEL) != DM_BITSPERPEL )
+            break;
+
+        if ( devmode.dmBitsPerPel < 24 )
+            continue;
+
+        DisplayModeInfo info( static_cast<int>(devmode.dmPelsWidth), static_cast<int>(devmode.dmPelsHeight) );
+        auto it = std::find_if( CachedDisplayModes.begin(), CachedDisplayModes.end(),
+            [&info]( DisplayModeInfo& a ) { return (a.Width == info.Width && a.Height == info.Height); } );
+        if ( it == CachedDisplayModes.end() ) {
+            CachedDisplayModes.push_back( info );
+        }
+    }
     return XR_SUCCESS;
 }
 
@@ -1200,7 +1254,7 @@ XRESULT D3D11GraphicsEngine::Present() {
     vp.TopLeftX = 0.0f;
     vp.TopLeftY = 0.0f;
     vp.MinDepth = 0.0f;
-    vp.MaxDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
     vp.Width = static_cast<float>(GetBackbufferResolution().x);
     vp.Height = static_cast<float>(GetBackbufferResolution().y);
 
@@ -1236,6 +1290,14 @@ XRESULT D3D11GraphicsEngine::Present() {
         SetDefaultStates();
         UpdateRenderStates();
         UIView->Render( Engine::GAPI->GetFrameTimeSec() );
+    }
+
+    // Don't allow presenting from different thread than mainthread
+    // shouldn't happen but who knows
+    if ( Engine::GAPI->GetMainThreadID() != GetCurrentThreadId() ) {
+        GetContext()->Flush();
+        PresentPending = false;
+        return XR_SUCCESS;
     }
 
     bool vsync = Engine::GAPI->GetRendererState().RendererSettings.EnableVSync;
@@ -1854,8 +1916,9 @@ XRESULT  D3D11GraphicsEngine::DrawSkeletalMesh( SkeletalVobInfo* vi,
         }
     }
 
+#if ENABLE_TESSELATION > 0
     const bool tesselationEnabled = Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation;
-
+#endif
     if ( RenderingStage == DES_MAIN ) {
         if ( ActiveHDS ) {
             GetContext()->DSSetShader( nullptr, nullptr, 0 );
@@ -1877,11 +1940,14 @@ XRESULT  D3D11GraphicsEngine::DrawSkeletalMesh( SkeletalVobInfo* vi,
             D3D11VertexBuffer* vb;
             D3D11VertexBuffer* ib;
             unsigned int numIndices;
+#if ENABLE_TESSELATION > 0
             if ( tesselationEnabled && !mesh->IndicesPNAEN.empty() ) {
                 vb = mesh->MeshVertexBuffer;
                 ib = mesh->MeshIndexBufferPNAEN;
                 numIndices = mesh->IndicesPNAEN.size();
-            } else {
+            } else
+#endif
+            {
                 vb = mesh->MeshVertexBuffer;
                 ib = mesh->MeshIndexBuffer;
                 numIndices = mesh->Indices.size();
@@ -2147,8 +2213,10 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
         // Disable here what we can't draw in feature level 10 compatibility
         Engine::GAPI->GetRendererState().RendererSettings.HbaoSettings.Enabled = false;
         Engine::GAPI->GetRendererState().RendererSettings.EnableSMAA = false;
+#if ENABLE_TESSELATION > 0
         Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation = false;
         Engine::GAPI->GetRendererState().RendererSettings.AllowWorldMeshTesselation = false;
+#endif
     }
 
     D3D11_VIEWPORT vp;
@@ -2163,8 +2231,9 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
 
     ID3D11RenderTargetView* rtvs[] = {
         GBuffer0_Diffuse->GetRenderTargetView().Get(),
-        GBuffer1_Normals_SpecIntens_SpecPower->GetRenderTargetView().Get() };
-    GetContext()->OMSetRenderTargets( 2, rtvs, DepthStencilBuffer->GetDepthStencilView().Get() );
+        GBuffer1_Normals->GetRenderTargetView().Get(),
+        GBuffer2_SpecIntens_SpecPower->GetRenderTargetView().Get() };
+    GetContext()->OMSetRenderTargets( 3, rtvs, DepthStencilBuffer->GetDepthStencilView().Get() );
 
     Engine::GAPI->SetFarPlane(
         Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius * WORLD_SECTION_SIZE );
@@ -2269,7 +2338,7 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
 
     // Draw debug lines
     LineRenderer->Flush();
-    LineRenderer->FlushDeferredLines();
+    LineRenderer->FlushScreenSpace();
 
     if ( Engine::GAPI->GetRendererState().RendererSettings.EnableHDR )
         PfxRenderer->RenderHDR();
@@ -2660,7 +2729,7 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
 
     ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &XMMatrixIdentity() );
     ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
-
+    
     InfiniteRangeConstantBuffer->BindToPixelShader( 3 );
 
     static std::vector<WorldMeshSectionInfo*> renderList; renderList.clear();
@@ -2726,8 +2795,10 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
             if ( mesh.first.Info->MaterialType == MaterialInfo::MT_Water )
                 continue;  // Don't pre-render water
 
+#if ENABLE_TESSELATION > 0
             if ( mesh.second->TesselationSettings.buffer.VT_TesselationFactor > 0.0f )
                 continue;  // Don't pre-render tesselated surfaces
+#endif
 
             DrawVertexBufferIndexedUINT( nullptr, nullptr, mesh.second->Indices.size(), mesh.second->BaseIndexLocation );
         }
@@ -2736,9 +2807,11 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
     SetActivePixelShader( "PS_Diffuse" );
     ActivePS->Apply();
 
+#if ENABLE_TESSELATION > 0
     bool tesselationEnabled =
         Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation &&
         Engine::GAPI->GetRendererState().RendererSettings.AllowWorldMeshTesselation;
+#endif
 
     // Now draw the actual pixels
     zCTexture* bound = nullptr;
@@ -2794,13 +2867,17 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
                 boundInfo = info;
             }
             bound = mesh.first.Texture;
+
+#if ENABLE_TESSELATION > 0
             // Bind normalmap to HDS
             if ( !mesh.second->IndicesPNAEN.empty() ) {
                 GetContext()->DSSetShaderResources( 0, 1, boundNormalmap.GetAddressOf() );
                 GetContext()->HSSetShaderResources( 0, 1, boundNormalmap.GetAddressOf() );
             }
+#endif
         }
 
+#if ENABLE_TESSELATION > 0
         // Check for tesselated mesh
         if ( tesselationEnabled && !ActiveHDS &&
             boundInfo->TextureTesselationSettings.buffer.VT_TesselationFactor >
@@ -2836,17 +2913,21 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
             // Bind wrapped mesh again
             DrawVertexBufferIndexedUINT( meshInfo->MeshVertexBuffer, meshInfo->MeshIndexBuffer, 0, 0 );
         }
+#endif
 
         if ( Engine::GAPI->GetRendererState().RendererSettings.DrawWorldMesh > 2 ) {
-            if ( !ActiveHDS ) {
-                DrawVertexBufferIndexed( mesh.second->MeshVertexBuffer,
-                    mesh.second->MeshIndexBuffer,
-                    mesh.second->Indices.size() );
-            } else {
+#if ENABLE_TESSELATION > 0
+            if ( ActiveHDS ) {
                 // Draw from mesh info
                 DrawVertexBufferIndexed( mesh.second->MeshVertexBuffer,
                     mesh.second->MeshIndexBufferPNAEN,
                     mesh.second->IndicesPNAEN.size() );
+            } else
+#endif
+            {
+                DrawVertexBufferIndexed( mesh.second->MeshVertexBuffer,
+                    mesh.second->MeshIndexBuffer,
+                    mesh.second->Indices.size() );
             }
         }
 
@@ -3265,6 +3346,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
     bool colorWritesEnabled =
         Engine::GAPI->GetRendererState().BlendState.ColorWritesEnabled;
     float alphaRef = Engine::GAPI->GetRendererState().GraphicsState.FF_AlphaRef;
+    bool isOutdoor = (Engine::GAPI->GetLoadedWorldInfo()->BspTree->GetBspTreeMode() == zBSP_MODE_OUTDOOR);
 
     std::vector<WorldMeshSectionInfo*> drawnSections;
 
@@ -3389,7 +3471,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
 
                     // Check for inside vob. Don't render inside-vobs when the light is
                     // outside and vice-versa.
-                    if ( !it->IsIndoorVob && indoor || it->IsIndoorVob && !indoor ) {
+                    if ( isOutdoor && it->IsIndoorVob != indoor ) {
                         continue;
                     }
                     rndVob.emplace_back( it );
@@ -3454,8 +3536,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
 
                 // Check for inside vob. Don't render inside-vobs when the light is
                 // outside and vice-versa.
-                if ( !it->Vob->IsIndoorVob() && indoor ||
-                    it->Vob->IsIndoorVob() && !indoor ) {
+                if ( isOutdoor && it->Vob->IsIndoorVob() != indoor ) {
                     continue;
                 }
 
@@ -3506,8 +3587,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
                 }
                 // Check for inside vob. Don't render inside-vobs when the light is
                 // outside and vice-versa.
-                if ( !skeletalMeshVob->Vob->IsIndoorVob() && indoor ||
-                    skeletalMeshVob->Vob->IsIndoorVob() && !indoor ) {
+                if ( isOutdoor && skeletalMeshVob->Vob->IsIndoorVob() != indoor ) {
                     continue;
                 }
 
@@ -3831,8 +3911,10 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
 
+#if ENABLE_TESSELATION > 0
     bool tesselationEnabled =
         Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation;
+#endif
 
     static std::vector<VobInfo*> vobs;
     static std::vector<VobLightInfo*> lights;
@@ -4006,9 +4088,11 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                             // Bind both
                             GetContext()->PSSetShaderResources( 0, 3, srv );
 
+#if ENABLE_TESSELATION > 0
                             // Set normal/displacement map
                             GetContext()->DSSetShaderResources( 0, 1, &srv[1] );
                             GetContext()->HSSetShaderResources( 0, 1, &srv[1] );
+#endif
 
                             // Force alphatest on vobs for now
                             BindShaderForTexture( tx, true, 0 );
@@ -4019,6 +4103,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         }
                     }
 
+#if ENABLE_TESSELATION > 0
                     if ( tesselationEnabled && !mi->IndicesPNAEN.empty() &&
                         RenderingStage == DES_MAIN &&
                         staticMeshVisual.second->TesselationInfo.buffer.VT_TesselationFactor > 0.0f ) {
@@ -4035,16 +4120,18 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         ActiveVS->Apply();
                     }
 
-                    if ( !ActiveHDS ) {
-                        // Draw batch
-                        DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBuffer,
-                            mi->Indices.size(), DynamicInstancingBuffer.get(),
-                            sizeof( VobInstanceInfo ), staticMeshVisual.second->Instances.size(),
-                            sizeof( ExVertexStruct ), staticMeshVisual.second->StartInstanceNum );
-                    } else {
+                    if ( ActiveHDS ) {
                         // Draw batch tesselated
                         DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBufferPNAEN,
                             mi->IndicesPNAEN.size(), DynamicInstancingBuffer.get(),
+                            sizeof( VobInstanceInfo ), staticMeshVisual.second->Instances.size(),
+                            sizeof( ExVertexStruct ), staticMeshVisual.second->StartInstanceNum );
+                    } else
+#endif
+                    {
+                        // Draw batch
+                        DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBuffer,
+                            mi->Indices.size(), DynamicInstancingBuffer.get(),
                             sizeof( VobInstanceInfo ), staticMeshVisual.second->Instances.size(),
                             sizeof( ExVertexStruct ), staticMeshVisual.second->StartInstanceNum );
                     }
@@ -4733,7 +4820,8 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
     plcb.PL_ViewportSize = float2( static_cast<float>(Resolution.x), static_cast<float>(Resolution.y) );
 
     GBuffer0_Diffuse->BindToPixelShader( GetContext().Get(), 0 );
-    GBuffer1_Normals_SpecIntens_SpecPower->BindToPixelShader( GetContext().Get(), 1 );
+    GBuffer1_Normals->BindToPixelShader( GetContext().Get(), 1 );
+    GBuffer2_SpecIntens_SpecPower->BindToPixelShader( GetContext().Get(), 7 );
     DepthStencilBufferCopy->BindToPixelShader( GetContext().Get(), 2 );
 
     bool lastOutside = true;
@@ -4944,6 +5032,7 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
     // Reset state
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
     GetContext()->PSSetShaderResources( 2, 1, srv.GetAddressOf() );
+    GetContext()->PSSetShaderResources( 7, 1, srv.GetAddressOf() );
     GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(),
         DepthStencilBuffer->GetDepthStencilView().Get() );
 
@@ -5238,9 +5327,12 @@ void D3D11GraphicsEngine::DrawVobsList( const std::list<VobInfo*>& vobs, zCCamer
 /** Update clipping cursor onto window */
 void D3D11GraphicsEngine::UpdateClipCursor( HWND hWnd )
 {
+#ifndef BUILD_SPACER_NET
     RECT rect;
     static RECT last_clipped_rect;
-    if ( m_isWindowActive ) {
+
+    // People use open settings window to navigate to other screens
+    if ( m_isWindowActive && !HasSettingsWindow() ) {
         GetClientRect( hWnd, &rect );
         ClientToScreen( hWnd, reinterpret_cast<LPPOINT>(&rect) + 0 );
         ClientToScreen( hWnd, reinterpret_cast<LPPOINT>(&rect) + 1 );
@@ -5253,6 +5345,7 @@ void D3D11GraphicsEngine::UpdateClipCursor( HWND hWnd )
             ZeroMemory( &last_clipped_rect, sizeof( RECT ) );
         }
     }
+#endif
 }
 
 /** Message-Callback for the main window */
@@ -5464,6 +5557,10 @@ void D3D11GraphicsEngine::OnUIEvent( EUIEvent uiEvent ) {
             Engine::GAPI->SetEnableGothicInput(
                 UIView->GetSettingsDialog()->IsHidden() );
         }
+        UpdateClipCursor( OutputWindow );
+    } else if ( uiEvent == UI_ClosedSettings ) {
+        // Settings can be closed in multiple ways
+        UpdateClipCursor( OutputWindow );
     } else if ( uiEvent == UI_OpenEditor ) {
         if ( UIView ) {
             // Show settings
@@ -5506,6 +5603,7 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     // Downscale to 256x256
     PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), INT2( width, width ),
         true );
+    GetContext()->Flush();
 
     D3D11_TEXTURE2D_DESC texDesc;
     texDesc.ArraySize = 1;
@@ -5528,11 +5626,25 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
         return;
     }
     GetContext()->CopyResource( texture.Get(), rt->GetTexture().Get() );
+    GetContext()->Flush();
 
     // Get data
     D3D11_MAPPED_SUBRESOURCE res;
     if ( SUCCEEDED( GetContext()->Map( texture.Get(), 0, D3D11_MAP_READ, 0, &res ) ) ) {
-        memcpy( d, res.pData, width * width * 4 );
+        unsigned char* dstData = reinterpret_cast<unsigned char*>(res.pData);
+        unsigned char* srcData = reinterpret_cast<unsigned char*>(d);
+        UINT length = width * 4;
+        if ( length == res.RowPitch ) {
+            memcpy( srcData, dstData, length * width );
+        } else {
+            if ( length > res.RowPitch )
+                length = res.RowPitch;
+            for ( int row = 0; row < width; ++row ) {
+                memcpy( srcData, dstData, length );
+                srcData += length;
+                dstData += res.RowPitch;
+            }
+        }
         GetContext()->Unmap( texture.Get(), 0 );
     } else {
         LogInfo() << "Thumbnail failed";
@@ -5888,6 +6000,7 @@ void D3D11GraphicsEngine::EnsureTempVertexBufferSize( std::unique_ptr<D3D11Verte
     }
 }
 
+#if ENABLE_TESSELATION > 0
 /** Sets up everything for a PNAEN-Mesh */
 void D3D11GraphicsEngine::Setup_PNAEN( EPNAENRenderMode mode ) {
     auto pnaen = ShaderManager->GetHDShader( "PNAEN_Tesselation" );
@@ -5928,6 +6041,7 @@ void D3D11GraphicsEngine::Setup_PNAEN( EPNAENRenderMode mode ) {
     GetContext()->IASetPrimitiveTopology(
         D3D11_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST );
 }
+#endif
 
 /** Draws particle meshes */
 void D3D11GraphicsEngine::DrawFrameParticleMeshes( std::unordered_map<zCVob*, MeshVisualInfo*>& progMeshes ) {
@@ -6039,7 +6153,7 @@ void D3D11GraphicsEngine::DrawFrameParticles(
 
     // Clear GBuffer0 to hold the refraction vectors since it's not needed anymore
     GetContext()->ClearRenderTargetView( GBuffer0_Diffuse->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
-    GetContext()->ClearRenderTargetView( GBuffer1_Normals_SpecIntens_SpecPower->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
+    GetContext()->ClearRenderTargetView( GBuffer1_Normals->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
 
     RefractionInfoConstantBuffer ricb = {};
     ricb.RI_Projection = Engine::GAPI->GetProjectionMatrix();
@@ -6078,7 +6192,7 @@ void D3D11GraphicsEngine::DrawFrameParticles(
 
     ID3D11RenderTargetView* rtv[] = {
         GBuffer0_Diffuse->GetRenderTargetView().Get(),
-        GBuffer1_Normals_SpecIntens_SpecPower->GetRenderTargetView().Get() };
+        GBuffer1_Normals->GetRenderTargetView().Get() };
     GetContext()->OMSetRenderTargets( 2, rtv, DepthStencilBuffer->GetDepthStencilView().Get() );
 
     // Bind view/proj
@@ -6169,7 +6283,7 @@ void D3D11GraphicsEngine::DrawFrameParticles(
     state.BlendState.SetDirty();
 
     GBuffer0_Diffuse->BindToPixelShader( GetContext().Get(), 1 );
-    GBuffer1_Normals_SpecIntens_SpecPower->BindToPixelShader( GetContext().Get(), 2 );
+    GBuffer1_Normals->BindToPixelShader( GetContext().Get(), 2 );
 
     // Copy scene behind the particle systems
     PfxRenderer->CopyTextureToRTV(
@@ -6427,8 +6541,18 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     SetActiveVertexShader( "VS_TransformedEx" );
     SetActivePixelShader( "PS_FixedFunctionPipe" );
 
+    GothicGraphicsState& graphicState = Engine::GAPI->GetRendererState().GraphicsState;
+    FixedFunctionStage::EColorOp copyColorOp = graphicState.FF_Stages[0].ColorOp;
+    FixedFunctionStage::EColorOp copyColorOp2 = graphicState.FF_Stages[1].ColorOp;
+    FixedFunctionStage::ETextureArg copyColorArg1 = graphicState.FF_Stages[0].ColorArg1;
+    FixedFunctionStage::ETextureArg copyColorArg2 = graphicState.FF_Stages[0].ColorArg2;
+    graphicState.FF_Stages[0].ColorOp = FixedFunctionStage::EColorOp::CO_MODULATE;
+    graphicState.FF_Stages[1].ColorOp = FixedFunctionStage::EColorOp::CO_DISABLE;
+    graphicState.FF_Stages[0].ColorArg1 = FixedFunctionStage::ETextureArg::TA_TEXTURE;
+    graphicState.FF_Stages[0].ColorArg2 = FixedFunctionStage::ETextureArg::TA_DIFFUSE;
+
     // Bind the FF-Info to the first PS slot
-    ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &Engine::GAPI->GetRendererState().GraphicsState );
+    ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &graphicState );
     ActivePS->GetConstantBuffer()[0]->BindToPixelShader( 0 );
 
     BindActiveVertexShader();
@@ -6464,19 +6588,6 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     // Bind the texture.
     tx->Bind( 0 );
 
-    // Set PS resources
-    MyDirectDrawSurface7* surface = tx->GetSurface();
-
-    ID3D11ShaderResourceView* srv[3] = {
-        // Get diffuse and normalmap
-        surface->GetEngineTexture()->GetShaderResourceView().Get(),
-        surface->GetNormalmap() ? surface->GetNormalmap()->GetShaderResourceView().Get() : NULL,
-        surface->GetFxMap() ? surface->GetFxMap()->GetShaderResourceView().Get() : NULL,
-    };
-
-    // Bind both
-
-    GetContext()->PSSetShaderResources( 0, 3, srv );
     if ( !Engine::GAPI->GetRendererState().BlendState.BlendEnabled ) {
         Engine::GAPI->GetRendererState().BlendState.SetAlphaBlending();
         Engine::GAPI->GetRendererState().BlendState.SetDirty();
@@ -6498,4 +6609,9 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     Engine::GAPI->GetRendererState().DepthState.SetDirty();
 
     UpdateRenderStates();
+
+    graphicState.FF_Stages[0].ColorOp = copyColorOp;
+    graphicState.FF_Stages[1].ColorOp = copyColorOp2;
+    graphicState.FF_Stages[0].ColorArg1 = copyColorArg1;
+    graphicState.FF_Stages[0].ColorArg2 = copyColorArg2;
 }

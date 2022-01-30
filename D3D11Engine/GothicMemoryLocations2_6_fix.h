@@ -124,6 +124,7 @@ struct GothicMemoryLocations {
 
         static const unsigned int Offset_Sun = 0x5F4; // First of the two planets
         static const unsigned int Offset_MasterTime = 0x80;
+        static const unsigned int Offset_LastMasterTime = 0x84;
         static const unsigned int Offset_MasterState = 0x88;
         static const unsigned int Offset_SkyLayer1 = 0x5A8;
         static const unsigned int Offset_SkyLayer2 = 0x5C4;
@@ -147,6 +148,10 @@ struct GothicMemoryLocations {
 
         static const unsigned int ProcessRainFX = 0x005EAF30;
         static const unsigned int Offset_OutdoorRainFXWeight = 0x69C;
+        static const unsigned int Offset_TimeStartRain = 0x6A8;
+        static const unsigned int Offset_TimeStopRain = 0x6AC;
+        static const unsigned int Offset_RenderLightning = 0x6B0;
+        static const unsigned int Offset_RainingCounter = 0x6B8;
     };
 
     struct zCSkyController {

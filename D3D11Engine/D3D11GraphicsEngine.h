@@ -91,6 +91,8 @@ public:
 
     /** Fetches a list of available display modes */
     XRESULT FetchDisplayModeList();
+    XRESULT FetchDisplayModeListDXGI();
+    XRESULT FetchDisplayModeListWindows();
 
     /** Returns a list of available display modes */
     virtual XRESULT GetDisplayModeList( std::vector<DisplayModeInfo>* modeList, bool includeSuperSampling = false );
@@ -134,6 +136,7 @@ public:
     void UpdateColorSpace_SwapChain3();
     void UpdateColorSpace_SwapChain4();
 
+#if ENABLE_TESSELATION > 0
     enum EPNAENRenderMode {
         PNAEN_Default,
         PNAEN_Instanced,
@@ -142,6 +145,7 @@ public:
 
     /** Sets up everything for a PNAEN-Mesh */
     void Setup_PNAEN( EPNAENRenderMode mode = PNAEN_Default );
+#endif
 
     /** Sets up texture with normalmap and fxmap for rendering */
     bool BindTextureNRFX( zCTexture* tex, bool bindShader );
@@ -196,7 +200,7 @@ public:
     RenderToTextureBuffer& GetGBuffer0() { return *GBuffer0_Diffuse; }
 
     /** Returns the second GBuffer */
-    RenderToTextureBuffer& GetGBuffer1() { return *GBuffer1_Normals_SpecIntens_SpecPower; }
+    RenderToTextureBuffer& GetGBuffer1() { return *GBuffer1_Normals; }
 
     /** Returns the HDRBackbuffer */
     RenderToTextureBuffer& GetHDRBackBuffer() { return *HDRBackBuffer; }
@@ -366,7 +370,8 @@ protected:
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> BackbufferRTV;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> BackbufferSRV; // Diffuse
     std::unique_ptr<RenderToTextureBuffer> GBuffer0_Diffuse;
-    std::unique_ptr<RenderToTextureBuffer> GBuffer1_Normals_SpecIntens_SpecPower; // Normals / SpecIntensity / SpecPower
+    std::unique_ptr<RenderToTextureBuffer> GBuffer1_Normals; // Normals
+    std::unique_ptr<RenderToTextureBuffer> GBuffer2_SpecIntens_SpecPower; // SpecIntensity / SpecPower
     std::unique_ptr<RenderToTextureBuffer> DepthStencilBufferCopy;
     std::unique_ptr<RenderToTextureBuffer> DummyShadowCubemapTexture; // PS-Stage needs to have a rendertarget bound to execute SV_Depth-Writes, as it seems.
 

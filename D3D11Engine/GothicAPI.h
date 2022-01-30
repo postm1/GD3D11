@@ -132,8 +132,10 @@ struct MaterialInfo {
     EMaterialType MaterialType;
     Buffer buffer;
 
+#if ENABLE_TESSELATION > 0
     /** Base tesselationsettings for this texture. Can be overwritten by ZEN-Resources */
     VisualTesselationSettings TextureTesselationSettings;
+#endif
 };
 
 struct ParticleFrameData {
@@ -331,11 +333,13 @@ public:
     /** Removes the given quadmark */
     void RemoveQuadMark( zCQuadMark* mark );
 
+#if ENABLE_TESSELATION > 0
     /** Saves all sections information */
     void SaveSectionInfos();
 
     /** Loads all sections information */
     void LoadSectionInfos();
+#endif
 
     /** Returns wether the camera is underwater or not */
     bool IsUnderWater();
@@ -373,9 +377,6 @@ public:
     /** Unprojects a pixel-position on the screen */
     void XM_CALLCONV UnprojectXM( DirectX::FXMVECTOR p, DirectX::XMVECTOR& worldPos, DirectX::XMVECTOR& worldDir );
 
-    /** Unprojects a pixel-position on the screen */
-    void XM_CALLCONV GothicAPI::UnprojectLinesIntoLineVerticies( const std::vector<ScreenSpaceLine>& lines, std::vector<LineVertex>& lineVerticies );
-
     /** Unprojects the current cursor, returns it's direction in world-space */
     DirectX::XMVECTOR XM_CALLCONV UnprojectCursorXM();
 
@@ -389,8 +390,10 @@ public:
     /** Traces a visual info. Returns -1 if not hit, distance otherwise */
     float TraceVisualInfo( const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& dir, BaseVisualInfo* visual, zCMaterial** hitMaterial = nullptr );
 
+#if ENABLE_TESSELATION > 0
     /** Applies tesselation-settings for all mesh-parts using the given info */
     void ApplyTesselationSettingsForAllMeshPartsUsing( MaterialInfo* info, int amount = 1 );
+#endif
 
     /** Returns the GSky-Object */
     GSky* GetSky() const;

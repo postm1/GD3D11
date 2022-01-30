@@ -64,6 +64,11 @@ struct GothicGraphicsState {
         FF_AlphaRef = 0.5f;
 
         FF_GSwitches = 0;
+
+        FF_Stages[0].ColorOp = FixedFunctionStage::EColorOp::CO_MODULATE;
+        FF_Stages[1].ColorOp = FixedFunctionStage::EColorOp::CO_DISABLE;
+        FF_Stages[0].ColorArg1 = FixedFunctionStage::ETextureArg::TA_TEXTURE;
+        FF_Stages[0].ColorArg2 = FixedFunctionStage::ETextureArg::TA_DIFFUSE;
     }
 
     /** Sets one of the GraphicsFlags */
@@ -604,9 +609,11 @@ struct GothicRendererSettings {
         SortRenderQueue = true;
         DrawThreaded = true;
 
+#if ENABLE_TESSELATION > 0
         EnableTesselation = false;
         AllowWorldMeshTesselation = false;
         TesselationFrustumCulling = true;
+#endif
         EnablePointlightShadows = PLS_UPDATE_DYNAMIC;
         MinLightShadowUpdateRange = 300.0f;
         PartialDynamicShadowUpdates = true;
@@ -705,9 +712,11 @@ struct GothicRendererSettings {
     E_HDRToneMap HDRToneMap;
     bool EnableVSync;
     bool EnableSMAA;
+#if ENABLE_TESSELATION > 0
     bool EnableTesselation;
     bool AllowWorldMeshTesselation;
     bool TesselationFrustumCulling;
+#endif
     bool FastShadows;
     bool ReplaceSunDirection;
     bool AtmosphericScattering;

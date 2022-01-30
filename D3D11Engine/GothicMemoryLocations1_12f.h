@@ -82,6 +82,7 @@ struct GothicMemoryLocations {
         static const unsigned int OBJ_ActivezCSkyController = 0x0099AC8C;
 
         static const unsigned int Offset_MasterTime = 0x6C;
+        static const unsigned int Offset_LastMasterTime = 0x70;
         static const unsigned int Offset_MasterState = 0x74;
 
         static const unsigned int GetUnderwaterFX = 0x5D8600;
@@ -98,6 +99,8 @@ struct GothicMemoryLocations {
 
         static const unsigned int ProcessRainFX = 0x005DECA0;
         static const unsigned int Offset_OutdoorRainFXWeight = 0x66C;
+        static const unsigned int Offset_TimeStartRain = 0x678;
+        static const unsigned int Offset_TimeStopRain = 0x67C;
     };
 
     struct zCSkyController {

@@ -33,25 +33,26 @@ public:
     }
 
     /** Draws a straight line from xyz1 to xyz2 */
-    static void __fastcall hooked_zCRndD3DDrawLineZ( void* thisptr, void* unknwn, float x1, float y1, float z1, float x2, float y2, float z2, zColor color ) {
-        // TODO: Implement occlusion culling for the lines.
-        // TODO: Find out why lines are flickering
-
-        auto lineRenderer = Engine::GraphicsEngine->GetLineRenderer();
-        if ( lineRenderer ) {
-            lineRenderer->AddLineDeferred( ScreenSpaceLine( XMFLOAT3( x1, y1, z1 ), color.dword ), ScreenSpaceLine( XMFLOAT3( x2, y2, z2 ), color.dword ) );
-        }
-    }
-
-    static void __fastcall hooked_zCRndD3DDrawLine( void* thisptr, void* unknwn, float x1, float y1, float x2, float y2, zColor color ) {
-        // TODO: Find out why lines are flickering
-
+    static void __fastcall hooked_zCRndD3DDrawLineZ( void* thisptr, void* unknwn, float x1, float y1, float z1VSInv, float x2, float y2, float z2VSInv, zColor color ) {
         if ( color.bgra.alpha == 0 ) {
             color.bgra.alpha = 255;
         }
         auto lineRenderer = Engine::GraphicsEngine->GetLineRenderer();
         if ( lineRenderer ) {
-            lineRenderer->AddLineDeferred( ScreenSpaceLine( XMFLOAT3( x1, y1, 0 ), color.dword ), ScreenSpaceLine( XMFLOAT3( x2, y2, 0 ), color.dword ) );
+            auto& proj = Engine::GAPI->GetProjectionMatrix();
+            float actualz1 = proj._33 + proj._34 * z1VSInv;
+            float actualz2 = proj._33 + proj._34 * z2VSInv;
+            lineRenderer->AddLineScreenSpace( LineVertex( XMFLOAT3( x1, y1, actualz1 ), color.dword, z1VSInv ), LineVertex( XMFLOAT3( x2, y2, actualz2 ), color.dword, z2VSInv ) );
+        }
+    }
+
+    static void __fastcall hooked_zCRndD3DDrawLine( void* thisptr, void* unknwn, float x1, float y1, float x2, float y2, zColor color ) {
+        if ( color.bgra.alpha == 0 ) {
+            color.bgra.alpha = 255;
+        }
+        auto lineRenderer = Engine::GraphicsEngine->GetLineRenderer();
+        if ( lineRenderer ) {
+            lineRenderer->AddLineScreenSpace( LineVertex( XMFLOAT3( x1, y1, 1.f ), color.dword, 1.f ), LineVertex( XMFLOAT3( x2, y2, 1.f ), color.dword, 1.f ) );
         }
     }
 

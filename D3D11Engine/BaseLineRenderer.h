@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 
-#pragma pack (push, 1)	
+#pragma pack (push, 1)
 struct LineVertex {
     LineVertex() {}
     LineVertex( const DirectX::XMFLOAT3& position, DWORD color = 0xFFFFFFFF ) {
@@ -24,17 +24,7 @@ struct LineVertex {
     float4 Position;
     float4 Color;
 };
-#pragma pack (pop)	
-
-struct ScreenSpaceLine {
-    ScreenSpaceLine() {}
-    ScreenSpaceLine( const DirectX::XMFLOAT3& position, DWORD color = 0xFFFFFFFF ) {
-        Position = position;
-        Color = color;
-    }
-    DirectX::XMFLOAT3 Position;
-    DWORD Color;
-};
+#pragma pack (pop)
 
 class BaseLineRenderer {
 public:
@@ -43,13 +33,11 @@ public:
 
     /** Adds a line to the list */
     virtual XRESULT AddLine( const LineVertex& v1, const LineVertex& v2 ) = 0;
-    virtual XRESULT AddLineDeferred( const ScreenSpaceLine& v1, const ScreenSpaceLine& v2 ) = 0;
+    virtual XRESULT AddLineScreenSpace( const LineVertex& v1, const LineVertex& v2 ) = 0;
 
     /** Flushes the cached lines */
     virtual XRESULT Flush() = 0;
-
-    /** Calculates the world-position from screen position and draws the lines */
-    virtual XRESULT FlushDeferredLines() = 0;
+    virtual XRESULT FlushScreenSpace() = 0;
 
     /** Clears the line cache */
     virtual XRESULT ClearCache() = 0;

@@ -542,6 +542,14 @@ struct GothicRendererSettings {
         OutdoorSmallVobDrawRadius = 10000.0f;
         SmallVobSize = 1500.0f;
 
+
+#ifdef  BUILD_SPACER_NET
+        OutdoorSmallVobDrawRadius = 30000.0f;
+        IndoorVobDrawRadius = 10000.0f;
+        SectionDrawRadius = 8;
+#endif //  BUILD_SPACER_NET
+
+
 #ifdef BUILD_GOTHIC_1_08k
         SetupOldWorldSpecificValues();
 #else

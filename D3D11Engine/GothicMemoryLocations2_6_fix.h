@@ -360,6 +360,7 @@ struct GothicMemoryLocations {
         static const unsigned int SetCollDetStat = 0x0061CE50;
         static const unsigned int s_ShowHelperVisuals = 0x009A37F4;
         static const unsigned int GetClassHelperVisual = 0x006011E0;
+        static const unsigned int s_renderVobs = 0x008A7634;
 
         static const unsigned int GetVisual = 0x00616B20;
         static const unsigned int SetVisual = 0x006024F0;

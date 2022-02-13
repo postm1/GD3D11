@@ -38,12 +38,12 @@ public:
 
     }
 
-    static void __fastcall Hooked_Destructor( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_Destructor( zCMaterial* thisptr, void* unknwn ) {
         hook_infunc
 
             // Notify the world
             if ( Engine::GAPI )
-                Engine::GAPI->OnMaterialDeleted( (zCMaterial*)thisptr );
+                Engine::GAPI->OnMaterialDeleted( thisptr );
 
         HookedFunctions::OriginalFunctions.original_zCMaterialDestructor( thisptr );
 
@@ -60,12 +60,12 @@ public:
         hook_outfunc
     }
 
-    static void __fastcall Hooked_InitValues( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_InitValues( zCMaterial* thisptr, void* unknwn ) {
         hook_infunc
 
             // Notify the world
             if ( Engine::GAPI )
-                Engine::GAPI->OnMaterialCreated( (zCMaterial*)thisptr );
+                Engine::GAPI->OnMaterialCreated( thisptr );
 
         HookedFunctions::OriginalFunctions.original_zCMaterialInitValues( thisptr );
 

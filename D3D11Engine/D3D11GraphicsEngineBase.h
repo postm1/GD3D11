@@ -128,6 +128,8 @@ public:
     virtual XRESULT SetActiveGShader( const std::string& shader );
     //virtual int MeasureString(std::string str, zFont* zFont);
 
+    void ResetPresentPending() { PresentPending = false; }
+
 protected:
     /** Updates the transformsCB with new values from the GAPI */
     void UpdateTransformsCB();

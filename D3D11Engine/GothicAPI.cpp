@@ -67,7 +67,9 @@ void MaterialInfo::WriteToFile( const std::string& name ) {
 
     // Then the data
     fwrite( &buffer, sizeof( MaterialInfo::Buffer ), 1, f );
+#if ENABLE_TESSELATION > 0
     fwrite( &TextureTesselationSettings.buffer, sizeof( VisualTesselationSettings::Buffer ), 1, f );
+#endif
 
     fclose( f );
 }
@@ -79,13 +81,20 @@ void MaterialInfo::LoadFromFile( const std::string& name ) {
     if ( !f )
         return;
 
+#if ENABLE_TESSELATION > 0
+    char ReadBuffer[sizeof( int ) + sizeof( MaterialInfo::Buffer ) + sizeof( VisualTesselationSettings::Buffer )];
+#else
+    char ReadBuffer[sizeof( int ) + sizeof( MaterialInfo::Buffer )];
+#endif
+    fread( ReadBuffer, 1, sizeof( ReadBuffer ), f );
+
     // Write the version first
     int version;
-    fread( &version, sizeof( int ), 1, f );
+    memcpy( &version, ReadBuffer, sizeof( int ) );
 
     // Then the data
     ZeroMemory( &buffer, sizeof( MaterialInfo::Buffer ) );
-    fread( &buffer, sizeof( MaterialInfo::Buffer ), 1, f );
+    memcpy( &buffer, ReadBuffer + sizeof( int ), sizeof( MaterialInfo::Buffer ) );
 
     if ( version < 2 ) {
         if ( buffer.DisplacementFactor == 0.0f ) {
@@ -93,16 +102,20 @@ void MaterialInfo::LoadFromFile( const std::string& name ) {
         }
     }
 
+#if ENABLE_TESSELATION > 0
     if ( version >= 4 ) {
-        fread( &TextureTesselationSettings.buffer, sizeof( VisualTesselationSettings::Buffer ), 1, f );
+        memcpy( &TextureTesselationSettings.buffer, ReadBuffer + sizeof( int ) + sizeof( MaterialInfo::Buffer ), sizeof( VisualTesselationSettings::Buffer ) );
     }
+#endif
 
     fclose( f );
 
     buffer.Color = float4( 1, 1, 1, 1 );
 
     UpdateConstantbuffer();
+#if ENABLE_TESSELATION > 0
     TextureTesselationSettings.UpdateConstantbuffer();
+#endif
 }
 
 /** creates/updates the constantbuffer */
@@ -136,24 +149,6 @@ GothicAPI::~GothicAPI() {
     SAFE_DELETE( WrappedWorldMesh );
 }
 
-int stof_safe( const std::string& str, float& p_value, std::size_t* pos = 0 ) {
-    // wrapping std::stof because it may throw an exception
-
-    try {
-        p_value = std::stof( str, pos );
-        return 0;
-    } catch ( const std::invalid_argument& ia ) {
-        LogWarn() << "parsing float failed with invalid argument: " << ia.what();
-        return -1;
-    } catch ( const std::out_of_range& oor ) {
-        LogWarn() << "parsing float failed with out of range: " << oor.what();
-        return -2;
-    } catch ( const std::exception& e ) {
-        LogWarn() << "parsing float failed with unknown error: " << e.what();
-        return -3;
-    }
-}
-
 float GetPrivateProfileFloatA(
     const LPCSTR lpAppName,
     const LPCSTR lpKeyName,
@@ -162,15 +157,16 @@ float GetPrivateProfileFloatA(
 ) {
     const int float_str_max = 30;
     TCHAR nFloat[float_str_max];
-    auto nRead = GetPrivateProfileStringA( lpAppName, lpKeyName, nullptr, nFloat, float_str_max, lpFileName.c_str() );
-    if ( nRead ) {
-        float value;
-        if ( 0 == stof_safe( std::string( nFloat, nRead ), value )) {
-            return value;
+    if ( GetPrivateProfileStringA( lpAppName, lpKeyName, nullptr, nFloat, float_str_max, lpFileName.c_str() ) ) {
+        try {
+            return std::stof( std::string( nFloat ) );
+        } catch ( const std::exception& ) {
+            return nDefault;
         }
     }
     return nDefault;
 }
+
 std::string GetPrivateProfileStringA(
     const LPCSTR lpAppName,
     const LPCSTR lpKeyName,
@@ -191,6 +187,9 @@ bool GetPrivateProfileBoolA(
 
 /** Called when the game starts */
 void GothicAPI::OnGameStart() {
+    // Get threadid of main thread here because DllMain can be called from different thread
+    MainThreadID = GetCurrentThreadId();
+
     LoadFixBinkValue();
     LoadMenuSettings( MENU_SETTINGS_FILE );
 
@@ -298,15 +297,15 @@ void GothicAPI::OnWorldUpdate() {
     if ( !GMPModeActive ) {
         if ( IsCameraIndoor() ) {
             // Set mode to 2, which means we are indoors, but can see the outside
-            if ( zCSoundSystem::GetSoundSystem() )
-                zCSoundSystem::GetSoundSystem()->SetGlobalReverbPreset( 2, 0.6f );
+            if ( zCSoundSystem* sndSystem = zCSoundSystem::GetSoundSystem() )
+                sndSystem->SetGlobalReverbPreset( 2, 0.6f );
 
             if ( world && world->GetSkyControllerOutdoor() )
                 world->GetSkyControllerOutdoor()->SetCameraLocationHint( 1 );
         } else {
             // Set mode to 0, which is the default
-            if ( zCSoundSystem::GetSoundSystem() )
-                zCSoundSystem::GetSoundSystem()->SetGlobalReverbPreset( 0, 0.0f );
+            if ( zCSoundSystem* sndSystem = zCSoundSystem::GetSoundSystem() )
+                sndSystem->SetGlobalReverbPreset( 0, 0.0f );
 
             if ( world && world->GetSkyControllerOutdoor() )
                 world->GetSkyControllerOutdoor()->SetCameraLocationHint( 0 );
@@ -314,25 +313,50 @@ void GothicAPI::OnWorldUpdate() {
     }
 
     // Do rain-effects
-    if ( world && world->GetSkyControllerOutdoor() && _canRain ) {
-        if( !RendererState.RendererSettings.EnableRain ) {
+    zCSkyController_Outdoor* skyController;
+    if ( world && (skyController = world->GetSkyControllerOutdoor()) != nullptr && _canRain ) {
+        bool outdoor = (LoadedWorldInfo->BspTree->GetBspTreeMode() == zBSP_MODE_OUTDOOR);
+        if ( RendererState.RendererSettings.AtmosphericScattering && outdoor ) {
+            float lastMasterTime = skyController->GetLastMasterTime();
+            float masterTime = skyController->GetMasterTime();
+            if ( (lastMasterTime - masterTime) > 0.95f && masterTime < 0.02f ) {
+#ifndef BUILD_GOTHIC_1_08k
+                float timeStartRain = std::min<float>( float( rand() ) / float( RAND_MAX ), 0.958f );
+                float timeStopRain = std::min<float>( timeStartRain + 0.042f + ( float( rand() ) / float( RAND_MAX ) * 0.06f ), 1.0f );
+#else
+                float timeStartRain = std::min<float>( float( rand() ) / float( RAND_MAX ), 0.96f );
+                float timeStopRain = std::min<float>( timeStartRain + 0.04f + ( float( rand() ) / float( RAND_MAX ) * 0.04f ), 1.0f );
+#endif
+                int renderLightning = 0;
+                if ( skyController->GetRainingCounter() > 3 && ( float( rand() ) / float( RAND_MAX ) ) > 0.6f )
+                    renderLightning = 1;
+
+                skyController->SetTimeStartRain( timeStartRain );
+                skyController->SetTimeStopRain( timeStopRain );
+                skyController->SetRenderLighting( renderLightning );
+            }
+
+            skyController->SetLastMasterTime( masterTime );
+        }
+
+        if( !RendererState.RendererSettings.EnableRain || !outdoor ) {
             #ifdef BUILD_GOTHIC_1_08k
             #ifdef BUILD_1_12F
             int skyEffects = *reinterpret_cast<int*>(0x887EDC);
             *reinterpret_cast<int*>(0x887EDC) = 0;
-            world->GetSkyControllerOutdoor()->ProcessRainFX();
+            skyController->ProcessRainFX();
             *reinterpret_cast<int*>(0x887EDC) = skyEffects;
             #else
             int skyEffects = *reinterpret_cast<int*>(0x8422A0);
             *reinterpret_cast<int*>(0x8422A0) = 0;
-            world->GetSkyControllerOutdoor()->ProcessRainFX();
+            skyController->ProcessRainFX();
             *reinterpret_cast<int*>(0x8422A0) = skyEffects;
             #endif
             #endif
             #ifdef BUILD_GOTHIC_2_6_fix
             int skyEffects = *reinterpret_cast<int*>(0x8A5DB0);
             *reinterpret_cast<int*>(0x8A5DB0) = 0;
-            world->GetSkyControllerOutdoor()->ProcessRainFX();
+            skyController->ProcessRainFX();
             *reinterpret_cast<int*>(0x8A5DB0) = skyEffects;
             #endif
         } else {
@@ -340,25 +364,26 @@ void GothicAPI::OnWorldUpdate() {
             #ifdef BUILD_1_12F
             int skyEffects = *reinterpret_cast<int*>(0x887EDC);
             *reinterpret_cast<int*>(0x887EDC) = 1;
-            world->GetSkyControllerOutdoor()->ProcessRainFX();
+            skyController->ProcessRainFX();
             *reinterpret_cast<int*>(0x887EDC) = skyEffects;
             #else
             int skyEffects = *reinterpret_cast<int*>(0x8422A0);
             *reinterpret_cast<int*>(0x8422A0) = 1;
-            world->GetSkyControllerOutdoor()->ProcessRainFX();
+            skyController->ProcessRainFX();
             *reinterpret_cast<int*>(0x8422A0) = skyEffects;
             #endif
             #endif
             #ifdef BUILD_GOTHIC_2_6_fix
             int skyEffects = *reinterpret_cast<int*>(0x8A5DB0);
             *reinterpret_cast<int*>(0x8A5DB0) = 1;
-            world->GetSkyControllerOutdoor()->ProcessRainFX();
+            skyController->ProcessRainFX();
             *reinterpret_cast<int*>(0x8A5DB0) = skyEffects;
             #endif
         }
     }
 
     if ( !_canRain ) {
+        srand( time( nullptr ) );
         _canRain = true;
     }
 
@@ -441,6 +466,7 @@ void GothicAPI::SetEnableGothicInput( bool value ) {
     }
 
 #ifndef BUILD_SPACER
+#ifndef BUILD_SPACER_NET
     // zMouse, false
     input->SetDeviceEnabled( 2, value ? 1 : 0 );
     input->SetDeviceEnabled( 1, value ? 1 : 0 );
@@ -487,6 +513,7 @@ void GothicAPI::SetEnableGothicInput( bool value ) {
     }
 
 #endif*/
+#endif
 #endif
 
 }
@@ -640,7 +667,7 @@ void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) 
 #endif
     LogInfo() << "Done extracting world!";
 
-
+#if ENABLE_TESSELATION > 0
     // Apply tesselation
     for ( auto const& it : LoadedMaterials ) {
         MaterialInfo* info = GetMaterialInfoFrom( it->GetTexture() );
@@ -648,6 +675,7 @@ void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) 
             ApplyTesselationSettingsForAllMeshPartsUsing( info, info->TextureTesselationSettings.buffer.VT_TesselationFactor > 1.0f ? 2 : 1 );
         }
     }
+#endif
 }
 
 /** Called when the game is about to load a new level */
@@ -1335,17 +1363,10 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
     }
 
     // Clear
+    std::list<BaseVobInfo*> list = VobsByVisual[visual];
     if ( _canClearVobsByVisual ) {
-        std::list<BaseVobInfo*> list = VobsByVisual[visual];
         for ( auto const& it : list ) {
             OnRemovedVob( it->Vob, LoadedWorldInfo->MainWorld );
-        }
-        if ( list.size() > 0 ) {
-            if ( RendererState.RendererSettings.EnableDebugLog )
-                LogInfo() << std::string( className ) << " had " + std::to_string( list.size() ) << " vobs";
-
-            VobsByVisual[visual].clear();
-            VobsByVisual.erase( visual );
         }
     } else {
         // TODO: #8 - Figure out why exactly we don't get notified that a VOB is re-added after being removed.
@@ -1358,6 +1379,15 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
                 OnRemovedVob(it->Vob, LoadedWorldInfo->MainWorld);
             }
         }*/
+    }
+    if ( list.size() > 0 ) {
+#ifndef PUBLIC_RELEASE
+        if ( RendererState.RendererSettings.EnableDebugLog )
+            LogInfo() << std::string( className ) << " had " + std::to_string( list.size() ) << " vobs";
+#endif
+
+        VobsByVisual[visual].clear();
+        VobsByVisual.erase( visual );
     }
 }
 /** Draws a MeshInfo */
@@ -1395,7 +1425,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
     //LogInfo() << "Removing vob: " << vob;
     Engine::GraphicsEngine->OnVobRemovedFromWorld( vob );
 
-    std::set<zCVob*>::iterator it = RegisteredVobs.find( vob );
+    auto it = RegisteredVobs.find( vob );
     if ( it == RegisteredVobs.end() ) {
         // Not registered
         return;
@@ -1853,6 +1883,11 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
 
     if ( !((SkeletalMeshVisualInfo*)vi->VisualInfo)->SkeletalMeshes.empty() ) {
         Engine::GraphicsEngine->DrawSkeletalMesh( vi, transforms, modelColor, fatness );
+    } else {
+        if ( model->GetMeshSoftSkinList()->NumInArray > 0 ) {
+            // Just in case somehow we end up without skeletal meshes and they are available
+            WorldConverter::ExtractSkeletalMeshFromVob( model, (SkeletalMeshVisualInfo*)vi->VisualInfo );
+        }
     }
 
     if ( g->GetRenderingStage() == DES_SHADOWMAP_CUBE )
@@ -2536,30 +2571,6 @@ void XM_CALLCONV GothicAPI::UnprojectXM( FXMVECTOR p, XMVECTOR& worldPos, XMVECT
     worldDir = XMVector3TransformCoord( XMVector3Normalize( u ), invView );
 }
 
-void XM_CALLCONV GothicAPI::UnprojectLinesIntoLineVerticies( const std::vector<ScreenSpaceLine>& lines, std::vector<LineVertex>& lineVerticies )
-{
-    auto cam = zCCamera::GetCamera();
-    XMMATRIX proj = XMMatrixTranspose( XMLoadFloat4x4( &cam->trafoProjection ) );
-    XMMATRIX invView = XMMatrixTranspose( XMLoadFloat4x4( &cam->trafoViewInv ) );
-
-    // Convert to screenspace
-    auto res = Engine::GraphicsEngine->GetResolution();
-    XMFLOAT3 pos;
-    for ( auto& l : lines ) {
-        FXMVECTOR u = XMVectorSet(
-            (((2.0f * l.Position.x) / res.x) - 1) / proj.r[0].m128_f32[0],
-            -(((2.0f * l.Position.y) / res.y) - 1) / proj.r[1].m128_f32[1],
-            1,
-            0 );
-
-        // Transform and output
-        //auto worldPos = XMVector3TransformCoord( u, invView );
-        auto worldPos = XMVector3TransformCoord( XMVector3Normalize( u ), invView );
-        XMStoreFloat3( &pos, worldPos );
-        lineVerticies.push_back( LineVertex( pos, l.Color ) );
-    }
-}
-
 /** Unprojects the current cursor */
 XMVECTOR GothicAPI::UnprojectCursorXM() {
     XMVECTOR mPos, mDir;
@@ -2628,7 +2639,7 @@ DirectX::XMFLOAT4X4& GothicAPI::GetProjectionMatrix() {
 
     // Reverse depth buffer
     float NearZ = RendererState.RendererSettings.SectionDrawRadius * WORLD_SECTION_SIZE;
-    float FarZ = 0.001f;
+    float FarZ = 1.0f;
     float zRange = FarZ / (FarZ - NearZ);
     RendererState.TransformState.TransformProj._33 = zRange;
     RendererState.TransformState.TransformProj._34 = -zRange * NearZ;
@@ -3241,7 +3252,7 @@ void GothicAPI::CollectVisibleVobsHelper( BspInfo* base, zTBBox3D boxCell, int c
                             }
 
                             VobLightInfo* vi = vit->second;
-                            if ( !vi->VisibleInRenderPass && vi->Vob->IsEnabled() /*&& vi->Vob->GetShowVisual()*/ ) {
+                            if ( !vi->VisibleInRenderPass && vob->IsEnabled() /*&& vob->GetShowVisual()*/ ) {
                                 vi->VisibleInRenderPass = true;
 
                                 // Update the lights shadows if: Light is dynamic or full shadow-updates are set
@@ -3249,7 +3260,7 @@ void GothicAPI::CollectVisibleVobsHelper( BspInfo* base, zTBBox3D boxCell, int c
                                     || (RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_UPDATE_DYNAMIC && !vob->IsStatic()) ) {
                                     // Now check for distances, etc
                                     float lightPlayerDist;
-                                    XMStoreFloat( &lightPlayerDist, DirectX::XMVector3Length( playerPosition - leaf->LightVobList.Array[i]->GetPositionWorldXM() ) );
+                                    XMStoreFloat( &lightPlayerDist, DirectX::XMVector3Length( playerPosition - vob->GetPositionWorldXM() ) );
                                     if ( vob->GetLightRange() > minDynamicUpdateLightRange && lightPlayerDist < vob->GetLightRange() * 1.5f )
                                         vi->UpdateShadows = true;
                                 }
@@ -3495,8 +3506,8 @@ void GothicAPI::ResetMaterialInfo() {
 
 /** Returns the material info associated with the given material */
 MaterialInfo* GothicAPI::GetMaterialInfoFrom( zCTexture* tex ) {
-    std::unordered_map<zCTexture*, MaterialInfo>::iterator f = MaterialInfos.find( tex );
-    if ( f == MaterialInfos.end() && tex ) {
+    auto it = MaterialInfos.find( tex );
+    if ( it == MaterialInfos.end() && tex ) {
         // Make a new one and try to load it
         MaterialInfos[tex].LoadFromFile( tex->GetNameWithoutExt() );
     }
@@ -3591,8 +3602,10 @@ void GothicAPI::LoadCustomZENResources() {
     // Load vegetation
     LoadVegetation( zen + ".veg" );
 
+#if ENABLE_TESSELATION > 0
     // Load world mesh information
     LoadSectionInfos();
+#endif
 }
 
 /** Saves resources created for this .ZEN */
@@ -3625,8 +3638,10 @@ void GothicAPI::SaveCustomZENResources() {
     // Save vegetation
     SaveVegetation( zen + ".veg" );
 
+#if ENABLE_TESSELATION > 0
     // Save world mesh information
     SaveSectionInfos();
+#endif
 }
 
 /** Applys the suppressed textures */
@@ -3934,8 +3949,10 @@ XRESULT GothicAPI::SaveMenuSettings( const std::string& file ) {
     WritePrivateProfileStringA( "HBAO", "SsaoBlurRadius", std::to_string( s.HbaoSettings.SsaoBlurRadius ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "HBAO", "SsaoStepCount", std::to_string( s.HbaoSettings.SsaoStepCount ).c_str(), ini.c_str() );
 
+#if ENABLE_TESSELATION > 0
     WritePrivateProfileStringA( "Tesselation", "EnableTesselation", std::to_string( s.EnableTesselation ? TRUE : FALSE ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "Tesselation", "AllowWorldMeshTesselation", std::to_string( s.AllowWorldMeshTesselation ? TRUE : FALSE ).c_str(), ini.c_str() );
+#endif
 
     WritePrivateProfileStringA( "FontRendering", "Enable", std::to_string( s.EnableCustomFontRendering ? TRUE : FALSE ).c_str(), ini.c_str() );
 
@@ -4027,8 +4044,10 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
     s.EnableSMAA = GetPrivateProfileBoolA( "SMAA", "Enabled", false, ini );
     s.SharpenFactor = GetPrivateProfileFloatA( "SMAA", "SharpenFactor", 0.30f, ini );
 
+#if ENABLE_TESSELATION > 0
     s.AllowWorldMeshTesselation = GetPrivateProfileBoolA( "Tesselation", "AllowWorldMeshTesselation", false, ini );
     s.EnableTesselation = GetPrivateProfileBoolA( "Tesselation", "EnableTesselation", false, ini );
+#endif
 
     HBAOSettings defaultHBAOSettings;
     s.HbaoSettings.Enabled = GetPrivateProfileBoolA( "HBAO", "Enabled", defaultHBAOSettings.Enabled, ini );
@@ -4286,6 +4305,7 @@ bool GothicAPI::IsUnderWater() {
     return false;
 }
 
+#if ENABLE_TESSELATION > 0
 /** Saves all sections information */
 void GothicAPI::SaveSectionInfos() {
     for ( auto&& itx : Engine::GAPI->GetWorldSections() ) {
@@ -4307,6 +4327,7 @@ void GothicAPI::LoadSectionInfos() {
         }
     }
 }
+#endif
 
 /** Returns if the given vob is registered in the world */
 SkeletalVobInfo* GothicAPI::GetSkeletalVobByVob( zCVob* vob ) {
@@ -4558,6 +4579,7 @@ void GothicAPI::PrintModInfo() {
     PrintMessageTimed( INT2( 5, 180 ), "Device: " + gpu );
 }
 
+#if ENABLE_TESSELATION > 0
 /** Applies tesselation-settings for all mesh-parts using the given info */
 void GothicAPI::ApplyTesselationSettingsForAllMeshPartsUsing( MaterialInfo* info, int amount ) {
     for ( std::map<int, std::map<int, WorldMeshSectionInfo>>::iterator itx = Engine::GAPI->GetWorldSections().begin(); itx != Engine::GAPI->GetWorldSections().end(); itx++ ) {
@@ -4574,6 +4596,7 @@ void GothicAPI::ApplyTesselationSettingsForAllMeshPartsUsing( MaterialInfo* info
         }
     }
 }
+#endif
 
 /** Returns the current weight of the rain-fx. The bigger value of ours and gothics is returned. */
 float GothicAPI::GetRainFXWeight() {

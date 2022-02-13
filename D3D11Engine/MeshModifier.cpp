@@ -295,6 +295,7 @@ struct PNAENKeyHasher {
     }*/
 };
 
+#if ENABLE_TESSELATION > 0
 void MeshModifier::ComputePNAENIndices( const std::vector<ExVertexStruct>& inVertices, const std::vector<unsigned short>& inIndices, std::vector<VERTEX_INDEX>& outIndices ) {
     std::vector<unsigned int> ix;
     std::vector<unsigned int> out;
@@ -393,6 +394,7 @@ void MeshModifier::ComputePNAENIndices( const std::vector<ExVertexStruct>& inVer
         }
     }
 }
+#endif
 
 // Helper struct which defines == for ExVertexStruct
 struct Vertex {
@@ -474,6 +476,7 @@ struct Float3KeyHasher {
     }
 };
 
+#if ENABLE_TESSELATION > 0
 void MeshModifier::ComputePNAEN18Indices( std::vector<ExVertexStruct>& inVertices, const std::vector<unsigned short>& inIndices, std::vector<VERTEX_INDEX>& outIndices, bool detectBorders, bool softNormals ) {
     std::vector<unsigned int> ix;
     std::vector<unsigned int> out;
@@ -715,7 +718,7 @@ void MeshModifier::ComputePNAEN18Indices( std::vector<ExVertexStruct>& inVertice
         }
     }
 }
-
+#endif
 
 bool TexcoordSame( float2 a, float2 b ) {
     if ( (abs( a.x - b.x ) > 0.001f &&

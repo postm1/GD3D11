@@ -177,12 +177,15 @@ void SV_GMeshInfoView::DrawMeshes() {
 	g->SetupVS_ExConstantBuffer();
 	g->SetupVS_ExPerInstanceConstantBuffer();
 
+#if ENABLE_TESSELATION > 0
 	VisualTesselationSettings* ts = nullptr;
 	if ( VisualInfo )
 		ts = &VisualInfo->TesselationInfo;
+#endif
 
 	// Draw each texture
 	for ( auto it = Meshes.cbegin(); it != Meshes.cend(); ++it ) {
+#if ENABLE_TESSELATION > 0
 		// Set up tesselation if wanted
 		if ( ts && !it->second->IndicesPNAEN.empty() && ts->buffer.VT_TesselationFactor > 0.0f ) {
 			g->Setup_PNAEN( D3D11GraphicsEngine::PNAEN_Default );
@@ -194,7 +197,9 @@ void SV_GMeshInfoView::DrawMeshes() {
 				it->first->Bind( 0 );
 				g->DrawVertexBufferIndexed( it->second->MeshVertexBuffer, it->second->MeshIndexBufferPNAEN, it->second->IndicesPNAEN.size() );
 			}
-		} else if ( VisualInfo ) {
+		} else if ( VisualInfo )
+#endif
+        {
 			g->GetContext()->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 			g->GetContext()->DSSetShader( nullptr, nullptr, 0 );
 			g->GetContext()->HSSetShader( nullptr, nullptr, 0 );

@@ -4,7 +4,6 @@
 #include "../Engine.h"
 #include "../GothicAPI.h"
 
-
 FakeDirectDrawSurface7::FakeDirectDrawSurface7() {
     RefCount = 1;
     Data = nullptr;

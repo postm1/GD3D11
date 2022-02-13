@@ -117,7 +117,7 @@ XRESULT D3D11PfxRenderer::CopyTextureToRTV( const Microsoft::WRL::ComPtr<ID3D11S
         vp.TopLeftX = (float)offset.x;
         vp.TopLeftY = (float)offset.y;
         vp.MinDepth = 0.0f;
-        vp.MaxDepth = 0.0f;
+        vp.MaxDepth = 1.0f;
         vp.Width = (float)targetResolution.x;
         vp.Height = (float)targetResolution.y;
 

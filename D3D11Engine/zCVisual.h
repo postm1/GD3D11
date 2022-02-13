@@ -21,11 +21,11 @@ public:
         XHook( HookedFunctions::OriginalFunctions.original_zCVisualDestructor, GothicMemoryLocations::zCVisual::Destructor, zCVisual::Hooked_Destructor );
     }
 
-    static void __fastcall Hooked_Destructor( void* thisptr, void* unknwn ) {
+    static void __fastcall Hooked_Destructor( zCVisual* thisptr, void* unknwn ) {
         hook_infunc
             // Notify the world
             if ( Engine::GAPI )
-                Engine::GAPI->OnVisualDeleted( (zCVisual*)thisptr );
+                Engine::GAPI->OnVisualDeleted( thisptr );
 
         HookedFunctions::OriginalFunctions.original_zCVisualDestructor( thisptr );
         hook_outfunc

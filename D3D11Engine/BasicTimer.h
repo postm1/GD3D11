@@ -3,6 +3,8 @@
 #include <exception>
 #include <wrl.h>
 
+#define BASIC_TIMING(x) BasicTimer x = {}; x.Update();
+
 class BasicTimer {
 private:
     LARGE_INTEGER m_frequency;

@@ -439,6 +439,9 @@ XRESULT D3D11GraphicsEngine::Init() {
         DXGI_FORMAT_UNKNOWN, 1, 6 );
 
     SteamOverlay::Init();
+
+    Effects->LoadRainResources();
+
     return XR_SUCCESS;
 }
 

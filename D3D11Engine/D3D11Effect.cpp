@@ -132,21 +132,7 @@ XRESULT D3D11Effect::DrawRain() {
 
         firstFrame = true;
 
-        if ( !RainTextureArray.Get() ) {
-            HRESULT hr = S_OK;
-            // Load textures...
-            LogInfo() << "Loading rain-drop textures";
-            LE( LoadTextureArray( e->GetDevice().Get(), e->GetContext().Get(), "system\\GD3D11\\Textures\\Raindrops\\cv0_vPositive_", 370, &RainTextureArray, &RainTextureArraySRV ) );
-
-        }
-
-        if ( !RainShadowmap.get() ) {
-            const int s = 2048;
-            RainShadowmap = std::make_unique<RenderToDepthStencilBuffer>( e->GetDevice().Get(), s, s, DXGI_FORMAT_R32_TYPELESS, nullptr, DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R32_FLOAT );
-            SetDebugName( RainShadowmap->GetDepthStencilView().Get(), "RainShadowmap->DepthStencilView" );
-            SetDebugName( RainShadowmap->GetShaderResView().Get(), "RainShadowmap->ShaderResView" );
-            SetDebugName( RainShadowmap->GetTexture().Get(), "RainShadowmap->Texture" );
-        }
+        LoadRainResources();
     }
 
     lastHeight = state.RendererSettings.RainHeightRange;
@@ -257,6 +243,31 @@ XRESULT D3D11Effect::DrawRain() {
     // Reset this
     e->GetContext()->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
     e->GetContext()->GSSetShader( nullptr, 0, 0 );
+    return XR_SUCCESS;
+}
+
+XRESULT D3D11Effect::LoadRainResources()
+{
+    D3D11GraphicsEngineBase* e = (D3D11GraphicsEngineBase*)Engine::GraphicsEngine;
+
+    if ( !RainTextureArray.Get() ) {
+        HRESULT hr = S_OK;
+        // Load textures...
+        LogInfo() << "Loading rain-drop textures";
+        BASIC_TIMING(t);
+        LE( LoadTextureArray( e->GetDevice().Get(), e->GetContext().Get(), "system\\GD3D11\\Textures\\Raindrops\\cv0_vPositive_", 370, &RainTextureArray, &RainTextureArraySRV ) );
+        t.Update();
+        LogInfo() << "Loading rain drops took " << ((int)(t.GetDelta() * 1000.0f)) << "ms";
+    }
+
+    if ( !RainShadowmap.get() ) {
+        const int s = 2048;
+        RainShadowmap = std::make_unique<RenderToDepthStencilBuffer>( e->GetDevice().Get(), s, s, DXGI_FORMAT_R32_TYPELESS, nullptr, DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R32_FLOAT );
+        SetDebugName( RainShadowmap->GetDepthStencilView().Get(), "RainShadowmap->DepthStencilView" );
+        SetDebugName( RainShadowmap->GetShaderResView().Get(), "RainShadowmap->ShaderResView" );
+        SetDebugName( RainShadowmap->GetTexture().Get(), "RainShadowmap->Texture" );
+    }
+
     return XR_SUCCESS;
 }
 

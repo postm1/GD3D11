@@ -2222,6 +2222,15 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
 #endif
     }
 
+#if BUILD_SPACER_NET
+    bool bDrawVobsGlobal = zCVob::GetDrawVobs();
+
+    Engine::GAPI->GetRendererState().RendererSettings.DrawVOBs = bDrawVobsGlobal;
+    Engine::GAPI->GetRendererState().RendererSettings.DrawMobs = bDrawVobsGlobal;
+    Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects = bDrawVobsGlobal;
+    Engine::GAPI->GetRendererState().RendererSettings.DrawSkeletalMeshes = bDrawVobsGlobal;
+#endif   
+
     D3D11_VIEWPORT vp;
     vp.TopLeftX = 0.0f;
     vp.TopLeftY = 0.0f;

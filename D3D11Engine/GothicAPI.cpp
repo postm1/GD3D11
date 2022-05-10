@@ -1160,7 +1160,7 @@ void GothicAPI::GetVisibleParticleEffectsList( std::vector<zCVob*>& pfxList ) {
             if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
                 continue;
 
-            if ( it->GetVisual() ) {
+            if ( it->GetVisual() && it->GetShowVisual()) {
                 pfxList.push_back( it );
             }
         }
@@ -1182,7 +1182,7 @@ void GothicAPI::GetVisibleDecalList( std::vector<zCVob*>& decals ) {
         if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
             continue;
 
-        if ( it->GetVisual() ) {
+        if ( it->GetVisual() && it->GetShowVisual()) {
             decalDistances.push_back( std::make_pair( it, dist ) );
         }
     }

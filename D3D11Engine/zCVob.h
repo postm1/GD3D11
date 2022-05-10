@@ -114,8 +114,11 @@ public:
 
     /** Returns the visual saved in this vob */
     zCVisual* GetVisual() {
+
+       
         zCVisual* visual = GetMainVisual();
 #if BUILD_SPACER_NET
+
         if ( !visual && Engine::GAPI->GetRendererState().RendererSettings.RunInSpacerNet )
 #else
         if ( !visual )
@@ -185,6 +188,7 @@ public:
             ( GothicMemoryLocations::zCVob::SetPositionWorld )( this, 0, v );
 #endif
     }
+
     /** Sets this vobs position */
     void XM_CALLCONV SetPositionWorldXM( DirectX::FXMVECTOR v ) {
         DirectX::XMFLOAT3 store; DirectX::XMStoreFloat3( &store, v );
@@ -240,6 +244,17 @@ public:
     void SetSleeping( int on ) {
         reinterpret_cast<void( __fastcall* )( zCVob*, int, int )>( GothicMemoryLocations::zCVob::SetSleeping )( this, 0, on );
     }
+
+
+#if BUILD_SPACER_NET
+    /** Return whether all vobs are currently rendered or not */
+    static bool GetDrawVobs()
+    {
+        bool showHelpers = (*(int*)GothicMemoryLocations::zCVob::s_renderVobs) != 0;
+        return showHelpers;
+    }
+
+#endif
 
 #ifndef BUILD_SPACER_NET
     /** Returns whether the visual of this vob is visible */

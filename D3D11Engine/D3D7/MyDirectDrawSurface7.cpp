@@ -190,6 +190,7 @@ ULONG MyDirectDrawSurface7::Release() {
 
 HRESULT MyDirectDrawSurface7::AddAttachedSurface( LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::AddAttachedSurface()" );
+    lpDDSAttachedSurface->AddRef();
     attachedSurfaces.push_back( (MyDirectDrawSurface7*)lpDDSAttachedSurface );
     return S_OK;
 }
@@ -328,6 +329,7 @@ HRESULT MyDirectDrawSurface7::Lock( LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurf
         reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->ResetPresentPending();
         Engine::GraphicsEngine->OnStartWorldRendering();
         Engine::GraphicsEngine->GetBackbufferData( &data, pixelSize );
+        reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->ResetPresentPending();
 
         lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = 32;
         lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = 0x000000FF;
@@ -634,6 +636,7 @@ HRESULT MyDirectDrawSurface7::SetSurfaceDesc( LPDDSURFACEDESC2 lpDDSurfaceDesc, 
     case 24:
     case 32:
         format = D3D11Texture::ETextureFormat::TF_R8G8B8A8;
+        break;
 
     case 0:
     {

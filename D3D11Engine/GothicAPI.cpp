@@ -33,6 +33,7 @@
 #include "D3D7\MyDirect3DDevice7.h"
 #include "GVegetationBox.h"
 #include "oCNPC.h"
+#include "oCVisFX.h"
 #include "zCMeshSoftSkin.h"
 #include "GOcean.h"
 #include "zCVobLight.h"
@@ -1160,7 +1161,7 @@ void GothicAPI::GetVisibleParticleEffectsList( std::vector<zCVob*>& pfxList ) {
             if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
                 continue;
 
-            if ( it->GetVisual() && it->GetShowVisual()) {
+            if ( it->GetVisual() && it->GetShowVisual() ) {
                 pfxList.push_back( it );
             }
         }
@@ -1182,7 +1183,7 @@ void GothicAPI::GetVisibleDecalList( std::vector<zCVob*>& decals ) {
         if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
             continue;
 
-        if ( it->GetVisual() && it->GetShowVisual()) {
+        if ( it->GetVisual() && it->GetShowVisual() ) {
             decalDistances.push_back( std::make_pair( it, dist ) );
         }
     }
@@ -3241,13 +3242,22 @@ void GothicAPI::CollectVisibleVobsHelper( BspInfo* base, zTBBox3D boxCell, int c
                             // Check if we already have this light
                             auto vit = VobLightMap.find( vob );
                             if ( vit == VobLightMap.end() ) {
+                                bool PFXVobLight = false;
+                                if ( zCVob* parent = vob->GetVobParent() ) {
+                                    if ( parent->As<oCVisualFX>() ) {
+                                        PFXVobLight = true;
+                                    }
+                                }
+
                                 // Add if not. This light must have been added during gameplay
                                 VobLightInfo* vi = new VobLightInfo;
                                 vi->Vob = vob;
+                                vi->IsPFXVobLight = PFXVobLight;
+                                vi->UpdateShadows = !PFXVobLight;
                                 vit = VobLightMap.emplace( vob, vi ).first;
 
                                 // Create shadow-buffers for these lights since it was dynamically added to the world
-                                if ( RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_STATIC_ONLY )
+                                if ( !vi->IsPFXVobLight && RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_STATIC_ONLY )
                                     Engine::GraphicsEngine->CreateShadowedPointLight( &vi->LightShadowBuffers, vi, true ); // Also flag as dynamic
                             }
 
@@ -3256,13 +3266,15 @@ void GothicAPI::CollectVisibleVobsHelper( BspInfo* base, zTBBox3D boxCell, int c
                                 vi->VisibleInRenderPass = true;
 
                                 // Update the lights shadows if: Light is dynamic or full shadow-updates are set
-                                if ( RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_FULL
-                                    || (RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_UPDATE_DYNAMIC && !vob->IsStatic()) ) {
-                                    // Now check for distances, etc
-                                    float lightPlayerDist;
-                                    XMStoreFloat( &lightPlayerDist, DirectX::XMVector3Length( playerPosition - vob->GetPositionWorldXM() ) );
-                                    if ( vob->GetLightRange() > minDynamicUpdateLightRange && lightPlayerDist < vob->GetLightRange() * 1.5f )
-                                        vi->UpdateShadows = true;
+                                if ( !vi->IsPFXVobLight ) {
+                                    if ( RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_FULL
+                                        || (RendererState.RendererSettings.EnablePointlightShadows >= GothicRendererSettings::PLS_UPDATE_DYNAMIC && !vob->IsStatic()) ) {
+                                        // Now check for distances, etc
+                                        float lightPlayerDist;
+                                        XMStoreFloat( &lightPlayerDist, DirectX::XMVector3Length( playerPosition - vob->GetPositionWorldXM() ) );
+                                        if ( vob->GetLightRange() > minDynamicUpdateLightRange && lightPlayerDist < vob->GetLightRange() * 1.5f )
+                                            vi->UpdateShadows = true;
+                                    }
                                 }
 
                                 // Render it
@@ -4109,6 +4121,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
         switch ( s.ChangeWindowPreset ) {
             case WINDOW_MODE_FULLSCREEN_EXCLUSIVE: {
                 s.DisplayFlip = false;
+                s.StretchWindow = true;
                 zSTRING section( "VIDEO" ); zSTRING defValue( "0" );
                 zCOption::GetOptions()->WriteString( section, "zStartupWindowed", defValue );
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "0", ini.c_str() );
@@ -4118,6 +4131,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
             case WINDOW_MODE_FULLSCREEN_BORDERLESS: {
                 s.DisplayFlip = true;
                 s.LowLatency = false;
+                s.StretchWindow = true;
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "1", ini.c_str() );
                 WritePrivateProfileStringA( "Display", "LowLatency", "0", ini.c_str() );
                 break;
@@ -4125,12 +4139,14 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
             case WINDOW_MODE_FULLSCREEN_LOWLATENCY: {
                 s.DisplayFlip = true;
                 s.LowLatency = true;
+                s.StretchWindow = true;
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "1", ini.c_str() );
                 WritePrivateProfileStringA( "Display", "LowLatency", "1", ini.c_str() );
                 break;
             }
             case WINDOW_MODE_WINDOWED: {
                 s.DisplayFlip = false;
+                s.StretchWindow = false;
                 zSTRING section( "VIDEO" ); zSTRING defValue( "1" );
                 zCOption::GetOptions()->WriteString( section, "zStartupWindowed", defValue );
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "0", ini.c_str() );

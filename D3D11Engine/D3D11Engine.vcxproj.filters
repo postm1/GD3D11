@@ -726,6 +726,9 @@
     <ClInclude Include="SteamOverlay.h">
       <Filter>Tools</Filter>
     </ClInclude>
+    <ClInclude Include="oCVisFX.h">
+      <Filter>ZenGin\Classes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

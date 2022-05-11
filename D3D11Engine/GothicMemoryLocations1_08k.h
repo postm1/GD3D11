@@ -174,6 +174,7 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_Type = 0x0A0;
 
         static const unsigned int Offset_Flags = 0xE4;
+        static const unsigned int Offset_VobTree = 0x24;
         static const unsigned int MASK_ShowVisual = 0x1;
         static const unsigned int Offset_CameraAlignment = 0xF0;
         static const unsigned int SHIFTLR_CameraAlignment = 0x1E;
@@ -492,6 +493,7 @@ struct GothicMemoryLocations {
         static const unsigned int oCMobLadder = 0x008daf10;
         static const unsigned int zCTrigger = 0x008d7b78;
         static const unsigned int zCTriggerBase = 0x008d7a98;
+        static const unsigned int oCVisualFX = 0x00869e00;
         static const unsigned int oCZoneMusic = 0x008de498;
         static const unsigned int zCMover = 0x008d7868;
         static const unsigned int oCMobDoor = 0x008dac40;

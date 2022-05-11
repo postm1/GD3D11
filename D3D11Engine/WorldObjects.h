@@ -370,6 +370,7 @@ struct VobLightInfo {
         Vob = nullptr;
         LightShadowBuffers = nullptr;
         VisibleInRenderPass = false;
+        IsPFXVobLight = false;
         IsIndoorVob = false;
         DynamicShadows = false;
         UpdateShadows = true;
@@ -384,6 +385,7 @@ struct VobLightInfo {
 
     /** Flag to see if this vob was drawn in the current render pass. Used to collect the same vob only once. */
     bool VisibleInRenderPass;
+    bool IsPFXVobLight;
 
     /** True if this is an indoor-vob */
     bool IsIndoorVob;

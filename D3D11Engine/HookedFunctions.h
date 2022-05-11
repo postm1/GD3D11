@@ -171,6 +171,8 @@ struct HookedFunctionInfo {
 
     static int __cdecl hooked_GetNumDevices();
     static void __fastcall hooked_SetLightmap( void* polygonPtr );
+
+    static FARPROC WINAPI hooked_GetProcAddress( HMODULE mod, const char* procName );
 };
 
 namespace HookedFunctions {

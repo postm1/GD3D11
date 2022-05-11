@@ -59,7 +59,7 @@ bool D3D11PointLight::NotYetDrawn() {
 void D3D11PointLight::InitResources() {
     D3D11GraphicsEngineBase* engine = (D3D11GraphicsEngineBase*)Engine::GraphicsEngine;
 
-    Engine::GAPI->EnterResourceCriticalSection();
+    //Engine::GAPI->EnterResourceCriticalSection();
 
     // Create texture-cube for this light
     DepthCubemap = std::make_unique<RenderToDepthStencilBuffer>( engine->GetDevice().Get(),
@@ -86,7 +86,12 @@ void D3D11PointLight::InitResources() {
 
     InitDone = true;
 
-    Engine::GAPI->LeaveResourceCriticalSection();
+    //Engine::GAPI->LeaveResourceCriticalSection();
+}
+
+/** Returns if this light is inited already */
+bool D3D11PointLight::IsInited() {
+    return InitDone.load();
 }
 
 /** Returns if this light needs an update */
@@ -271,7 +276,7 @@ void D3D11PointLight::OnRenderLight() {
 /** Called when a vob got removed from the world */
 void D3D11PointLight::OnVobRemovedFromWorld( BaseVobInfo* vob ) {
     // Wait for cache initialization to finish first
-    Engine::GAPI->EnterResourceCriticalSection();
+   // Engine::GAPI->EnterResourceCriticalSection();
 
     // See if we have this vob registered
     if ( std::find( VobCache.begin(), VobCache.end(), vob ) != VobCache.end()
@@ -281,5 +286,5 @@ void D3D11PointLight::OnVobRemovedFromWorld( BaseVobInfo* vob ) {
         SkeletalVobCache.clear();
     }
 
-    Engine::GAPI->LeaveResourceCriticalSection();
+    //Engine::GAPI->LeaveResourceCriticalSection();
 }

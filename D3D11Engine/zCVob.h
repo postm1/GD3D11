@@ -114,11 +114,8 @@ public:
 
     /** Returns the visual saved in this vob */
     zCVisual* GetVisual() {
-
-       
         zCVisual* visual = GetMainVisual();
 #if BUILD_SPACER_NET
-
         if ( !visual && Engine::GAPI->GetRendererState().RendererSettings.RunInSpacerNet )
 #else
         if ( !visual )
@@ -188,7 +185,6 @@ public:
             ( GothicMemoryLocations::zCVob::SetPositionWorld )( this, 0, v );
 #endif
     }
-
     /** Sets this vobs position */
     void XM_CALLCONV SetPositionWorldXM( DirectX::FXMVECTOR v ) {
         DirectX::XMFLOAT3 store; DirectX::XMStoreFloat3( &store, v );
@@ -245,7 +241,6 @@ public:
         reinterpret_cast<void( __fastcall* )( zCVob*, int, int )>( GothicMemoryLocations::zCVob::SetSleeping )( this, 0, on );
     }
 
-
 #if BUILD_SPACER_NET
     /** Return whether all vobs are currently rendered or not */
     static bool GetDrawVobs()
@@ -253,7 +248,6 @@ public:
         bool showHelpers = (*(int*)GothicMemoryLocations::zCVob::s_renderVobs) != 0;
         return showHelpers;
     }
-
 #endif
 
 #ifndef BUILD_SPACER_NET
@@ -301,6 +295,16 @@ public:
     /** Vob type */
     EVobType GetVobType() {
         return *(EVobType*)THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_Type );
+    }
+
+    /** Vob parent */
+    zCVob* GetVobParent() {
+        if ( DWORD vobTree = *(DWORD*)THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_VobTree ) ) {
+            if ( ( vobTree = *(DWORD*)(vobTree + 0x00) ) != 0 ) { // Read parent from vobtree
+                return *(zCVob**)(vobTree + 0x10);
+            }
+        }
+        return nullptr;
     }
 
     /** Alignemt to the camera */

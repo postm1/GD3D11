@@ -70,7 +70,11 @@ public:
 		DebugWrite( "MyDirectDraw::GetDeviceIdentifier\n" );
 
 		ZeroMemory( lpdddi, sizeof( DDDEVICEIDENTIFIER2 ) );
-		strcpy( lpdddi->szDescription, "DirectX11" );
+        if ( Engine::GraphicsEngine ) {
+            strcpy( lpdddi->szDescription, Engine::GraphicsEngine->GetGraphicsDeviceName().c_str() );
+        } else {
+            strcpy( lpdddi->szDescription, "DirectX11" );
+        }
 		strcpy( lpdddi->szDriver, "DirectX11" );
         lpdddi->guidDeviceIdentifier = { 0xF5049E78, 0x4861, 0x11D2, {0xA4, 0x07, 0x00, 0xA0, 0xC9, 0x06, 0x29, 0xA8} };
 

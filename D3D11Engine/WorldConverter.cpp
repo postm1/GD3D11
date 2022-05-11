@@ -45,8 +45,9 @@ void WorldConverter::WorldMeshCollectPolyRange( const float3& position, float ra
     // Generate the meshes
     for ( auto const& itx : Engine::GAPI->GetWorldSections() ) {
         for ( auto const& ity : itx.second ) {
-            float len;
-            XMStoreFloat( &len, XMVector2Length( XMVectorSet( static_cast<float> (itx.first - s.x), static_cast<float> (ity.first - s.y), 0, 0 ) ) );
+            float px = static_cast<float>(itx.first - s.x);
+            float py = static_cast<float>(ity.first - s.y);
+            float len = sqrtf((px * px) + (py * py));
             if ( len < 2 ) {
                 // Check all polys from all meshes
                 for ( auto const& it : ity.second.WorldMeshes ) {

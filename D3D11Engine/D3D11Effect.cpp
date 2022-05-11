@@ -254,7 +254,7 @@ XRESULT D3D11Effect::LoadRainResources()
         HRESULT hr = S_OK;
         // Load textures...
         LogInfo() << "Loading rain-drop textures";
-        BASIC_TIMING(t);
+        BASIC_TIMING( t );
         LE( LoadTextureArray( e->GetDevice().Get(), e->GetContext().Get(), "system\\GD3D11\\Textures\\Raindrops\\cv0_vPositive_", 370, &RainTextureArray, &RainTextureArraySRV ) );
         t.Update();
         LogInfo() << "Loading rain drops took " << ((int)(t.GetDelta() * 1000.0f)) << "ms";
@@ -373,10 +373,8 @@ HRESULT LoadTextureArray( Microsoft::WRL::ComPtr<ID3D11Device1> pd3dDevice, Micr
             }
             pTemp->GetDesc( &desc );
 
-
             if ( DXGI_FORMAT_R8_UNORM != desc.Format )
                 return E_FAIL;
-
 
             if ( !(*ppTex2D) ) {
                 desc.Usage = D3D11_USAGE_DEFAULT;
@@ -386,19 +384,15 @@ HRESULT LoadTextureArray( Microsoft::WRL::ComPtr<ID3D11Device1> pd3dDevice, Micr
                 LE( pd3dDevice->CreateTexture2D( &desc, nullptr, ppTex2D ) );
             }
 
-
-            D3D11_MAPPED_SUBRESOURCE mappedTex2D;
             for ( UINT iMip = 0; iMip < desc.MipLevels; iMip++ ) {
-                context->Map( pTemp.Get(), iMip, D3D11_MAP_READ, 0, &mappedTex2D );
-                if ( mappedTex2D.pData ) {
-                    context->UpdateSubresource( (*ppTex2D),
-                        D3D11CalcSubresource( iMip, i, desc.MipLevels ),
-                        nullptr,
-                        mappedTex2D.pData,
-                        mappedTex2D.RowPitch,
-                        0 );
-                }
-                context->Unmap( pTemp.Get(), iMip );
+                context->CopySubresourceRegion( (*ppTex2D),
+                    D3D11CalcSubresource( iMip, i, desc.MipLevels ),
+                    0,
+                    0,
+                    0,
+                    pTemp.Get(),
+                    iMip,
+                    nullptr );
             }
 
             pRes.Reset();

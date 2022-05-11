@@ -5,7 +5,7 @@
 #include "../GothicAPI.h"
 
 FakeDirectDrawSurface7::FakeDirectDrawSurface7() {
-    RefCount = 1;
+    RefCount = 0;
     Data = nullptr;
 }
 
@@ -50,6 +50,7 @@ ULONG FakeDirectDrawSurface7::Release() {
 
 HRESULT FakeDirectDrawSurface7::AddAttachedSurface( LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface ) {
     DebugWrite( "FakeDirectDrawSurface7(%p)::AddAttachedSurface()" );//, PRINT_DEV);
+    lpDDSAttachedSurface->AddRef();
     AttachedSurfaces.push_back( (FakeDirectDrawSurface7*)lpDDSAttachedSurface );
     return S_OK;
 }

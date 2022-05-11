@@ -2229,7 +2229,7 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     Engine::GAPI->GetRendererState().RendererSettings.DrawMobs = bDrawVobsGlobal;
     Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects = bDrawVobsGlobal;
     Engine::GAPI->GetRendererState().RendererSettings.DrawSkeletalMeshes = bDrawVobsGlobal;
-#endif   
+#endif  
 
     D3D11_VIEWPORT vp;
     vp.TopLeftX = 0.0f;
@@ -4621,10 +4621,10 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
             if ( light->LightShadowBuffers ) {
                 // Check if this lights even needs an update
                 bool needsUpdate = ((D3D11PointLight*)light->LightShadowBuffers)->NeedsUpdate();
-                bool wantsUpdate = ((D3D11PointLight*)light->LightShadowBuffers)->WantsUpdate();
+                bool isInited = ((D3D11PointLight*)light->LightShadowBuffers)->IsInited();
 
                 // Add to the updatequeue if it does
-                if ( needsUpdate || light->UpdateShadows ) {
+                if ( isInited && (needsUpdate || light->UpdateShadows) ) {
                     // Always update the light if the light itself moved
                     if ( partialShadowUpdate && !needsUpdate ) {
                         // Only add once. This list should never be very big, so it should
@@ -4836,8 +4836,6 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
     GBuffer2_SpecIntens_SpecPower->BindToPixelShader( GetContext().Get(), 7 );
     DepthStencilBufferCopy->BindToPixelShader( GetContext().Get(), 2 );
 
-    bool lastOutside = true;
-
     // Draw all lights
     for ( auto const& light : lights ) {
         zCVobLight* vob = light->Vob;
@@ -4849,11 +4847,13 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
 
         // Set right shader
         if ( Engine::GAPI->GetRendererState().RendererSettings.EnablePointlightShadows > 0 ) {
-            if ( light->LightShadowBuffers && ActivePS != psPointLightDynShadow ) {
-                // Need to update shader for shadowed pointlight
-                ActivePS = psPointLightDynShadow;
-                ActivePS->Apply();
-            } else if ( !light->LightShadowBuffers && ActivePS != psPointLight ) {
+            if ( light->LightShadowBuffers && ((D3D11PointLight*)light->LightShadowBuffers)->IsInited() ) {
+                if ( ActivePS != psPointLightDynShadow ) {
+                    // Need to update shader for shadowed pointlight
+                    ActivePS = psPointLightDynShadow;
+                    ActivePS->Apply();
+                }
+            } else if ( ActivePS != psPointLight ) {
                 // Need to update shader for usual pointlight
                 ActivePS = psPointLight;
                 ActivePS->Apply();

@@ -263,8 +263,11 @@ public:
     /** Called on level load. */
     static int __fastcall hooked_LoadBIN( void* thisptr, void* unknwn, zCFileBIN& file, int skip ) {
         LogInfo() << "Loading world!";
-        int r = HookedFunctions::OriginalFunctions.original_zCBspTreeLoadBIN( thisptr, file, skip );
 
+        // Make sure worker thread don't work on any point light
+        Engine::RefreshWorkerThreadpool();
+
+        int r = HookedFunctions::OriginalFunctions.original_zCBspTreeLoadBIN( thisptr, file, skip );
         LoadLevelGeometry( (zCBspTree*)thisptr );
 
         return r;
@@ -294,6 +297,7 @@ public:
     /** Returns only the polygons used in LOD0 of the world */
     void GetLOD0Polygons( std::vector<zCPolygon*>& target ) {
         int num = GetNumLeafes();
+        target.reserve( num * 3 ); // preallocate a little space
 
         for ( int i = 0; i < num; i++ ) {
             zCBspLeaf* leaf = GetLeaf( i );

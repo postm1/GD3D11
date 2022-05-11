@@ -160,6 +160,7 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_Type = 0x0A0;
 
         static const unsigned int Offset_Flags = 0xE4;
+        static const unsigned int Offset_VobTree = 0x24;
         static const unsigned int MASK_ShowVisual = 0x1;
         static const unsigned int Offset_CameraAlignment = 0xF0;
         static const unsigned int SHIFTLR_CameraAlignment = 0x1E;
@@ -447,6 +448,7 @@ struct GothicMemoryLocations {
     struct zCClassDef {
         static const unsigned int oCNpc = 0x00922830;
         static const unsigned int zCTexture = 0x00914FE0;
+        static const unsigned int oCVisualFX = 0x008AF438;
     };
 
     class VobTypes // vftables

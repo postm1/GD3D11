@@ -63,7 +63,7 @@ void HookedFunctionInfo::InitHooks() {
     oCSpawnManager::Hook();
     zCVob::Hook();
     zCTexture::Hook();
-    zCThread::Hook();
+    //zCThread::Hook();
     //zCResourceManager::Hook();
     zCQuadMark::Hook();
     oCNPC::Hook();
@@ -85,7 +85,7 @@ void HookedFunctionInfo::InitHooks() {
     XHook( original_zCBinkPlayerOpenVideo, GothicMemoryLocations::zCBinkPlayer::OpenVideo, HookedFunctionInfo::hooked_zBinkPlayerOpenVideo );
 #endif
     original_Alg_Rotation3DNRad = (Alg_Rotation3DNRad)GothicMemoryLocations::Functions::Alg_Rotation3DNRad;
-
+    
 //G1 patches
 #ifdef BUILD_GOTHIC_1_08k
 #ifdef BUILD_1_12F
@@ -108,6 +108,9 @@ void HookedFunctionInfo::InitHooks() {
     PatchAddr( 0x004381D6, "\xEB\x07" );
     PatchAddr( 0x004381E1, "\x55" );
     PatchAddr( 0x00438218, "\xEB\x15" );
+
+    LogInfo() << "Patching: Fix screen hung due to DX7 api invalidating our swapchain";
+    PatchAddr( 0x0075B5A7, "\xE9\x59\x02\x00\x00\x90" );
 #else
     LogInfo() << "Patching: BroadCast fix";
     {
@@ -169,6 +172,12 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x0063DA2E, "\xA1\xD0\x5E\x8C\x00\x90\x90\x90\x90\x90\x90" );
         PatchAddr( 0x0063DA2F, trisHndl );
     }
+    {
+        char* GetProcAddressHndl[5];
+        DWORD GetProcAddressHandle = reinterpret_cast<DWORD>(&hooked_GetProcAddress);
+        memcpy( GetProcAddressHndl, &GetProcAddressHandle, 4 );
+        PatchAddr( 0x007D0104, GetProcAddressHndl );
+    }
 
     LogInfo() << "Patching: Decouple barrier from sky";
     PatchAddr( 0x00632146, "\x90\x90\x90\x90\x90" );
@@ -196,6 +205,9 @@ void HookedFunctionInfo::InitHooks() {
     PatchAddr( 0x004342B5, "\x55" );
     PatchAddr( 0x004342E0, "\xEB\x15" );
 
+    LogInfo() << "Patching: Fix screen hung due to DX7 api invalidating our swapchain";
+    PatchAddr( 0x0071EE02, "\xE9\x38\x02\x00\x00\x90" );
+
     if ( !IsRunningUnderUnion ) {
         LogInfo() << "Patching: Fix zFILE_VDFS class \"B: VFILE:\" error message due to LAAHack(4GB patch)";
         PatchAddr( 0x004451CF, "\xE9\xCF\x7E\x0A\x00\x90\x0F\x85\xFF\x00\x00\x00" );
@@ -208,6 +220,7 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x00444F70, "\x33\xC0\x83\xB9\xFC\x29\x00\x00\xFF\x0F\x95\xC0\x90" );
         PatchAddr( 0x004450CE, "\x83\xBE\xFC\x29\x00\x00\xFF\xEB\xAC\x90\x90\x90" );
         PatchAddr( 0x00445083, "\x0F\x84\xD6\x00\x00\x00\xEB\x4F" );
+        PatchAddr( 0x00444E7D, "\x83\xBE\xFC\x29\x00\x00\xFF\x0F\x95\xC0\xEB\x09\x39\x9E\x8C\x00\x00\x00\x0F\x95\xC0\x83\xCF\xFF\x3A\xC3\x74\x51\x8B\xCE\xE8\x60\xB2\xFF\xFF\x38\x1D\xCC\xF2\x85\x00\x74\x42\x83\xBE\xFC\x29\x00\x00\xFF\x74\x39\x8B\x0D\xD0\xF2\x85\x00\x90\x90" );
     }
 #endif
 #endif
@@ -293,7 +306,13 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x006C80F2, "\x36\x8B\x3D\x08\x2F\x98\x00" );
         PatchAddr( 0x006C80F5, trisHndl );
     }
-
+    {
+        char* GetProcAddressHndl[5];
+        DWORD GetProcAddressHandle = reinterpret_cast<DWORD>(&hooked_GetProcAddress);
+        memcpy( GetProcAddressHndl, &GetProcAddressHandle, 4 );
+        PatchAddr( 0x0082E298, GetProcAddressHndl );
+    }
+    
     // Show DirectX11 as currently used graphic device
     {
         PatchAddr( 0x006581AD, "\x57\xBD\x00\x00\x00\x00\x90" );
@@ -318,6 +337,9 @@ void HookedFunctionInfo::InitHooks() {
     PatchAddr( 0x0043728E, "\x55" );
     PatchAddr( 0x004372B9, "\xEB\x15" );
 
+    LogInfo() << "Patching: Fix screen hung due to DX7 api invalidating our swapchain";
+    PatchAddr( 0x006576D2, "\xE9\x38\x02\x00\x00\x90" );
+
     if ( !IsRunningUnderUnion ) {
         LogInfo() << "Patching: Fix zFILE_VDFS class \"B: VFILE:\" error message due to LAAHack(4GB patch)";
         PatchAddr( 0x0044925F, "\xE9\x70\x8D\xFB\xFF\x90\x0F\x85\xFF\x00\x00\x00" );
@@ -332,6 +354,7 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x00402074, "\x0F\x84\xAC\x79\x04\x00\xE9\x2C\x78\x04\x00" );
         PatchAddr( 0x0044915E, "\x83\xBE\xFC\x29\x00\x00\xFF\xEB\xAF\x90\x90\x90" );
         PatchAddr( 0x00449116, "\x0F\x84\xD3\x00\x00\x00\xEB\x4C" );
+        PatchAddr( 0x00448F0D, "\x83\xBE\xFC\x29\x00\x00\xFF\x0F\x95\xC0\xEB\x09\x39\x9E\x8C\x00\x00\x00\x0F\x95\xC0\x83\xCF\xFF\x3A\xC3\x74\x51\x8B\xCE\xE8\xE0\xB0\xFF\xFF\x38\x1D\xC4\x34\x8C\x00\x74\x42\x83\xBE\xFC\x29\x00\x00\xFF\x74\x39\x8B\x0D\xC8\x34\x8C\x00\x90\x90" );
     }
 
     // HACK Workaround to fix debuglines in godmode
@@ -429,4 +452,16 @@ void __fastcall HookedFunctionInfo::hooked_SetLightmap( void* polygonPtr ) {
     zCPolygon* polygon = reinterpret_cast<zCPolygon*>(polygonPtr);
     polygon->SetLightmap( lightmap );
     zCObject_AddRef( lightmap ); // Make sure it won't get deleted
+}
+
+FARPROC WINAPI HookedFunctionInfo::hooked_GetProcAddress( HMODULE mod, const char* procName ) {
+    if ( Engine::GAPI && _stricmp( procName, "GDX_SetFogColor" ) == 0 ) {
+        std::string gameName = Engine::GAPI->GetGameName();
+        std::transform( gameName.begin(), gameName.end(), gameName.end(), toupper );
+        if ( strstr( gameName.c_str(), "VINV" ) ) {
+            // Remove "incompatible with DX11" message in "Shadows of the past" modification
+            return reinterpret_cast<FARPROC>(0);
+        }
+    }
+    return GetProcAddress( mod, procName );
 }

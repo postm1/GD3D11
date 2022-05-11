@@ -3,6 +3,7 @@
 #include "WorldConverter.h"
 #include <thread>
 #include <condition_variable>
+#include <atomic>
 
 class D3D11PointLight;
 
@@ -25,6 +26,9 @@ public:
 
     /** Binds the shadowmap to the pixelshader */
     void OnRenderLight();
+
+    /** Returns if this light is inited already */
+    bool IsInited();
 
     /** Returns if this light needs an update */
     bool NeedsUpdate();
@@ -57,7 +61,7 @@ protected:
     DWORD LastUpdateColor;
     std::unique_ptr<D3D11ConstantBuffer> ViewMatricesCB;
     bool DynamicLight;
-    bool InitDone;
+    std::atomic<bool> InitDone;
     bool DrawnOnce;
 };
 

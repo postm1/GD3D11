@@ -144,9 +144,13 @@ public:
 		devDesc.dwVertexProcessingCaps = (D3DVTXPCAPS_TEXGEN|D3DVTXPCAPS_MATERIALSOURCE7|D3DVTXPCAPS_DIRECTIONALLIGHTS|D3DVTXPCAPS_POSITIONALLIGHTS|D3DVTXPCAPS_LOCALVIEWER);
 
 		// Pass it to the callback function
-        char desc[256] = "DirectX11";
         char name[256] = "DirectX11";
-		(*lpEnumDevicesCallback)(desc, name, &devDesc, lpUserArg);
+        if ( Engine::GraphicsEngine ) {
+            (*lpEnumDevicesCallback)(const_cast<char*>(Engine::GraphicsEngine->GetGraphicsDeviceName().c_str()), name, &devDesc, lpUserArg);
+        } else {
+            char desc[256] = "DirectX11";
+            (*lpEnumDevicesCallback)(desc, name, &devDesc, lpUserArg);
+        }
 		return S_OK;
 	}
 

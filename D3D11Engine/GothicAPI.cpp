@@ -4085,6 +4085,8 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
         res = INT2( r.right, r.bottom );
     }*/
 
+    res.x = std::max<int>( res.x, 800 );
+    res.y = std::max<int>( res.y, 600 );
     s.LoadedResolution = res;
 
 

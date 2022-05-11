@@ -1143,11 +1143,13 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeListDXGI() {
             }
         }
 
-        DisplayModeInfo info( static_cast<int>(displayMode.Width), static_cast<int>(displayMode.Height) );
-        auto it = std::find_if( CachedDisplayModes.begin(), CachedDisplayModes.end(), 
-            [&info]( DisplayModeInfo& a ) { return (a.Width == info.Width && a.Height == info.Height); } );
-        if ( it == CachedDisplayModes.end() ) {
-            CachedDisplayModes.push_back(info);
+        if ( displayMode.Width >= 800 && displayMode.Height >= 600 ) {
+            DisplayModeInfo info( static_cast<int>(displayMode.Width), static_cast<int>(displayMode.Height) );
+            auto it = std::find_if( CachedDisplayModes.begin(), CachedDisplayModes.end(),
+                [&info]( DisplayModeInfo& a ) { return (a.Width == info.Width && a.Height == info.Height); } );
+            if ( it == CachedDisplayModes.end() ) {
+                CachedDisplayModes.push_back( info );
+            }
         }
     }
     CachedDisplayModes.shrink_to_fit();
@@ -1165,11 +1167,13 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeListWindows() {
         if ( devmode.dmBitsPerPel < 24 )
             continue;
 
-        DisplayModeInfo info( static_cast<int>(devmode.dmPelsWidth), static_cast<int>(devmode.dmPelsHeight) );
-        auto it = std::find_if( CachedDisplayModes.begin(), CachedDisplayModes.end(),
-            [&info]( DisplayModeInfo& a ) { return (a.Width == info.Width && a.Height == info.Height); } );
-        if ( it == CachedDisplayModes.end() ) {
-            CachedDisplayModes.push_back( info );
+        if ( devmode.dmPelsWidth >= 800 && devmode.dmPelsHeight >= 600 ) {
+            DisplayModeInfo info( static_cast<int>(devmode.dmPelsWidth), static_cast<int>(devmode.dmPelsHeight) );
+            auto it = std::find_if( CachedDisplayModes.begin(), CachedDisplayModes.end(),
+                [&info]( DisplayModeInfo& a ) { return (a.Width == info.Width && a.Height == info.Height); } );
+            if ( it == CachedDisplayModes.end() ) {
+                CachedDisplayModes.push_back( info );
+            }
         }
     }
     return XR_SUCCESS;

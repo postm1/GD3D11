@@ -60,31 +60,10 @@ public:
         XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolys, GothicMemoryLocations::zCBspBase::CheckRayAgainstPolys, zCBspNode::hooked_zCBspBaseCheckRayAgainstPolys );
         XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysCache, GothicMemoryLocations::zCBspBase::CheckRayAgainstPolysCache, zCBspNode::hooked_zCBspBaseCheckRayAgainstPolysCache );
         XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysNearestHit, GothicMemoryLocations::zCBspBase::CheckRayAgainstPolysNearestHit, zCBspNode::hooked_zCBspBaseCheckRayAgainstPolysNearestHit );
-
 #endif
-
-        //(zCBspNodeRenderIndoor)DetourFunction((BYTE *)GothicMemoryLocations::zCBspNode::RenderIndoor, (BYTE *)zCBspNode::hooked_zCBspNodeRenderIndoor);
-        //(zCBspNodeRenderOutdoor)DetourFunction((BYTE *)GothicMemoryLocations::zCBspNode::RenderOutdoor, (BYTE *)zCBspNode::hooked_zCBspNodeRenderOutdoor);
-
-        /*DWORD dwProtect;
-        VirtualProtect((void *)GothicMemoryLocations::zCBspNode::RenderOutdoor, GothicMemoryLocations::zCBspNode::SIZE_RenderOutdoor, PAGE_EXECUTE_READWRITE, &dwProtect);
-        VirtualProtect((void *)GothicMemoryLocations::zCBspNode::RenderIndoor, GothicMemoryLocations::zCBspNode::REPL_RenderIndoorEnd - GothicMemoryLocations::zCBspNode::RenderIndoor, PAGE_EXECUTE_READWRITE, &dwProtect);
-
-
-        // NOP some render-calls
-        REPLACE_RANGE(GothicMemoryLocations::zCBspNode::RenderOutdoor, GothicMemoryLocations::zCBspNode::REPL_RenderOutdoorEnd - 1, INST_NOP);
-        REPLACE_RANGE(GothicMemoryLocations::zCBspNode::RenderIndoor, GothicMemoryLocations::zCBspNode::REPL_RenderIndoorEnd - 1, INST_NOP);
-        */
-        /*REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderOutdoor, INST_NOP);
-        REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderOutdoor2, INST_NOP);
-        REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderIndoor, INST_NOP);
-        REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderIndoor2, INST_NOP);
-        REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderIndoor3, INST_NOP);
-        REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderIndoor4, INST_NOP);
-        REPLACE_CALL(GothicMemoryLocations::zCBspTree::CALL_RenderTrivIndoor, INST_NOP);*/
     }
 
-    static int _fastcall hooked_zCBspBaseCheckRayAgainstPolysNearestHit( void* thisptr, const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, DirectX::XMFLOAT3& intersection ) {
+    static int _fastcall hooked_zCBspBaseCheckRayAgainstPolysNearestHit( void* thisptr, const XMFLOAT3& start, const XMFLOAT3& end, XMFLOAT3& intersection ) {
         // Get our version of this node
         //Engine::GAPI->Get
 
@@ -93,7 +72,7 @@ public:
 #endif
 
         if ( Engine::GAPI->GetLoadedWorldInfo()->CustomWorldLoaded ) {
-            zCBspBase* base = (zCBspBase*)thisptr;
+            zCBspBase* base = reinterpret_cast<zCBspBase*>(thisptr);
             BspInfo* newNode = Engine::GAPI->GetNewBspNode( base );
 
             zCPolygon** polysOld = base->PolyList;
@@ -116,11 +95,9 @@ public:
         } else {
             return HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysNearestHit( thisptr, start, end, intersection );
         }
-
-
     }
 
-    static int _fastcall hooked_zCBspBaseCheckRayAgainstPolysCache( void* thisptr, const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, DirectX::XMFLOAT3& intersection ) {
+    static int _fastcall hooked_zCBspBaseCheckRayAgainstPolysCache( void* thisptr, const XMFLOAT3& start, const XMFLOAT3& end, XMFLOAT3& intersection ) {
         // Get our version of this node
         //Engine::GAPI->Get
 
@@ -130,7 +107,7 @@ public:
             Engine::GraphicsEngine->GetLineRenderer()->AddLine( LineVertex( start, 0xFF0000FF ), LineVertex( end, 0xFFFFFFFF ) );
 #endif
 
-            zCBspBase* base = (zCBspBase*)thisptr;
+            zCBspBase* base = reinterpret_cast<zCBspBase*>(thisptr);
             BspInfo* newNode = Engine::GAPI->GetNewBspNode( base );
 
             zCPolygon** polysOld = base->PolyList;
@@ -155,13 +132,13 @@ public:
         }
     }
 
-    static int _fastcall hooked_zCBspBaseCheckRayAgainstPolys( void* thisptr, const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, DirectX::XMFLOAT3& intersection ) {
+    static int _fastcall hooked_zCBspBaseCheckRayAgainstPolys( void* thisptr, const XMFLOAT3& start, const XMFLOAT3& end, XMFLOAT3& intersection ) {
 #ifdef DEBUG_SHOW_COLLISION
         Engine::GraphicsEngine->GetLineRenderer()->AddLine( LineVertex( start, 0xFF0000FF ), LineVertex( end, 0xFFFFFFFF ) );
 #endif
 
         if ( Engine::GAPI->GetLoadedWorldInfo()->CustomWorldLoaded ) {
-            zCBspBase* base = (zCBspBase*)thisptr;
+            zCBspBase* base = reinterpret_cast<zCBspBase*>(thisptr);
             BspInfo* newNode = Engine::GAPI->GetNewBspNode( base );
 
             zCPolygon** polysOld = base->PolyList;
@@ -198,7 +175,7 @@ public:
             }
 
 
-            Engine::GraphicsEngine->GetLineRenderer()->AddAABBMinMax( bbox.Min, bbox.Max, DirectX::XMFLOAT4( 1, 0, 0, 1 ) );
+            Engine::GraphicsEngine->GetLineRenderer()->AddAABBMinMax( bbox.Min, bbox.Max, XMFLOAT4( 1, 0, 0, 1 ) );
 #endif
 
             return numFound != 0;
@@ -210,16 +187,6 @@ public:
     static void __fastcall hooked_zCBspNodeRender( void* thisptr, void* unkwn ) {
         // Start world rendering here
         Engine::GraphicsEngine->OnStartWorldRendering();
-    }
-
-    static void __fastcall hooked_zCBspNodeRenderIndoor( void* thisptr, int clipFlags ) {
-        LogInfo() << "Render indoor!";
-        //HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob(thisptr, vob);
-    }
-
-    static void __fastcall hooked_zCBspNodeRenderOutdoor( void* thisptr, zCBspBase* node, zTBBox3D bbox, int clipFlags, int crossingVobPlane ) {
-        LogInfo() << "Render outdoor!";
-        //HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob(thisptr, vob);
     }
 
     zTPlane	Plane;
@@ -247,17 +214,12 @@ public:
     /** Hooks the functions of this Class */
     static void Hook() {
         XHook( HookedFunctions::OriginalFunctions.original_zCBspTreeLoadBIN, GothicMemoryLocations::zCBspTree::LoadBIN, zCBspTree::hooked_LoadBIN );
-        XHook( HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob, GothicMemoryLocations::zCBspTree::AddVob, zCBspTree::hooked_AddVob );
+        //XHook( HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob, GothicMemoryLocations::zCBspTree::AddVob, zCBspTree::hooked_AddVob );
     }
 
     /** Called when a vob gets added to a bsp-tree */
     static void __fastcall hooked_AddVob( void* thisptr, void* unknwn, zCVob* vob ) {
         HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob( thisptr, vob );
-
-        if ( vob->GetVisual() ) {
-            //LogInfo() << vob->GetVisual()->GetFileExtension(0);
-            //Engine::GAPI->OnAddVob(vob);
-        }
     }
 
     /** Called on level load. */
@@ -268,7 +230,7 @@ public:
         Engine::RefreshWorkerThreadpool();
 
         int r = HookedFunctions::OriginalFunctions.original_zCBspTreeLoadBIN( thisptr, file, skip );
-        LoadLevelGeometry( (zCBspTree*)thisptr );
+        LoadLevelGeometry( reinterpret_cast<zCBspTree*>(thisptr) );
 
         return r;
     }
@@ -287,11 +249,6 @@ public:
         tree->GetLOD0Polygons( polys );
 
         Engine::GAPI->OnGeometryLoaded( &polys[0], polys.size() );
-        /*#else
-                Engine::GAPI->OnGeometryLoaded(tree->GetPolygons());
-        #endif*/
-
-
     }
 
     /** Returns only the polygons used in LOD0 of the world */
@@ -306,52 +263,35 @@ public:
                 target.push_back( leaf->PolyList[j] );
             }
         }
-
-        /*if (nodeBase->IsLeaf())
-        {
-            zCBspLeaf* leaf = (zCBspLeaf *)nodeBase;
-
-            for(int i=0;i<leaf->NumPolys;i++)
-            {
-                target.push_back(leaf->PolyList[i]);
-            }
-        } else
-        {
-            zCBspNode* node = (zCBspNode *)nodeBase;
-            GetLOD0Polygons(node->Front, target);
-            GetLOD0Polygons(node->Back, target);
-        }*/
     }
 
     int GetNumLeafes() {
-        return *(int*)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_NumLeafes );
+        return *reinterpret_cast<int*>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_NumLeafes ));
     }
 
     zTBspMode GetBspTreeMode() {
-        return *(zTBspMode*)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_BspTreeMode );
+        return *reinterpret_cast<zTBspMode*>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_BspTreeMode ));
     }
 
-
-
     zCBspLeaf* GetLeaf( int i ) {
-        char* list = *(char**)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_LeafList );
-        return (zCBspLeaf*)(list + GothicMemoryLocations::zCBspLeaf::Size * i);
+        char* list = *reinterpret_cast<char**>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_LeafList ));
+        return reinterpret_cast<zCBspLeaf*>(list + GothicMemoryLocations::zCBspLeaf::Size * i);
     }
 
     zCBspBase* GetRootNode() {
-        return *(zCBspBase**)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_RootNode );
+        return *reinterpret_cast<zCBspBase**>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_RootNode ));
     }
 
     int GetNumPolys() {
-        return *(int*)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_NumPolys );
+        return *reinterpret_cast<int*>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_NumPolys ));
     }
 
     zCPolygon** GetPolygons() {
-        return *(zCPolygon***)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_PolyArray );
+        return *reinterpret_cast<zCPolygon***>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_PolyArray ));
     }
 
     zCMesh* GetMesh() {
-        return *(zCMesh**)THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_WorldMesh );
+        return *reinterpret_cast<zCMesh**>(THISPTR_OFFSET( GothicMemoryLocations::zCBspTree::Offset_WorldMesh ));
     }
 
 private:

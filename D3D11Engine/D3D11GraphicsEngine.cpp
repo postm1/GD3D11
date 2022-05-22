@@ -42,10 +42,10 @@
 #endif
 
 #include "SteamOverlay.h"
+#include <d3dcompiler.h>
 #include <dxgi1_6.h>
 
 namespace wrl = Microsoft::WRL;
-using namespace DirectX;
 
 const int NUM_UNLOADEDTEXCOUNT_FORCE_LOAD_TEXTURES = 100;
 
@@ -368,9 +368,15 @@ XRESULT D3D11GraphicsEngine::Init() {
     InverseUnitSphereMesh->LoadMesh( "system\\GD3D11\\meshes\\icoSphere.obj" );
 
     // Create distance-buffers
-    CreateConstantBuffer( (D3D11ConstantBuffer**)&InfiniteRangeConstantBuffer, nullptr, sizeof( float4 ) );
-    CreateConstantBuffer( (D3D11ConstantBuffer**)&OutdoorSmallVobsConstantBuffer, nullptr, sizeof( float4 ) );
-    CreateConstantBuffer( (D3D11ConstantBuffer**)&OutdoorVobsConstantBuffer, nullptr, sizeof( float4 ) );
+    D3D11ConstantBuffer* infiniteRangeConstantBuffer;
+    D3D11ConstantBuffer* outdoorSmallVobsConstantBuffer;
+    D3D11ConstantBuffer* outdoorVobsConstantBuffer;
+    CreateConstantBuffer( &infiniteRangeConstantBuffer, nullptr, sizeof( float4 ) );
+    CreateConstantBuffer( &outdoorSmallVobsConstantBuffer, nullptr, sizeof( float4 ) );
+    CreateConstantBuffer( &outdoorVobsConstantBuffer, nullptr, sizeof( float4 ) );
+    InfiniteRangeConstantBuffer.reset( infiniteRangeConstantBuffer );
+    OutdoorSmallVobsConstantBuffer.reset( outdoorSmallVobsConstantBuffer );
+    OutdoorVobsConstantBuffer.reset(outdoorVobsConstantBuffer);
 
     // Init inf-buffer now
     InfiniteRangeConstantBuffer->UpdateBuffer( &float4( FLT_MAX, 0, 0, 0 ) );
@@ -589,6 +595,10 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
         } else {
             SwapChain->ResizeTarget( &newMode );
         }
+
+        RECT desktopRect;
+        GetClientRect( GetDesktopWindow(), &desktopRect );
+        SetWindowPos( OutputWindow, nullptr, 0, 0, desktopRect.right, desktopRect.bottom, SWP_SHOWWINDOW );
     } else if ( Engine::GAPI->GetRendererState().RendererSettings.StretchWindow ) {
         RECT desktopRect;
         GetClientRect( GetDesktopWindow(), &desktopRect );
@@ -605,7 +615,6 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
 
     // Release all referenced buffer resources before we can resize the swapchain. Needed!
     BackbufferRTV.Reset();
-    BackbufferSRV.Reset();
     DepthStencilBuffer.reset();
 
     if ( UIView ) UIView->PrepareResize();
@@ -785,7 +794,7 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
         if ( m_HDR && m_swapchainflip ) {
             UpdateColorSpace_SwapChain4();
         }
-        SwapChain4->GetBuffer( 0, __uuidof(ID3D11Texture2D), &backbuffer );
+        SwapChain4->GetBuffer( 0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backbuffer.GetAddressOf()) );
     } else if ( dxgi_1_4 ) {
         LE( SwapChain.As( &SwapChain3 ) );
         LogInfo() << "SwapChain: DXGI 1.4";
@@ -798,7 +807,7 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
         if ( m_HDR && m_swapchainflip ) {
             UpdateColorSpace_SwapChain3();
         }
-        SwapChain3->GetBuffer( 0, __uuidof(ID3D11Texture2D), &backbuffer );
+        SwapChain3->GetBuffer( 0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backbuffer.GetAddressOf()) );
     } else if ( dxgi_1_3 ) {
         LE( SwapChain.As( &SwapChain2 ) );
         LogInfo() << "SwapChain: DXGI 1.3";
@@ -807,15 +816,14 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
             WaitForSingleObjectEx( frameLatencyWaitableObject, INFINITE, true );
             LogInfo() << "SwapChain Mode: DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT";
         }
-        SwapChain2->GetBuffer( 0, __uuidof(ID3D11Texture2D), &backbuffer );
+        SwapChain2->GetBuffer( 0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backbuffer.GetAddressOf()) );
     } else {
-        SwapChain->GetBuffer( 0, __uuidof(ID3D11Texture2D), &backbuffer );
+        SwapChain->GetBuffer( 0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backbuffer.GetAddressOf()) );
         LogInfo() << "SwapChain: DXGI 1.2";
     }
 
     // Recreate RenderTargetView
     LE( GetDevice()->CreateRenderTargetView( backbuffer.Get(), nullptr, BackbufferRTV.GetAddressOf() ) );
-    LE( GetDevice()->CreateShaderResourceView( backbuffer.Get(), nullptr, BackbufferSRV.GetAddressOf() ) );
 
     if ( UIView ) UIView->Resize( Resolution, backbuffer.Get() );
 
@@ -1047,13 +1055,14 @@ XRESULT D3D11GraphicsEngine::OnEndFrame() {
 
 /** Called when the game wants to clear the bound rendertarget */
 XRESULT D3D11GraphicsEngine::Clear( const float4& color ) {
-    GetContext()->ClearDepthStencilView( DepthStencilBuffer->GetDepthStencilView().Get(),
+    const Microsoft::WRL::ComPtr<ID3D11DeviceContext1>& context = GetContext();
+    context->ClearDepthStencilView( DepthStencilBuffer->GetDepthStencilView().Get(),
         D3D11_CLEAR_DEPTH, 0, 0 );
 
-    GetContext()->ClearRenderTargetView( GBuffer0_Diffuse->GetRenderTargetView().Get(), (float*)&color );
-    GetContext()->ClearRenderTargetView( GBuffer1_Normals->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
-    GetContext()->ClearRenderTargetView( GBuffer2_SpecIntens_SpecPower->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
-    GetContext()->ClearRenderTargetView( HDRBackBuffer->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
+    context->ClearRenderTargetView( GBuffer0_Diffuse->GetRenderTargetView().Get(), reinterpret_cast<const float*>(&color) );
+    context->ClearRenderTargetView( GBuffer1_Normals->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
+    context->ClearRenderTargetView( GBuffer2_SpecIntens_SpecPower->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
+    context->ClearRenderTargetView( HDRBackBuffer->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
 
     return XR_SUCCESS;
 }
@@ -1106,7 +1115,7 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeListDXGI() {
     Microsoft::WRL::ComPtr<IDXGIOutput1> output;
 
     DXGIAdapter2->EnumOutputs( 0, output11.GetAddressOf() );
-    HRESULT hr = output11->QueryInterface( __uuidof(IDXGIOutput1), (void**)output.GetAddressOf() );
+    HRESULT hr = output11.As( &output );
     if ( !output.Get() || FAILED( hr ) ) {
         CachedDisplayModes.emplace_back( Resolution.x, Resolution.y );
         return XR_FAILED;
@@ -1196,61 +1205,6 @@ D3D11GraphicsEngine::GetDisplayModeList( std::vector<DisplayModeInfo>* modeList,
             ++i;
         }
     }
-    /*HRESULT hr;
-    UINT numModes = 0;
-    std::unique_ptr<DXGI_MODE_DESC1[]> displayModes = nullptr;
-    const DXGI_FORMAT format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    Microsoft::WRL::ComPtr<IDXGIOutput> output11;
-    Microsoft::WRL::ComPtr<IDXGIOutput1> output;
-
-    // Get desktop rect
-    RECT desktop;
-    GetClientRect( GetDesktopWindow(), &desktop );
-
-    if ( !DXGIAdapter2 ) return XR_FAILED;
-
-    DXGIAdapter2->EnumOutputs( 0, output11.GetAddressOf() );
-    hr = output11->QueryInterface( __uuidof(IDXGIOutput1), (void**)output.GetAddressOf() );
-    if ( !output.Get() ) return XR_FAILED;
-
-    hr = output->GetDisplayModeList1( format, 0, &numModes, nullptr );
-
-    displayModes = std::make_unique<DXGI_MODE_DESC1[]>( numModes );
-
-    // Get the list
-    hr = output->GetDisplayModeList1( format, 0, &numModes, displayModes.get() );
-    for ( unsigned int i = 0; i < numModes; i++ ) {
-        if ( displayModes[i].Format != format ) continue;
-
-        DisplayModeInfo info;
-        info.Height = displayModes[i].Height;
-        info.Width = displayModes[i].Width;
-        // TODO: find out what is causing issues, this has issues with exclusive fullscreen
-        //if (info.Width > (unsigned long)desktop.right ||
-        //	info.Height > (unsigned long)desktop.bottom)
-        //	continue;  // Skip bigger sizes than the desktop rect, because DXGI
-                       // doesn't like them apparently
-                       // TODO: Fix this if possible!
-
-        if ( !modeList->empty() &&
-            memcmp( &modeList->back(), &info, sizeof( info ) ) == 0 )
-            continue;  // Already have that in list
-
-        modeList->push_back( info );
-    }
-    if ( includeSuperSampling ) {
-        // Put supersampling resolutions in, up to just below 8k
-        int i = 2;
-        DisplayModeInfo ssBase = modeList->back();
-        while ( ssBase.Width * i < 8192 && ssBase.Height * i < 8192 ) {
-            DisplayModeInfo info;
-            info.Height = ssBase.Height * i;
-            info.Width = ssBase.Width * i;
-
-            modeList->push_back( info );
-            i++;
-        }
-    }*/
 
     return XR_SUCCESS;
 }
@@ -1470,8 +1424,7 @@ XRESULT D3D11GraphicsEngine::DrawVertexBufferIndexedUINT(
         UINT offset = 0;
         UINT uStride = sizeof( ExVertexStruct );
         GetContext()->IASetVertexBuffers( 0, 1, vb->GetVertexBuffer().GetAddressOf(), &uStride, &offset );
-        GetContext()->IASetIndexBuffer( ((D3D11VertexBuffer*)ib)->GetVertexBuffer().Get(),
-            DXGI_FORMAT_R32_UINT, 0 );
+        GetContext()->IASetIndexBuffer( ib->GetVertexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0 );
     }
 
     if ( numIndices ) {
@@ -2027,7 +1980,7 @@ XRESULT D3D11GraphicsEngine::DrawInstanced(
     cb.Projection = proj;
 
     VS_ExConstantBuffer_PerInstance cbb = {};
-    cbb.World = *(DirectX::XMFLOAT4X4*)world;
+    cbb.World = *world;
 
     vShader->GetConstantBuffer()[0]->UpdateBuffer( &cb );
     vShader->GetConstantBuffer()[0]->BindToVertexShader( 0 );
@@ -2038,16 +1991,16 @@ XRESULT D3D11GraphicsEngine::DrawInstanced(
     UINT offset[] = { 0, 0 };
     UINT uStride[] = { vertexStride, instanceDataStride };
     ID3D11Buffer* buffers[2] = {
-        ((D3D11VertexBuffer*)vb)->GetVertexBuffer().Get(),
+        vb->GetVertexBuffer().Get(),
         DynamicInstancingBuffer->GetVertexBuffer().Get(),
     };
     GetContext()->IASetVertexBuffers( 0, 2, buffers, uStride, offset );
 
     if ( sizeof( VERTEX_INDEX ) == sizeof( unsigned short ) ) {
-        GetContext()->IASetIndexBuffer( ((D3D11VertexBuffer*)ib)->GetVertexBuffer().Get(),
+        GetContext()->IASetIndexBuffer( ib->GetVertexBuffer().Get(),
             DXGI_FORMAT_R16_UINT, 0 );
     } else {
-        GetContext()->IASetIndexBuffer( ((D3D11VertexBuffer*)ib)->GetVertexBuffer().Get(),
+        GetContext()->IASetIndexBuffer( ib->GetVertexBuffer().Get(),
             DXGI_FORMAT_R32_UINT, 0 );
     }
 
@@ -2070,16 +2023,16 @@ XRESULT D3D11GraphicsEngine::DrawInstanced(
     UINT offset[] = { 0, 0 };
     UINT uStride[] = { vertexStride, instanceDataStride };
     ID3D11Buffer* buffers[2] = {
-        ((D3D11VertexBuffer*)vb)->GetVertexBuffer().Get(),
-        ((D3D11VertexBuffer*)instanceData)->GetVertexBuffer().Get()
+        vb->GetVertexBuffer().Get(),
+        instanceData->GetVertexBuffer().Get()
     };
     GetContext()->IASetVertexBuffers( 0, 2, buffers, uStride, offset );
 
     if ( sizeof( VERTEX_INDEX ) == sizeof( unsigned short ) ) {
-        GetContext()->IASetIndexBuffer( ((D3D11VertexBuffer*)ib)->GetVertexBuffer().Get(),
+        GetContext()->IASetIndexBuffer( ib->GetVertexBuffer().Get(),
             DXGI_FORMAT_R16_UINT, 0 );
     } else {
-        GetContext()->IASetIndexBuffer( ((D3D11VertexBuffer*)ib)->GetVertexBuffer().Get(),
+        GetContext()->IASetIndexBuffer( ib->GetVertexBuffer().Get(),
             DXGI_FORMAT_R32_UINT, 0 );
     }
 
@@ -2142,8 +2095,8 @@ XRESULT D3D11GraphicsEngine::UnbindTexture( int slot ) {
 XRESULT D3D11GraphicsEngine::UpdateRenderStates() {
     if ( Engine::GAPI->GetRendererState().BlendState.StateDirty &&
         Engine::GAPI->GetRendererState().BlendState.Hash != FFBlendStateHash ) {
-        D3D11BlendStateInfo* state = (D3D11BlendStateInfo*)
-            GothicStateCache::s_BlendStateMap[Engine::GAPI->GetRendererState().BlendState];
+        D3D11BlendStateInfo* state = static_cast<D3D11BlendStateInfo*>
+            (GothicStateCache::s_BlendStateMap[Engine::GAPI->GetRendererState().BlendState]);
 
         if ( !state ) {
             // Create new state
@@ -2164,8 +2117,8 @@ XRESULT D3D11GraphicsEngine::UpdateRenderStates() {
     if ( Engine::GAPI->GetRendererState().RasterizerState.StateDirty &&
         Engine::GAPI->GetRendererState().RasterizerState.Hash !=
         FFRasterizerStateHash ) {
-        D3D11RasterizerStateInfo* state = (D3D11RasterizerStateInfo*)
-            GothicStateCache::s_RasterizerStateMap[Engine::GAPI->GetRendererState().RasterizerState];
+        D3D11RasterizerStateInfo* state = static_cast<D3D11RasterizerStateInfo*>
+            (GothicStateCache::s_RasterizerStateMap[Engine::GAPI->GetRendererState().RasterizerState]);
 
         if ( !state ) {
             // Create new state
@@ -2185,8 +2138,8 @@ XRESULT D3D11GraphicsEngine::UpdateRenderStates() {
     if ( Engine::GAPI->GetRendererState().DepthState.StateDirty &&
         Engine::GAPI->GetRendererState().DepthState.Hash !=
         FFDepthStencilStateHash ) {
-        D3D11DepthBufferState* state = (D3D11DepthBufferState*)
-            GothicStateCache::s_DepthBufferMap[Engine::GAPI->GetRendererState().DepthState];
+        D3D11DepthBufferState* state = static_cast<D3D11DepthBufferState*>
+            (GothicStateCache::s_DepthBufferMap[Engine::GAPI->GetRendererState().DepthState]);
 
         if ( !state ) {
             // Create new state
@@ -2233,7 +2186,16 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     Engine::GAPI->GetRendererState().RendererSettings.DrawMobs = bDrawVobsGlobal;
     Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects = bDrawVobsGlobal;
     Engine::GAPI->GetRendererState().RendererSettings.DrawSkeletalMeshes = bDrawVobsGlobal;
-#endif  
+#endif 
+
+    ID3D11RenderTargetView* rtvs[] = {
+        GBuffer0_Diffuse->GetRenderTargetView().Get(),
+        GBuffer1_Normals->GetRenderTargetView().Get(),
+        GBuffer2_SpecIntens_SpecPower->GetRenderTargetView().Get() };
+    GetContext()->OMSetRenderTargets( 3, rtvs, DepthStencilBuffer->GetDepthStencilView().Get() );
+
+    Engine::GAPI->SetFarPlane(
+        Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius * WORLD_SECTION_SIZE );
 
     D3D11_VIEWPORT vp;
     vp.TopLeftX = 0.0f;
@@ -2244,15 +2206,6 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     vp.Height = static_cast<float>(GetResolution().y);
 
     GetContext()->RSSetViewports( 1, &vp );
-
-    ID3D11RenderTargetView* rtvs[] = {
-        GBuffer0_Diffuse->GetRenderTargetView().Get(),
-        GBuffer1_Normals->GetRenderTargetView().Get(),
-        GBuffer2_SpecIntens_SpecPower->GetRenderTargetView().Get() };
-    GetContext()->OMSetRenderTargets( 3, rtvs, DepthStencilBuffer->GetDepthStencilView().Get() );
-
-    Engine::GAPI->SetFarPlane(
-        Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius * WORLD_SECTION_SIZE );
 
     Clear( float4( Engine::GAPI->GetRendererState().GraphicsState.FF_FogColor, 0.0f ) );
 
@@ -2844,12 +2797,12 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
             MaterialInfo* info = mesh.first.Info;
 
             // Get diffuse and normalmap
-            srv[0] = ((D3D11Texture*)surface->GetEngineTexture())->GetShaderResourceView().Get();
+            srv[0] = surface->GetEngineTexture()->GetShaderResourceView().Get();
             srv[1] = surface->GetNormalmap()
-                ? ((D3D11Texture*)surface->GetNormalmap())->GetShaderResourceView().Get()
+                ? surface->GetNormalmap()->GetShaderResourceView().Get()
                 : nullptr;
             srv[2] = surface->GetFxMap()
-                ? ((D3D11Texture*)surface->GetFxMap())->GetShaderResourceView().Get()
+                ? surface->GetFxMap()->GetShaderResourceView().Get()
                 : nullptr;
 
             // Bind a default normalmap in case the scene is wet and we currently have
@@ -3501,7 +3454,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
         std::list<VobInfo*>& rl = renderedVobs != nullptr ? *renderedVobs : rndVob;
         for ( auto const& vobInfo : rl ) {
             // Bind per-instance buffer
-            ((D3D11ConstantBuffer*)vobInfo->VobConstantBuffer)->BindToVertexShader( 1 );
+            vobInfo->VobConstantBuffer->BindToVertexShader( 1 );
 
             // Draw the vob
             for ( auto const& materialMesh : vobInfo->VisualInfo->Meshes ) {
@@ -3558,8 +3511,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
 
                 // Assume everything that doesn't have a skeletal-mesh won't move very
                 // much This applies to usable things like chests, chairs, beds, etc
-                if ( !((SkeletalMeshVisualInfo*)it->VisualInfo)
-                    ->SkeletalMeshes.empty() ) {
+                if ( !static_cast<SkeletalMeshVisualInfo*>(it->VisualInfo)->SkeletalMeshes.empty() ) {
                     continue;
                 }
 
@@ -3761,7 +3713,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
             if ( !it->IsIndoorVob ) {
                 VobInstanceInfo vii;
                 vii.world = it->WorldMatrix;
-                ((MeshVisualInfo*)it->VisualInfo)->Instances.emplace_back( vii );
+                static_cast<MeshVisualInfo*>(it->VisualInfo)->Instances.emplace_back( vii );
             }
         }
 
@@ -3776,12 +3728,13 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
             GetContext()->PSSetShader( nullptr, nullptr, 0 );
         }
 
-        size_t ByteWidth = DynamicInstancingBuffer->GetSizeInBytes();
+        // Static meshes should already be in buffer from main stage rendering
+        /*size_t ByteWidth = DynamicInstancingBuffer->GetSizeInBytes();
         byte* data;
         UINT size;
         UINT loc = 0;
         DynamicInstancingBuffer->Map( D3D11VertexBuffer::M_WRITE_DISCARD,
-            (void**)&data, &size );
+            reinterpret_cast<void**>(&data), &size );
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
 
@@ -3793,7 +3746,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
                 sizeof( VobInstanceInfo ) * staticMeshVisual.second->Instances.size() );
             loc += staticMeshVisual.second->Instances.size();
         }
-        DynamicInstancingBuffer->Unmap();
+        DynamicInstancingBuffer->Unmap();*/
 
         // Draw all vobs the player currently sees
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
@@ -3976,7 +3929,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
         UINT size;
         UINT loc = 0;
         DynamicInstancingBuffer->Map( D3D11VertexBuffer::M_WRITE_DISCARD,
-            (void**)&data, &size );
+            reinterpret_cast<void**>(&data), &size );
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             staticMeshVisual.second->StartInstanceNum = loc;
             memcpy( data + loc * sizeof( VobInstanceInfo ), &staticMeshVisual.second->Instances[0],
@@ -4052,7 +4005,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         if ( !Engine::GAPI->GetRendererState().RendererSettings.RunInSpacerNet ) {
                             continue;
                         }
-                        bool showHelpers = (*(int*)GothicMemoryLocations::zCVob::s_ShowHelperVisuals) != 0;
+                        bool showHelpers = *reinterpret_cast<int*>(GothicMemoryLocations::zCVob::s_ShowHelperVisuals) != 0;
 
                         if ( showHelpers ) {
                             WhiteTexture->BindToPixelShader( 0 );
@@ -4077,15 +4030,12 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                             MaterialInfo* info = itt.first.Info;
 
                             // Get diffuse and normalmap
-                            srv[0] = ((D3D11Texture*)surface->GetEngineTexture())
-                                ->GetShaderResourceView().Get();
+                            srv[0] = surface->GetEngineTexture()->GetShaderResourceView().Get();
                             srv[1] = surface->GetNormalmap()
-                                ? ((D3D11Texture*)surface->GetNormalmap())
-                                ->GetShaderResourceView().Get()
+                                ? surface->GetNormalmap()->GetShaderResourceView().Get()
                                 : nullptr;
                             srv[2] = surface->GetFxMap()
-                                ? ((D3D11Texture*)surface->GetFxMap())
-                                ->GetShaderResourceView().Get()
+                                ? surface->GetFxMap()->GetShaderResourceView().Get()
                                 : nullptr;
 
                             // Bind a default normalmap in case the scene is wet and we
@@ -4624,8 +4574,8 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
 
             if ( light->LightShadowBuffers ) {
                 // Check if this lights even needs an update
-                bool needsUpdate = ((D3D11PointLight*)light->LightShadowBuffers)->NeedsUpdate();
-                bool isInited = ((D3D11PointLight*)light->LightShadowBuffers)->IsInited();
+                bool needsUpdate = static_cast<D3D11PointLight*>(light->LightShadowBuffers)->NeedsUpdate();
+                bool isInited = static_cast<D3D11PointLight*>(light->LightShadowBuffers)->IsInited();
 
                 // Add to the updatequeue if it does
                 if ( isInited && (needsUpdate || light->UpdateShadows) ) {
@@ -4669,7 +4619,7 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
 
         // Render the closest light
         for ( auto const& importantUpdate : importantUpdates ) {
-            ((D3D11PointLight*)importantUpdate->LightShadowBuffers)->RenderCubemap( importantUpdate->UpdateShadows );
+            static_cast<D3D11PointLight*>(importantUpdate->LightShadowBuffers)->RenderCubemap( importantUpdate->UpdateShadows );
             importantUpdate->UpdateShadows = false;
         }
 
@@ -4678,8 +4628,7 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
             (UINT)NUM_MIN_FRAME_SHADOW_UPDATES,
             (UINT)(FrameShadowUpdateLights.size() / NUM_FRAME_SHADOW_UPDATES) );
         while ( !FrameShadowUpdateLights.empty() ) {
-            D3D11PointLight* l = (D3D11PointLight*)FrameShadowUpdateLights.front()
-                ->LightShadowBuffers;
+            D3D11PointLight* l = static_cast<D3D11PointLight*>(FrameShadowUpdateLights.front()->LightShadowBuffers);
 
             // Check if we have to force this light to update itself (NPCs moving around, for example)
             bool force = FrameShadowUpdateLights.front()->UpdateShadows;
@@ -4732,9 +4681,9 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
     XMStoreFloat( &len, XMVector3Length( oldP - XMLoadFloat3( &cameraPosition ) ) );
     if ( (len < 64 &&
         // And is on even space
-        (cameraPosition.x - (int)cameraPosition.x) < 0.1f &&
+        (cameraPosition.x - static_cast<int>(cameraPosition.x)) < 0.1f &&
         // but don't let it go too far
-        (cameraPosition.y - (int)cameraPosition.y) < 0.1f) || len < 600.0f ) {
+        (cameraPosition.y - static_cast<int>(cameraPosition.y)) < 0.1f) || len < 600.0f ) {
         WorldShadowCP = oldP;
     } else {
         oldP = XMLoadFloat3( &cameraPosition );
@@ -4851,7 +4800,7 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
 
         // Set right shader
         if ( Engine::GAPI->GetRendererState().RendererSettings.EnablePointlightShadows > 0 ) {
-            if ( light->LightShadowBuffers && ((D3D11PointLight*)light->LightShadowBuffers)->IsInited() ) {
+            if ( light->LightShadowBuffers && static_cast<D3D11PointLight*>(light->LightShadowBuffers)->IsInited() ) {
                 if ( ActivePS != psPointLightDynShadow ) {
                     // Need to update shader for shadowed pointlight
                     ActivePS = psPointLightDynShadow;
@@ -4938,7 +4887,7 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
         if ( Engine::GAPI->GetRendererState().RendererSettings.EnablePointlightShadows > 0 ) {
             // Bind shadowmap, if possible
             if ( light->LightShadowBuffers )
-                ((D3D11PointLight*)light->LightShadowBuffers)->OnRenderLight();
+                static_cast<D3D11PointLight*>(light->LightShadowBuffers)->OnRenderLight();
         }
 
         // Draw the mesh
@@ -5057,7 +5006,7 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
 
 /** Renders the shadowmaps for a pointlight */
 void XM_CALLCONV D3D11GraphicsEngine::RenderShadowCube(
-    DirectX::FXMVECTOR position, float range,
+    FXMVECTOR position, float range,
     const RenderToDepthStencilBuffer& targetCube, Microsoft::WRL::ComPtr<ID3D11DepthStencilView> face,
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> debugRTV, bool cullFront, bool indoor, bool noNPCs,
     std::list<VobInfo*>* renderedVobs,
@@ -5280,7 +5229,7 @@ void D3D11GraphicsEngine::DrawVobsList( const std::list<VobInfo*>& vobs, zCCamer
 #if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
     // System Pack Animated_Inventory workaround
     for ( auto const& vob : vobs ) {
-        DirectX::XMMATRIX worldMatrix = vob->Vob->GetWorldMatrixXM();
+        XMMATRIX worldMatrix = vob->Vob->GetWorldMatrixXM();
         const uint32_t mask = _mm_movemask_epi8( _mm_packs_epi32(
             _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[0], worldMatrix.r[1] ) ),
             _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[2], worldMatrix.r[3] ) )
@@ -5537,26 +5486,6 @@ XRESULT D3D11GraphicsEngine::DrawOcean( GOcean* ocean ) {
     return XR_SUCCESS;
 }
 
-/** Constructs the makro list for shader compilation */
-void D3D11GraphicsEngine::ConstructShaderMakroList(
-    std::vector<D3D_SHADER_MACRO >& list ) {
-    GothicRendererSettings& s =
-        Engine::GAPI->GetRendererState().RendererSettings;
-    D3D_SHADER_MACRO m;
-
-    m.Name = "SHD_ENABLE";
-    m.Definition = s.EnableShadows ? "1" : "0";
-    list.push_back( m );
-
-    m.Name = "SHD_FILTER_16TAP_PCF";
-    m.Definition = s.EnableSoftShadows ? "1" : "0";
-    list.push_back( m );
-
-    m.Name = nullptr;
-    m.Definition = nullptr;
-    list.push_back( m );
-}
-
 /** Handles an UI-Event */
 void D3D11GraphicsEngine::OnUIEvent( EUIEvent uiEvent ) {
     if ( !UIView ) {
@@ -5734,7 +5663,7 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
 
     int lastAlphaFunc = -1;
     for ( unsigned int i = 0; i < decals.size(); i++ ) {
-        zCDecal* d = (zCDecal*)decals[i]->GetVisual();
+        zCDecal* d = static_cast<zCDecal*>(decals[i]->GetVisual());
 
         if ( !d ) {
             continue;
@@ -5992,7 +5921,7 @@ void D3D11GraphicsEngine::CreateMainUIView() {
         UIView = std::make_unique<D2DView>();
 
         wrl::ComPtr<ID3D11Texture2D> tex;
-        BackbufferRTV->GetResource( (ID3D11Resource**)tex.ReleaseAndGetAddressOf() );
+        BackbufferRTV->GetResource( reinterpret_cast<ID3D11Resource**>(tex.ReleaseAndGetAddressOf()) );
         if ( XR_SUCCESS != UIView->Init( Resolution, tex.Get() ) ) {
             UIView.reset();
             return;
@@ -6081,7 +6010,7 @@ void D3D11GraphicsEngine::DrawFrameParticleMeshes( std::unordered_map<zCVob*, Me
     int lastBlend = zRND_ALPHA_FUNC_NONE;
     for ( auto const& it : progMeshes ) {
         float dist;
-        XMStoreFloat( &dist, DirectX::XMVector3Length( it.first->GetPositionWorldXM() - camPos ) );
+        XMStoreFloat( &dist, XMVector3Length( it.first->GetPositionWorldXM() - camPos ) );
         if ( dist > state.RendererSettings.VisualFXDrawRadius )
             continue;
 
@@ -6168,8 +6097,8 @@ void D3D11GraphicsEngine::DrawFrameParticles(
     // TODO: Maybe make particles draw at a lower res and bilinear upsample the result.
 
     // Clear GBuffer0 to hold the refraction vectors since it's not needed anymore
-    GetContext()->ClearRenderTargetView( GBuffer0_Diffuse->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
-    GetContext()->ClearRenderTargetView( GBuffer1_Normals->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
+    GetContext()->ClearRenderTargetView( GBuffer0_Diffuse->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
+    GetContext()->ClearRenderTargetView( GBuffer1_Normals->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
 
     RefractionInfoConstantBuffer ricb = {};
     ricb.RI_Projection = Engine::GAPI->GetProjectionMatrix();
@@ -6529,7 +6458,7 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
         if ( savedBarSize == -1 ) {
             savedBarSize = oCGame::GetGame()->swimBar->psizex;
         }
-        UIScale = (float)savedBarSize / 180;
+        UIScale = static_cast<float>(savedBarSize) / 180.f;
     }
 
     constexpr float FONT_CACHE_PRIO = -1;

@@ -73,7 +73,7 @@ public:
 
         hook_infunc
             //LogInfo() << "Draw Poly Return Adress: " << _ReturnAddress();		
-            void* polyStripReturnPointer = (void*)GothicMemoryLocations::zCPolyStrip::RenderDrawPolyReturn;
+            void* polyStripReturnPointer = reinterpret_cast<void*>(GothicMemoryLocations::zCPolyStrip::RenderDrawPolyReturn);
         if ( _ReturnAddress() != polyStripReturnPointer ) {
             HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawPoly( thisptr, poly );
         }
@@ -100,18 +100,13 @@ public:
 
     void ResetRenderState() {
         // Set render state values to some absurd high value so that they will be changed by engine for sure
-        *(DWORD*)THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_BoundTexture + ( /*TEX0*/0 * 4) ) = 0x00000000;
-        *(DWORD*)THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_RenderState + ( /*D3DRENDERSTATE_ALPHABLENDENABLE*/27 * 4 ) ) = 0xFFFFFFFF;
-        *(DWORD*)THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_RenderState + ( /*D3DRENDERSTATE_SRCBLEND*/19 * 4 ) ) = 0xFFFFFFFF;
-        *(DWORD*)THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_RenderState + ( /*D3DRENDERSTATE_DESTBLEND*/20 * 4 ) ) = 0xFFFFFFFF;
+        *reinterpret_cast<DWORD*>(THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_BoundTexture + ( /*TEX0*/0 * 4) )) = 0x00000000;
+        *reinterpret_cast<DWORD*>(THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_RenderState + ( /*D3DRENDERSTATE_ALPHABLENDENABLE*/27 * 4 ) )) = 0xFFFFFFFF;
+        *reinterpret_cast<DWORD*>(THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_RenderState + ( /*D3DRENDERSTATE_SRCBLEND*/19 * 4 ) )) = 0xFFFFFFFF;
+        *reinterpret_cast<DWORD*>(THISPTR_OFFSET( GothicMemoryLocations::zCRndD3D::Offset_RenderState + ( /*D3DRENDERSTATE_DESTBLEND*/20 * 4 ) )) = 0xFFFFFFFF;
     }
 
-    /*float GetGammaValue()
-    {
-        return reinterpret_cast<float( __fastcall* )( zCRndD3D* )>( GothicMemoryLocations::zCRndD3D::Vid_GetGammaCorrection )( this );
-    }*/
-
     static zCRndD3D* GetRenderer() {
-        return *(zCRndD3D**)GothicMemoryLocations::GlobalObjects::zRenderer;
+        return *reinterpret_cast<zCRndD3D**>(GothicMemoryLocations::GlobalObjects::zRenderer);
     }
 };

@@ -6,11 +6,9 @@
 #include <DirectXMesh.h>
 #include "D3D11_Helpers.h"
 
-D3D11VertexBuffer::D3D11VertexBuffer() {
-}
+D3D11VertexBuffer::D3D11VertexBuffer() {}
 
-D3D11VertexBuffer::~D3D11VertexBuffer() {
-}
+D3D11VertexBuffer::~D3D11VertexBuffer() {}
 
 /** Creates the vertexbuffer with the given arguments */
 XRESULT D3D11VertexBuffer::Init( void* initData, unsigned int sizeInBytes, EBindFlags EBindFlags, EUsageFlags usage, ECPUAccessFlags cpuAccess, const std::string& fileName, unsigned int structuredByteSize ) {
@@ -98,10 +96,8 @@ XRESULT D3D11VertexBuffer::UpdateBuffer( void* data, UINT size ) {
 
 /** Maps the buffer */
 XRESULT D3D11VertexBuffer::Map( int flags, void** dataPtr, UINT* size ) {
-    D3D11GraphicsEngineBase* engine = reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine);
-
     D3D11_MAPPED_SUBRESOURCE res;
-    if ( FAILED( engine->GetContext()->Map( VertexBuffer.Get(), 0, static_cast<D3D11_MAP>(flags), 0, &res ) ) ) {
+    if ( FAILED( reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->GetContext()->Map( VertexBuffer.Get(), 0, static_cast<D3D11_MAP>(flags), 0, &res ) ) ) {
         return XR_FAILED;
     }
 
@@ -113,10 +109,7 @@ XRESULT D3D11VertexBuffer::Map( int flags, void** dataPtr, UINT* size ) {
 
 /** Unmaps the buffer */
 XRESULT D3D11VertexBuffer::Unmap() {
-    D3D11GraphicsEngineBase* engine = reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine);
-
-    engine->GetContext()->Unmap( VertexBuffer.Get(), 0 );
-
+    reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->GetContext()->Unmap( VertexBuffer.Get(), 0 );
     return XR_SUCCESS;
 }
 

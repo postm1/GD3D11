@@ -45,15 +45,15 @@ XRESULT D2DVobSettingsDialog::InitControls() {
     RenderMode->UpdateDimensions();
     RenderMode->GetSlider()->SetSliderChangedCallback( SliderDragged, this );
     RenderMode->GetSlider()->SetMinMax( 0.0f, 3.0f );
+
     std::vector<std::string> modes;
-    modes.push_back( "Wireframe" );
-    modes.push_back( "SolidWireframe" );
-    modes.push_back( "Textured" );
-    modes.push_back( "Lit" );
+    modes.emplace_back( "Wireframe" );
+    modes.emplace_back( "SolidWireframe" );
+    modes.emplace_back( "Textured" );
+    modes.emplace_back( "Lit" );
     RenderMode->GetSlider()->SetDisplayValues( modes );
     RenderMode->GetSlider()->SetIsIntegralSlider( true );
     RenderMode->GetSlider()->SetValue( 3 );
-
 
     TesselationFactorSetting = new SV_NamedSlider( MainView, MainPanel );
     TesselationFactorSetting->AlignRightTo( MeshView, 10 );
@@ -91,12 +91,12 @@ XRESULT D2DVobSettingsDialog::InitControls() {
 
 /** Close button */
 void D2DVobSettingsDialog::CloseButtonPressed( SV_Button* sender, void* userdata ) {
-    D2DVobSettingsDialog* d = (D2DVobSettingsDialog*)userdata;
+    D2DVobSettingsDialog* d = reinterpret_cast<D2DVobSettingsDialog*>(userdata);
     d->SetHidden( true );
 }
 
 void D2DVobSettingsDialog::SliderDragged( SV_Slider* sender, void* userdata ) {
-    D2DVobSettingsDialog* d = (D2DVobSettingsDialog*)userdata;
+    D2DVobSettingsDialog* d = reinterpret_cast<D2DVobSettingsDialog*>(userdata);
 
     if ( !d->Vob )
         return;
@@ -141,7 +141,7 @@ void D2DVobSettingsDialog::SliderDragged( SV_Slider* sender, void* userdata ) {
         }
 #endif
     } else if ( sender == d->RenderMode->GetSlider() ) {
-        d->MeshView->SetRenderMode( (SV_GMeshInfoView::ERenderMode)(int)(sender->GetValue() + 0.5f) );
+        d->MeshView->SetRenderMode( static_cast<SV_GMeshInfoView::ERenderMode>(sender->GetValue() + 0.5f) );
     }
 
 #if ENABLE_TESSELATION > 0

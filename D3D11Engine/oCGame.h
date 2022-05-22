@@ -43,24 +43,7 @@ public:
     static void __fastcall hooked_EnterWorld( void* thisptr, void* unknwn, oCNPC* playerVob, int changePlayerPos, const zSTRING& startpoint ) {
         HookedFunctions::OriginalFunctions.original_oCGameEnterWorld( thisptr, playerVob, changePlayerPos, startpoint );
 
-        /*if (!Engine::GAPI->GetLoadedWorldInfo()->BspTree) // Happens in Gothic II - Johannes Edition, zCBspTree::LoadBIN isn't called for some reason
-        {
-            zCWorld* w = (zCWorld *)thisptr;
-
-            LogWarn() << "Weird ZEN-File: zCBspTree::LoadBIN wasn't called, trying to load geometry now...";
-
-            // Load the world-geometry now
-            zCBspTree::LoadLevelGeometry(w->GetBspTree());
-        }*/
-
         Engine::GAPI->OnWorldLoaded();
-
-        // TODO: Player sometimes gets invisible, apparently.
-        // Re-Add the player npc to the world because it sometimes would be invisible after a world-change
-        //auto const&& player = (zCVob *)oCGame::GetPlayer();
-        //auto const&& playerHomeworld = player->GetHomeWorld();
-        //Engine::GAPI->OnRemovedVob(player, playerHomeworld);
-        //Engine::GAPI->OnAddVob(player, playerHomeworld);
     }
 
     void TestKey( GOTHIC_KEY key ) {
@@ -68,18 +51,18 @@ public:
     }
 
     static oCNPC* GetPlayer() {
-        return *(oCNPC**)GothicMemoryLocations::oCGame::Var_Player;
+        return *reinterpret_cast<oCNPC**>(GothicMemoryLocations::oCGame::Var_Player);
     }
 
     zCView* GetGameView() {
-        return *(zCView**)THISPTR_OFFSET( GothicMemoryLocations::oCGame::Offset_GameView );
+        return *reinterpret_cast<zCView**>(THISPTR_OFFSET( GothicMemoryLocations::oCGame::Offset_GameView ));
     }
 
     bool GetSingleStep() {
 #ifdef BUILD_SPACER
         return false;
 #else
-        return (*(int*)THISPTR_OFFSET( GothicMemoryLocations::oCGame::Offset_SingleStep )) != 0;
+        return *reinterpret_cast<int*>(THISPTR_OFFSET( GothicMemoryLocations::oCGame::Offset_SingleStep )) != 0;
 #endif
     }
 
@@ -119,5 +102,5 @@ public:
     /*oCViewStatusBar*/ _zCView* manaBar;
     /*oCViewStatusBar*/ _zCView* focusBar;
 
-    static oCGame* GetGame() { return *(oCGame**)GothicMemoryLocations::GlobalObjects::oCGame; };
+    static oCGame* GetGame() { return *reinterpret_cast<oCGame**>(GothicMemoryLocations::GlobalObjects::oCGame); };
 };

@@ -6,7 +6,6 @@
 
 GInventory::GInventory() {}
 
-
 GInventory::~GInventory() {}
 
 /** Called when a VOB got added to the BSP-Tree or the world */

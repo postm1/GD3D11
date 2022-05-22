@@ -4,7 +4,7 @@
 //#define BUILD_GOTHIC_1_08k
 //#define BUILD_GOTHIC_2_6_fix
 
-#define THISPTR_OFFSET(x) (((char *)this) + (x))
+#define THISPTR_OFFSET(x) (reinterpret_cast<DWORD>(this) + (x))
 
 template<typename TOriginal, typename T>
 static void XHook( TOriginal& original, unsigned int adr, T& hookFn ) {

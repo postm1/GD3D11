@@ -94,22 +94,11 @@ public:
     }
 
     static void __fastcall hooked_LoadWorld( zCWorld* thisptr, void* unknwn, const zSTRING& fileName, const int loadMode ) {
-        //hook_infunc
-        //LogInfo() << "Loading: " << fileName.ToChar();
-
-        //if (loadMode != 1)
-        //	Engine::GAPI->ResetWorld();
-
         Engine::GAPI->OnLoadWorld( fileName.ToChar(), loadMode );
 
         HookedFunctions::OriginalFunctions.original_zCWorldLoadWorld( thisptr, fileName, loadMode );
 
         Engine::GAPI->GetLoadedWorldInfo()->MainWorld = thisptr;
-
-        //LogInfo() << "Loaded world: " << fileName.ToChar();
-
-        //Engine::GAPI->OnWorldLoaded();
-        //hook_outfunc
     }
 
     static void __fastcall hooked_VobAddedToWorld( zCWorld* thisptr, void* unknwn, zCVob* vob ) {
@@ -135,7 +124,6 @@ public:
             // Main world
             if ( Engine::GAPI->GetRendererState().RendererSettings.AtmosphericScattering ) {
                 HookedFunctions::OriginalFunctions.original_zCWorldRender( thisptr, camera );
-                //zCWorld::fake_zCWorldRender(thisptr, camera);
             } else {
                 camera.SetFarPlane( 25000.0f );
                 HookedFunctions::OriginalFunctions.original_zCWorldRender( thisptr, camera );
@@ -165,50 +153,20 @@ public:
         hook_outfunc
     }
 
-    static void fake_zCWorldRender( void* thisptr, zCCamera& camera ) {
-        zCWorld* world = (zCWorld*)thisptr;
-
-        unsigned char originalzCWorldRender[0x255];
-        unsigned char* worldRender = (unsigned char*)GothicMemoryLocations::zCWorld::Render;
-
-        memcpy( originalzCWorldRender, worldRender, 0x255 );
-
-        // zCBspTree::Render()
-        //REPLACE_CALL(GothicMemoryLocations::zCWorld::Call_Render_zCBspTreeRender, INST_NOP);
-
-        // Increase farplane 
-        //camera.SetFarPlane(80000.0f); // Does this even do something
-
-        HookedFunctions::OriginalFunctions.original_zCWorldRender( thisptr, camera );
-
-        /*D3DXVECTOR4 cc = D3DXVECTOR4(Engine::GAPI->GetRendererState().GraphicsState.FF_FogColor.x,
-            Engine::GAPI->GetRendererState().GraphicsState.FF_FogColor.y,
-            Engine::GAPI->GetRendererState().GraphicsState.FF_FogColor.z, 0);
-
-        Engine::GraphicsEngine->Clear(*(float4 *)&cc);*/
-
-        memcpy( worldRender, originalzCWorldRender, 0x255 );
-    }
-
     zCTree<zCVob>* GetGlobalVobTree() {
-        return (zCTree<zCVob>*)THISPTR_OFFSET( GothicMemoryLocations::zCWorld::Offset_GlobalVobTree );
+        return reinterpret_cast<zCTree<zCVob>*>(THISPTR_OFFSET( GothicMemoryLocations::zCWorld::Offset_GlobalVobTree ));
     }
 
     void Render( zCCamera& camera ) {
         reinterpret_cast<void( __fastcall* )( zCWorld*, int, zCCamera& )>( GothicMemoryLocations::zCWorld::Render )( this, 0, camera );
     }
 
-    /*zCSkyController* GetActiveSkyController()
-    {
-        return reinterpret_cast<zCSkyController*( __fastcall* )( zCWorld* )>( GothicMemoryLocations::zCWorld::GetActiveSkyController )( this );
-    }*/
-
     zCSkyController_Outdoor* GetSkyControllerOutdoor() {
-        return *(zCSkyController_Outdoor**)(((char*)this) + GothicMemoryLocations::zCWorld::Offset_SkyControllerOutdoor);
+        return *reinterpret_cast<zCSkyController_Outdoor**>(THISPTR_OFFSET( GothicMemoryLocations::zCWorld::Offset_SkyControllerOutdoor ));
     }
 
     zCBspTree* GetBspTree() {
-        return (zCBspTree*)THISPTR_OFFSET( GothicMemoryLocations::zCWorld::Offset_BspTree );
+        return reinterpret_cast<zCBspTree*>(THISPTR_OFFSET( GothicMemoryLocations::zCWorld::Offset_BspTree ));
     }
 
     void RemoveVob( zCVob* vob ) {

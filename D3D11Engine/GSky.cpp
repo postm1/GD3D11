@@ -57,7 +57,7 @@ XRESULT GSky::InitSky() {
     SkyPlaneVertices[5].Position = float3( -sizeX, sizeY, +sizeX ); // 2
 
     const float scale = 20.0f;
-    DirectX::XMFLOAT2 displacement;
+    XMFLOAT2 displacement;
     float4 color = float4( 1, 1, 1, 1 );
 
     // Construct vertices
@@ -181,8 +181,8 @@ void GSky::GetTextureOfDaytime( float time, D3D11Texture** t1, D3D11Texture** t2
     float index = time * (SkyTextures.size() - 0.5f);
 
     // Get indices of the current and the next texture
-    int i0 = (int)index;
-    int i1 = (unsigned int)index + 1 < SkyTextures.size() ? (int)index + 1 : 0;
+    int i0 = static_cast<int>(index);
+    int i1 = static_cast<unsigned int>(index + 1) < SkyTextures.size() ? static_cast<int>(index) + 1 : 0;
 
     // Calculate weight
     float weight = index - (i0);
@@ -230,7 +230,7 @@ XRESULT GSky::RenderSky() {
     AtmosphereCB.AC_InnerRadius = Atmosphere.InnerRadius;
     AtmosphereCB.AC_OuterRadius = Atmosphere.OuterRadius;
     AtmosphereCB.AC_nSamples = Atmosphere.Samples;
-    AtmosphereCB.AC_fSamples = (float)AtmosphereCB.AC_nSamples;
+    AtmosphereCB.AC_fSamples = static_cast<float>(AtmosphereCB.AC_nSamples);
 
     AtmosphereCB.AC_Kr4PI = Atmosphere.Kr * 4 * XM_PI;
     AtmosphereCB.AC_Km4PI = Atmosphere.Km * 4 * XM_PI;

@@ -109,7 +109,7 @@ __declspec(align(4)) struct GothicPipelineState {
     /** Sets this state dirty, which means that it will be updated before next rendering */
     void SetDirty() {
         StateDirty = true;
-        HashThis( (char*)this, StructSize );
+        HashThis( reinterpret_cast<char*>(this), StructSize );
     }
 
     /** Hashes the whole struct */
@@ -454,20 +454,20 @@ struct GothicSamplerStateInfo : public GothicPipelineState {
 struct GothicTransformInfo {
     /** Sets the default values for this struct */
     void SetDefault() {
-        XMMATRIX const& idMatrix = DirectX::XMMatrixIdentity();
+        XMMATRIX const& idMatrix = XMMatrixIdentity();
         XMStoreFloat4x4( &TransformWorld, idMatrix );
         XMStoreFloat4x4( &TransformView, idMatrix );
         XMStoreFloat4x4( &TransformProj, idMatrix );
     }
 
     /** This is actually world * view. Gothic never sets the view matrix */
-    DirectX::XMFLOAT4X4 TransformWorld;
+    XMFLOAT4X4 TransformWorld;
 
     /** Though never really set by Gothic, it's listed here for completeness sake */
-    DirectX::XMFLOAT4X4 TransformView;
+    XMFLOAT4X4 TransformView;
 
     /** Projectionmatrix */
-    DirectX::XMFLOAT4X4 TransformProj;
+    XMFLOAT4X4 TransformProj;
 };
 
 struct HBAOSettings {
@@ -629,11 +629,11 @@ struct GothicRendererSettings {
         RainHeightRange = 1000.0f;
         RainNumParticles = 50000;
         RainMoveParticles = true;
-        RainGlobalVelocity = DirectX::XMFLOAT3( 250, -1000, 0 );
+        RainGlobalVelocity = XMFLOAT3( 250, -1000, 0 );
         RainUseInitialSet = false;
         RainSceneWettness = 0.0f;
         RainSunLightStrength = 0.50f;
-        RainFogColor = DirectX::XMFLOAT3( 0.28f, 0.28f, 0.28f );
+        RainFogColor = XMFLOAT3( 0.28f, 0.28f, 0.28f );
         RainFogDensity = 0.00500f;
 
         EnableRain = true;
@@ -796,11 +796,11 @@ struct GothicRendererSettings {
     UINT RainNumParticles;
     bool RainMoveParticles;
     bool RainUseInitialSet;
-    DirectX::XMFLOAT3 RainGlobalVelocity;
+    XMFLOAT3 RainGlobalVelocity;
     float RainSceneWettness;
 
     float RainSunLightStrength;
-    DirectX::XMFLOAT3 RainFogColor;
+    XMFLOAT3 RainFogColor;
     float RainFogDensity;
 
     bool EnableRain;

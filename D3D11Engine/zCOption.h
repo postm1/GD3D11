@@ -100,9 +100,6 @@ public:
 #endif
         }
 
-
-
-
         Engine::GAPI->SetIntParamFromConfig( var, r );
         return r;
     }
@@ -177,8 +174,6 @@ public:
         return HookedFunctions::OriginalFunctions.original_zCOptionReadDWORD( thisptr, section, var, def );
     }
 
-
-
     static long __fastcall hooked_zOptionReadInt( void* thisptr, void* unknwn, zSTRING const& section, char const* var, int def ) {
         int i = Do_hooked_zOptionReadInt( thisptr, section, var, def );
 
@@ -192,7 +187,7 @@ public:
         reinterpret_cast<void( __thiscall* )( zCOption*, zSTRING const&, const char*, zSTRING, int )>( GothicMemoryLocations::zCOption::WriteString )( this, section, var, def, 0 );
     }
 
-    static zCOption* GetOptions() { return *(zCOption**)GothicMemoryLocations::GlobalObjects::zCOption; }
+    static zCOption* GetOptions() { return *reinterpret_cast<zCOption**>(GothicMemoryLocations::GlobalObjects::zCOption); }
 private:
     std::string GetCommandLineNormalized() {
         std::string cmdLine = this->GetCommandline();
@@ -203,6 +198,3 @@ private:
         return cmdLine;
     }
 };
-
-
-

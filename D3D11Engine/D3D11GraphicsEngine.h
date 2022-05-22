@@ -1,5 +1,4 @@
 #pragma once
-
 #include "D3D11GraphicsEngineBase.h"
 #include "fpslimiter.h"
 
@@ -151,8 +150,8 @@ public:
     bool BindTextureNRFX( zCTexture* tex, bool bindShader );
 
     /** Draws a skeletal mesh */
-    XRESULT DrawSkeletalVertexNormals( SkeletalVobInfo* vi, const std::vector<DirectX::XMFLOAT4X4>& transforms, float4 color, float fatness = 1.0f );
-    virtual XRESULT DrawSkeletalMesh( SkeletalVobInfo* vi, const std::vector<DirectX::XMFLOAT4X4>& transforms, float4 color, float fatness = 1.0f ) override;
+    XRESULT DrawSkeletalVertexNormals( SkeletalVobInfo* vi, const std::vector<XMFLOAT4X4>& transforms, float4 color, float fatness = 1.0f );
+    virtual XRESULT DrawSkeletalMesh( SkeletalVobInfo* vi, const std::vector<XMFLOAT4X4>& transforms, float4 color, float fatness = 1.0f ) override;
 
     /** Draws a screen fade effects */
     virtual XRESULT DrawScreenFade( void* camera ) override;
@@ -192,9 +191,6 @@ public:
 
     /** Gets the depthbuffer */
     RenderToDepthStencilBuffer* GetDepthBuffer() { return DepthStencilBuffer.get(); }
-
-    /** Returns the Backbuffers shader resource view */
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetBackbufferSRV() { return BackbufferSRV.Get(); }
 
     /** Returns the first GBuffer */
     RenderToTextureBuffer& GetGBuffer0() { return *GBuffer0_Diffuse; }
@@ -246,8 +242,8 @@ public:
     virtual void DrawVobsList( const std::list<VobInfo*>& vobs, zCCamera& camera ) override;
 
     /** Draws everything around the given position */
-    void XM_CALLCONV DrawWorldAround( DirectX::FXMVECTOR position, int sectionRange, float vobXZRange, bool cullFront = true, bool dontCull = false );
-    void XM_CALLCONV DrawWorldAround( DirectX::FXMVECTOR position,
+    void XM_CALLCONV DrawWorldAround( FXMVECTOR position, int sectionRange, float vobXZRange, bool cullFront = true, bool dontCull = false );
+    void XM_CALLCONV DrawWorldAround( FXMVECTOR position,
         float range,
         bool cullFront = true,
         bool indoor = false,
@@ -270,10 +266,10 @@ public:
     virtual XRESULT DrawSky();
 
     /** Renders the shadowmaps for the sun */
-    void XM_CALLCONV RenderShadowmaps( DirectX::FXMVECTOR cameraPosition, RenderToDepthStencilBuffer* target = nullptr, bool cullFront = true, bool dontCull = false, Microsoft::WRL::ComPtr<ID3D11DepthStencilView> dsvOverwrite = nullptr, Microsoft::WRL::ComPtr<ID3D11RenderTargetView> debugRTV = nullptr );
+    void XM_CALLCONV RenderShadowmaps( FXMVECTOR cameraPosition, RenderToDepthStencilBuffer* target = nullptr, bool cullFront = true, bool dontCull = false, Microsoft::WRL::ComPtr<ID3D11DepthStencilView> dsvOverwrite = nullptr, Microsoft::WRL::ComPtr<ID3D11RenderTargetView> debugRTV = nullptr );
 
     /** Renders the shadowmaps for a pointlight */
-    void XM_CALLCONV RenderShadowCube( DirectX::FXMVECTOR position,
+    void XM_CALLCONV RenderShadowCube( FXMVECTOR position,
         float range,
         const RenderToDepthStencilBuffer& targetCube,
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> face,
@@ -303,9 +299,6 @@ public:
 
     /** Message-Callback for the main window */
     virtual LRESULT OnWindowMessage( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
-
-    /** Constructs the makro list for shader compilation */
-    static void ConstructShaderMakroList( std::vector<D3D_SHADER_MACRO>& list );
 
     /** Reloads shaders */
     virtual XRESULT ReloadShaders();
@@ -368,7 +361,6 @@ protected:
 
     /** Swapchain buffers */
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> BackbufferRTV;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> BackbufferSRV; // Diffuse
     std::unique_ptr<RenderToTextureBuffer> GBuffer0_Diffuse;
     std::unique_ptr<RenderToTextureBuffer> GBuffer1_Normals; // Normals
     std::unique_ptr<RenderToTextureBuffer> GBuffer2_SpecIntens_SpecPower; // SpecIntensity / SpecPower
@@ -376,7 +368,7 @@ protected:
     std::unique_ptr<RenderToTextureBuffer> DummyShadowCubemapTexture; // PS-Stage needs to have a rendertarget bound to execute SV_Depth-Writes, as it seems.
 
     /** Temp-Arrays for storing data to be put in constant buffers */
-    DirectX::XMFLOAT4X4 Temp2D3DXMatrix[2];
+    XMFLOAT4X4 Temp2D3DXMatrix[2];
     float2 Temp2Float2[2];
     std::unique_ptr<D3D11VertexBuffer> DynamicInstancingBuffer;
 

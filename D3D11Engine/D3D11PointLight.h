@@ -44,7 +44,7 @@ public:
 
 protected:
     /** Renders the scene with the given view-proj-matrices */
-    void RenderCubemapFace( const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& proj, UINT faceIdx );
+    void RenderCubemapFace( const XMFLOAT4X4& view, const XMFLOAT4X4& proj, UINT faceIdx );
 
     /** Renders all cubemap faces at once, using the geometry shader */
     void RenderFullCubemap();
@@ -56,8 +56,8 @@ protected:
 
     VobLightInfo* LightInfo;
     std::unique_ptr<RenderToDepthStencilBuffer> DepthCubemap;
-    DirectX::XMFLOAT4X4 CubeMapViewMatrices[6];
-    DirectX::XMFLOAT3 LastUpdatePosition;
+    XMFLOAT4X4 CubeMapViewMatrices[6];
+    XMFLOAT3 LastUpdatePosition;
     DWORD LastUpdateColor;
     std::unique_ptr<D3D11ConstantBuffer> ViewMatricesCB;
     bool DynamicLight;

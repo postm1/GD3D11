@@ -4,7 +4,6 @@
 #include "MyDirect3DVertexBuffer7.h"
 #include "../Engine.h"
 
-
 class MyDirect3D7 : public IDirect3D7 {
 public:
 	MyDirect3D7( IDirect3D7* direct3d7 ) {
@@ -22,14 +21,12 @@ public:
 
 	ULONG STDMETHODCALLTYPE AddRef() {
 		DebugWrite( "MyDirect3D7::AddRef\n" );
-		RefCount++;
-		return RefCount;
+		return ++RefCount;
 	}
 
 	ULONG STDMETHODCALLTYPE Release() {
 		DebugWrite( "MyDirect3D7::Release\n" );
-		RefCount--;
-		if ( 0 == RefCount ) {
+		if ( --RefCount == 0 ) {
 			delete this;
 			return 0;
 		}
@@ -53,8 +50,7 @@ public:
 		DebugWrite( "MyDirect3D7::CreateVertexBuffer\n" );
 
 		// Fake a vertexbuffer
-		MyDirect3DVertexBuffer7* buff = new MyDirect3DVertexBuffer7( *lpVBDesc );
-		*lplpD3DVertexBuffer = buff;
+		*lplpD3DVertexBuffer = new MyDirect3DVertexBuffer7( *lpVBDesc );
 
 		return S_OK;
 	}

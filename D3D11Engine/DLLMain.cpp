@@ -18,8 +18,6 @@
 #pragma comment(lib, "Imagehlp.lib") // Used in VersionCheck.cpp to get Gothic.exe Checksum.
 #pragma comment(lib, "shlwapi.lib")
 
-//#pragma pack(1)
-
 // Signal NVIDIA/AMD drivers that we want the high-performance card on laptops
 extern "C" {
     _declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
@@ -28,7 +26,6 @@ extern "C" {
 
 static HINSTANCE hLThis = 0;
 
-static HRESULT( WINAPI* DirectDrawCreateEx_t )(GUID FAR* lpGuid, LPVOID* lplpDD, REFIID  iid, IUnknown FAR* pUnkOuter);
 typedef void (WINAPI* DirectDrawSimple)();
 typedef HRESULT( WINAPI* DirectDrawCreateEx_type )(GUID FAR*, LPVOID*, REFIID, IUnknown FAR*);
 
@@ -83,12 +80,8 @@ HRESULT DoHookedDirectDrawCreateEx( GUID FAR* lpGuid, LPVOID* lplpDD, REFIID  ii
 }
 
 extern "C" HRESULT WINAPI HookedDirectDrawCreateEx( GUID FAR * lpGuid, LPVOID * lplpDD, REFIID  iid, IUnknown FAR * pUnkOuter ) {
-    //LogInfo() << "HookedDirectDrawCreateEx!";
-    HRESULT hr = S_OK;
-
     if ( Engine::PassThrough ) {
-        DirectDrawCreateEx_type fn = (DirectDrawCreateEx_type)ddraw.DirectDrawCreateEx;
-        return fn( lpGuid, lplpDD, iid, pUnkOuter );
+        return reinterpret_cast<DirectDrawCreateEx_type>(ddraw.DirectDrawCreateEx)( lpGuid, lplpDD, iid, pUnkOuter );
     }
 
     hook_infunc
@@ -97,13 +90,12 @@ extern "C" HRESULT WINAPI HookedDirectDrawCreateEx( GUID FAR * lpGuid, LPVOID * 
 
     hook_outfunc
 
-        return hr;
+        return S_OK;
 }
 
 extern "C" void WINAPI HookedAcquireDDThreadLock() {
     if ( Engine::PassThrough ) {
-        DirectDrawSimple fn = (DirectDrawSimple)ddraw.AcquireDDThreadLock;
-        fn();
+        reinterpret_cast<DirectDrawSimple>(ddraw.AcquireDDThreadLock)();
         return;
     }
     // Do nothing
@@ -112,11 +104,9 @@ extern "C" void WINAPI HookedAcquireDDThreadLock() {
 
 extern "C" void WINAPI HookedReleaseDDThreadLock() {
     if ( Engine::PassThrough ) {
-        DirectDrawSimple fn = (DirectDrawSimple)ddraw.ReleaseDDThreadLock;
-        fn();
+        reinterpret_cast<DirectDrawSimple>(ddraw.ReleaseDDThreadLock)();
         return;
     }
-
     // Do nothing
     LogInfo() << "ReleaseDDThreadLock called!";
 }
@@ -136,7 +126,12 @@ __declspec(naked) void FakeDirectDrawCreateClipper() { _asm { jmp[ddraw.DirectDr
 // HRESULT WINAPI DirectDrawCreateEx(GUID FAR * lpGuid, LPVOID *lplpDD, REFIID iid,IUnknown FAR *pUnkOuter);
 __declspec(naked) void FakeDirectDrawCreateEx() { _asm { jmp[ddraw.DirectDrawCreateEx] } }
 // HRESULT WINAPI DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext);
-__declspec(naked) void FakeDirectDrawEnumerateA() { _asm { jmp[ddraw.DirectDrawEnumerateA] } }
+HRESULT WINAPI FakeDirectDrawEnumerateA( LPDDENUMCALLBACKA lpCallback, LPVOID lpContext )
+{
+    GUID deviceGUID = { 0xF5049E78, 0x4861, 0x11D2, {0xA4, 0x07, 0x00, 0xA0, 0xC9, 0x06, 0x29, 0xA8} };
+    lpCallback( &deviceGUID, "DirectX11", "DirectX11", lpContext );
+    return S_OK;
+}
 // HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags);
 HRESULT WINAPI FakeDirectDrawEnumerateExA( LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags )
 {
@@ -144,7 +139,6 @@ HRESULT WINAPI FakeDirectDrawEnumerateExA( LPDDENUMCALLBACKEXA lpCallback, LPVOI
     lpCallback( &deviceGUID, "DirectX11", "DirectX11", lpContext, nullptr );
     return S_OK;
 }
-//__declspec(naked) void FakeDirectDrawEnumerateExA() { _asm { jmp[ddraw.DirectDrawEnumerateExA] } }
 // HRESULT WINAPI DirectDrawEnumerateExW(LPDDENUMCALLBACKEXW lpCallback, LPVOID lpContext, DWORD dwFlags);
 __declspec(naked) void FakeDirectDrawEnumerateExW() { _asm { jmp[ddraw.DirectDrawEnumerateExW] } }
 // HRESULT WINAPI DirectDrawEnumerateW(LPDDENUMCALLBACKW lpCallback, LPVOID lpContext);
@@ -287,8 +281,6 @@ BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
         ddraw.GetSurfaceFromDC = GetProcAddress( ddraw.dll, "GetSurfaceFromDC" );
         ddraw.RegisterSpecialCase = GetProcAddress( ddraw.dll, "RegisterSpecialCase" );
         ddraw.ReleaseDDThreadLock = GetProcAddress( ddraw.dll, "ReleaseDDThreadLock" );
-
-        *(void**)&DirectDrawCreateEx_t = (void*)GetProcAddress( ddraw.dll, "DirectDrawCreateEx" );
     } else if ( reason == DLL_PROCESS_DETACH ) {
         Engine::OnShutDown();
 

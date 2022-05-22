@@ -54,19 +54,19 @@ public:
     }
 
     zCMesh* GetQuadMesh() {
-        return *(zCMesh**)THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_QuadMesh );
+        return *reinterpret_cast<zCMesh**>(THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_QuadMesh ));
     }
 
     zCMaterial* GetMaterial() {
-        return *(zCMaterial**)THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_Material );
+        return *reinterpret_cast<zCMaterial**>(THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_Material ));
     }
 
     zCVob* GetConnectedVob() {
-        return *(zCVob**)THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_ConnectedVob );
+        return *reinterpret_cast<zCVob**>(THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_ConnectedVob ));
     }
 
     /** This gets only set for quad-marks created by a particle-effect. */
     int GetDontRepositionConnectedVob() {
-        return *(int*)THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_DontRepositionConnectedVob );
+        return *reinterpret_cast<int*>(THISPTR_OFFSET( GothicMemoryLocations::zCQuadMark::Offset_DontRepositionConnectedVob ));
     }
 };

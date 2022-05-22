@@ -23,8 +23,6 @@
 #include "D3D7\MyDirectDrawSurface7.h"
 #include "zCQuadMark.h"
 
-using namespace DirectX;
-
 WorldConverter::WorldConverter() {}
 
 WorldConverter::~WorldConverter() {}
@@ -184,15 +182,15 @@ XRESULT WorldConverter::LoadWorldMeshFromFile( const std::string& file, std::map
 
 
             // Calculate midpoint of this triange to get the section
-            DirectX::XMFLOAT3 avgPos;
+            XMFLOAT3 avgPos;
             XMStoreFloat3( &avgPos, XMLoadFloat3( &*v[0]->Position.toXMFLOAT3() ) + XMLoadFloat3( &*v[1]->Position.toXMFLOAT3() ) + XMLoadFloat3( &*v[2]->Position.toXMFLOAT3() ) / 3.0f );
             INT2 sxy = GetSectionOfPos( avgPos );
 
             WorldMeshSectionInfo& section = (*outSections)[sxy.x][sxy.y];
             section.WorldCoordinates = sxy;
 
-            DirectX::XMFLOAT3& bbmin = section.BoundingBox.Min;
-            DirectX::XMFLOAT3& bbmax = section.BoundingBox.Max;
+            XMFLOAT3& bbmin = section.BoundingBox.Min;
+            XMFLOAT3& bbmax = section.BoundingBox.Max;
 
             // Check bounding box
             bbmin.x = bbmin.x > v[0]->Position.x ? v[0]->Position.x : bbmin.x;
@@ -256,14 +254,14 @@ XRESULT WorldConverter::LoadWorldMeshFromFile( const std::string& file, std::map
 
                 // Optimize faces
                 it.second->MeshVertexBuffer->OptimizeFaces( &it.second->Indices[0],
-                    (byte*)&it.second->Vertices[0],
+                    reinterpret_cast<byte*>(&it.second->Vertices[0]),
                     it.second->Indices.size(),
                     it.second->Vertices.size(),
                     sizeof( ExVertexStruct ) );
 
                 // Then optimize vertices
                 it.second->MeshVertexBuffer->OptimizeVertices( &it.second->Indices[0],
-                    (byte*)&it.second->Vertices[0],
+                    reinterpret_cast<byte*>(&it.second->Vertices[0]),
                     it.second->Indices.size(),
                     it.second->Vertices.size(),
                     sizeof( ExVertexStruct ) );
@@ -358,7 +356,7 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
         //	continue;
 
         // Calculate midpoint of this triange to get the section
-        DirectX::XMFLOAT3 avgPos;
+        XMFLOAT3 avgPos;
         XMStoreFloat3( &avgPos, (XMLoadFloat3( poly->getVertices()[0]->Position.toXMFLOAT3() ) + XMLoadFloat3( poly->getVertices()[1]->Position.toXMFLOAT3() ) + XMLoadFloat3( poly->getVertices()[2]->Position.toXMFLOAT3() )) / 3.0f );
  
         INT2 section = GetSectionOfPos( avgPos );
@@ -502,14 +500,14 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
 
                 // Optimize faces
                 it.second->MeshVertexBuffer->OptimizeFaces( &it.second->Indices[0],
-                    (byte*)&it.second->Vertices[0],
+                    reinterpret_cast<byte*>(&it.second->Vertices[0]),
                     it.second->Indices.size(),
                     it.second->Vertices.size(),
                     sizeof( ExVertexStruct ) );
 
                 // Then optimize vertices
                 it.second->MeshVertexBuffer->OptimizeVertices( &it.second->Indices[0],
-                    (byte*)&it.second->Vertices[0],
+                    reinterpret_cast<byte*>(&it.second->Vertices[0]),
                     it.second->Indices.size(),
                     it.second->Vertices.size(),
                     sizeof( ExVertexStruct ) );
@@ -597,9 +595,9 @@ void WorldConverter::GenerateFullSectionMesh( WorldMeshSectionInfo& section ) {
         if ( it->IsIndoorVob )
             continue;
 
-        DirectX::XMFLOAT4X4 world;
+        XMFLOAT4X4 world;
         it->Vob->GetWorldMatrix( &world );
-        XMMATRIX XMM_world = DirectX::XMMatrixTranspose( XMLoadFloat4x4( &world ) );
+        XMMATRIX XMM_world = XMMatrixTranspose( XMLoadFloat4x4( &world ) );
 
         // Insert the vob
         for ( auto const& itm : it->VisualInfo->Meshes ) {
@@ -616,7 +614,7 @@ void WorldConverter::GenerateFullSectionMesh( WorldMeshSectionInfo& section ) {
                     Position.x = v.Position.x;
                     Position.y = v.Position.y;
                     Position.z = v.Position.z;
-                    XMStoreFloat3( &Position, DirectX::XMVector3TransformCoord( XMLoadFloat3( &Position ), XMM_world ) );
+                    XMStoreFloat3( &Position, XMVector3TransformCoord( XMLoadFloat3( &Position ), XMM_world ) );
                     v.Position = Position;
                     vx.emplace_back( v );
                 }
@@ -646,8 +644,8 @@ void WorldConverter::GenerateFullSectionMesh( WorldMeshSectionInfo& section ) {
 /** Returns what section the given position is in */
 INT2 WorldConverter::GetSectionOfPos( const float3& pos ) {
     // Find out where it belongs
-    int px = (int)((pos.x / WORLD_SECTION_SIZE) + 0.5f);
-    int py = (int)((pos.z / WORLD_SECTION_SIZE) + 0.5f);
+    int px = static_cast<int>((pos.x / WORLD_SECTION_SIZE) + 0.5f);
+    int py = static_cast<int>((pos.z / WORLD_SECTION_SIZE) + 0.5f);
 
     // Fix the centerpiece
     /*if (pos.x < 0)
@@ -759,7 +757,7 @@ void WorldConverter::ExtractSkeletalMeshFromVob( zCModel* model, SkeletalMeshVis
         // Get bone weights for each vertex
         for ( int i = 0; i < s->GetPositionList()->NumInArray; i++ ) {
             // Get num of nodes
-            int numNodes = *(int*)stream;
+            int numNodes = *reinterpret_cast<int*>(stream);
             stream += 4;
 
             ExSkelVertexStruct vx;
@@ -771,7 +769,7 @@ void WorldConverter::ExtractSkeletalMeshFromVob( zCModel* model, SkeletalMeshVis
 
             for ( int n = 0; n < numNodes; n++ ) {
                 // Get entry
-                zTWeightEntry weightEntry = *(zTWeightEntry*)stream;
+                zTWeightEntry weightEntry = *reinterpret_cast<zTWeightEntry*>(stream);
                 stream += sizeof( zTWeightEntry );
 
                 //if (s->GetNormalsList() && i < s->GetNormalsList()->NumInArray)
@@ -908,11 +906,11 @@ void WorldConverter::ExtractProgMeshProtoFromModel( zCModel* model, MeshVisualIn
         if ( !isMMS && strcmp( ext, ".3DS" ) != 0 )
             continue;
 
-        zCProgMeshProto* visual = (zCProgMeshProto*)node->NodeVisual;
+        zCProgMeshProto* visual = static_cast<zCProgMeshProto*>(node->NodeVisual);
         if ( isMMS ) {
-            visual = ((zCMorphMesh*)node->NodeVisual)->GetMorphMesh();
+            visual = reinterpret_cast<zCMorphMesh*>(node->NodeVisual)->GetMorphMesh();
         }
-        DirectX::XMFLOAT3* posList = (DirectX::XMFLOAT3*)visual->GetPositionList()->Array;
+        XMFLOAT3* posList = visual->GetPositionList()->Array->toXMFLOAT3();
 
         // Calculate transform for this node
         zCModelNodeInst* parent = node->ParentNode;
@@ -945,7 +943,7 @@ void WorldConverter::ExtractProgMeshProtoFromModel( zCModel* model, MeshVisualIn
                 vertices.emplace_back();
 
                 ExVertexStruct& vx = vertices.back();
-                XMStoreFloat3( vx.Position.toXMFLOAT3(), DirectX::XMVector3TransformCoord( XMLoadFloat3( &posList[wedge.position] ), XMMatrixTranspose( XMLoadFloat4x4( &node->TrafoObjToCam ) ) ) );
+                XMStoreFloat3( vx.Position.toXMFLOAT3(), XMVector3TransformCoord( XMLoadFloat3( &posList[wedge.position] ), XMMatrixTranspose( XMLoadFloat4x4( &node->TrafoObjToCam ) ) ) );
                 vx.TexCoord = wedge.texUV;
                 vx.Normal = wedge.normal;
                 vx.Color = 0xFFFFFFFF;
@@ -969,14 +967,14 @@ void WorldConverter::ExtractProgMeshProtoFromModel( zCModel* model, MeshVisualIn
 
             // Optimize faces
             mi->MeshVertexBuffer->OptimizeFaces( &mi->Indices[0],
-                (byte*)&mi->Vertices[0],
+                reinterpret_cast<byte*>(&mi->Vertices[0]),
                 mi->Indices.size(),
                 mi->Vertices.size(),
                 sizeof( ExVertexStruct ) );
 
             // Then optimize vertices
             mi->MeshVertexBuffer->OptimizeVertices( &mi->Indices[0],
-                (byte*)&mi->Vertices[0],
+                reinterpret_cast<byte*>(&mi->Vertices[0]),
                 mi->Indices.size(),
                 mi->Vertices.size(),
                 sizeof( ExVertexStruct ) );
@@ -1031,7 +1029,7 @@ void WorldConverter::ExtractProgMeshProtoFromModel( zCModel* model, MeshVisualIn
 
     meshInfo->BBox.Min = bbmin;
     meshInfo->BBox.Max = bbmax;
-    XMStoreFloat( &meshInfo->MeshSize, DirectX::XMVector3Length( (XMLoadFloat3( &bbmin ) - XMLoadFloat3( &bbmax )) ) );
+    XMStoreFloat( &meshInfo->MeshSize, XMVector3Length( (XMLoadFloat3( &bbmin ) - XMLoadFloat3( &bbmax )) ) );
     XMStoreFloat3( &meshInfo->MidPoint, 0.5f * (XMLoadFloat3( &bbmin ) + XMLoadFloat3( &bbmax )) );
 
     meshInfo->Visual = model;
@@ -1111,9 +1109,9 @@ void WorldConverter::ExtractNodeVisual( int index, zCModelNodeInst* node, std::m
 
         bool isMMS = strcmp( ext, ".MMS" ) == 0;
         if ( isMMS || strcmp( ext, ".3DS" ) == 0 ) {
-            zCProgMeshProto* pm = (zCProgMeshProto*)node->NodeVisual;
+            zCProgMeshProto* pm = static_cast<zCProgMeshProto*>(node->NodeVisual);
             if ( isMMS ) {
-                pm = ((zCMorphMesh*)node->NodeVisual)->GetMorphMesh();
+                pm = reinterpret_cast<zCMorphMesh*>(node->NodeVisual)->GetMorphMesh();
             }
 
             if ( pm->GetNumSubmeshes() == 0 ) {
@@ -1122,7 +1120,7 @@ void WorldConverter::ExtractNodeVisual( int index, zCModelNodeInst* node, std::m
 
             MeshVisualInfo* mi = new MeshVisualInfo;
             if ( isMMS ) {
-                mi->MorphMeshVisual = (void*)node->NodeVisual;
+                mi->MorphMeshVisual = reinterpret_cast<void*>(node->NodeVisual);
                 zCObject_AddRef( mi->MorphMeshVisual );
             }
 
@@ -1134,7 +1132,7 @@ void WorldConverter::ExtractNodeVisual( int index, zCModelNodeInst* node, std::m
             attachments[index].emplace_back( mi );
         } else if ( strcmp( ext, ".MDS" ) == 0 || strcmp( ext, ".ASC" ) == 0 ) {
             MeshVisualInfo* mi = new MeshVisualInfo;
-            ExtractProgMeshProtoFromModel( (zCModel*)node->NodeVisual, mi );
+            ExtractProgMeshProtoFromModel( static_cast<zCModel*>(node->NodeVisual), mi );
             attachments[index].emplace_back( mi );
         }
     }
@@ -1142,7 +1140,7 @@ void WorldConverter::ExtractNodeVisual( int index, zCModelNodeInst* node, std::m
 
 /** Updates a Morph-Mesh visual */
 void WorldConverter::UpdateMorphMeshVisual( void* v, MeshVisualInfo* meshInfo ) {
-    zCMorphMesh* visual = (zCMorphMesh*)v;
+    zCMorphMesh* visual = reinterpret_cast<zCMorphMesh*>(v);
     visual->GetTexAniState()->UpdateTexList();
     visual->AdvanceAnis();
     visual->CalcVertexPositions();
@@ -1151,7 +1149,7 @@ void WorldConverter::UpdateMorphMeshVisual( void* v, MeshVisualInfo* meshInfo ) 
     if ( !morphMesh )
         return;
 
-    DirectX::XMFLOAT3* posList = (DirectX::XMFLOAT3*)morphMesh->GetPositionList()->Array;
+    XMFLOAT3* posList = morphMesh->GetPositionList()->Array->toXMFLOAT3();
     for ( int i = 0; i < morphMesh->GetNumSubmeshes(); i++ ) {
         std::vector<ExVertexStruct> vertices;
 
@@ -1184,7 +1182,7 @@ void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVis
     XMFLOAT3 bbmin = XMFLOAT3( FLT_MAX, FLT_MAX, FLT_MAX );
     XMFLOAT3 bbmax = XMFLOAT3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
 
-    DirectX::XMFLOAT3* posList = (DirectX::XMFLOAT3*)visual->GetPositionList()->Array;
+    XMFLOAT3* posList = visual->GetPositionList()->Array->toXMFLOAT3();
 
     std::list<std::vector<ExVertexStruct>*> vertexBuffers;
     std::list<std::vector<VERTEX_INDEX>*> indexBuffers;
@@ -1253,14 +1251,14 @@ void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVis
         } else {
             // Optimize faces
             mi->MeshVertexBuffer->OptimizeFaces(&mi->Indices[0],
-                (byte*)&mi->Vertices[0],
+                reinterpret_cast<byte*>(&mi->Vertices[0]),
                 mi->Indices.size(),
                 mi->Vertices.size(),
                 sizeof( ExVertexStruct ) );
 
             // Then optimize vertices
             mi->MeshVertexBuffer->OptimizeVertices( &mi->Indices[0],
-                (byte*)&mi->Vertices[0],
+                reinterpret_cast<byte*>(&mi->Vertices[0]),
                 mi->Indices.size(),
                 mi->Vertices.size(),
                 sizeof( ExVertexStruct ) );
@@ -1317,7 +1315,7 @@ void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVis
 
     meshInfo->BBox.Min = bbmin;
     meshInfo->BBox.Max = bbmax;
-    XMStoreFloat( &meshInfo->MeshSize, DirectX::XMVector3Length( (XMLoadFloat3( &bbmin ) - XMLoadFloat3( &bbmax )) ) );
+    XMStoreFloat( &meshInfo->MeshSize, XMVector3Length( (XMLoadFloat3( &bbmin ) - XMLoadFloat3( &bbmax )) ) );
     XMStoreFloat3( &meshInfo->MidPoint, 0.5f * (XMLoadFloat3( &bbmin ) + XMLoadFloat3( &bbmax )) );
 
     meshInfo->Visual = visual;
@@ -1366,7 +1364,7 @@ void WorldConverter::IndexVertices( ExVertexStruct* input, unsigned int numInput
     // TODO: Remove this and fix it properly!
     /*for (std::set<std::pair<ExVertexStruct, int>>::iterator it=vertices.begin(); it!=vertices.end(); it++)
     {
-        if ((unsigned int)it->second >= vertices.size())
+        if ( static_cast<size_t>(it->second) >= vertices.size() )
         {
              // TODO: Investigate!
             it = vertices.erase(it);
@@ -1376,7 +1374,7 @@ void WorldConverter::IndexVertices( ExVertexStruct* input, unsigned int numInput
 
     for (std::vector<VERTEX_INDEX>::iterator it=outIndices.begin(); it!=outIndices.end(); it++)
     {
-        if ((unsigned int)(*it) >= vertices.size())
+        if ( static_cast<size_t>(*it) >= vertices.size() )
         {
              // TODO: Investigate!
             it = outIndices.erase(it);
@@ -1405,7 +1403,7 @@ void WorldConverter::IndexVertices( ExVertexStruct* input, unsigned int numInput
     outVertices.clear();
     outVertices.resize( vertices.size() );
     for ( auto const& it : vertices ) {
-        if ( (unsigned int)it.second >= vertices.size() ) {
+        if ( static_cast<size_t>(it.second) >= vertices.size() ) {
             continue;
         }
 

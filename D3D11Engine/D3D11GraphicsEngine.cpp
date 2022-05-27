@@ -4648,42 +4648,24 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
     // Get shadow direction, but don't update every frame, to get around flickering
     XMVECTOR dir =
         XMLoadFloat3( Engine::GAPI->GetSky()->GetAtmosphereCB().AC_LightPos.toXMFLOAT3() );
-    static XMVECTOR oldDir = dir;
-    static XMVECTOR smoothDir = dir;
 
     // Update dir
     if ( Engine::GAPI->GetRendererState().RendererSettings.SmoothShadowCameraUpdate ) {
-        FXMVECTOR target = dir;
-
-        float dotDir;
-        XMStoreFloat( &dotDir, XMVector3Dot( dir, oldDir ) );
-        // Smoothly transition to the next state and wait there
-        if ( fabs( dotDir ) < 0.99994f )  // but cut it off somewhere or the pixels will flicker
-        {
-            oldDir = dir;
-            smoothDir = dir;
-        }
-        //else if ( fabs( dotDir ) < 0.99973f ) {
-        //    // flickers
-        //    smoothDir = XMVectorLerp( oldDir, target, 0.5f );
-        //    dir = smoothDir;
-        //} 
-        else {
-            dir = oldDir;
-        }
+        XMVECTOR scale = XMVectorReplicate( 500.f );
+        dir = XMVectorDivide( _mm_cvtepi32_ps( _mm_cvtps_epi32( XMVectorMultiply( dir, scale ) ) ), scale );
     }
 
     static XMVECTOR oldP = XMVectorZero();
     XMVECTOR WorldShadowCP;
     // Update position
-    // Try to update only if the camera went 500 units away from the last position
+    // Try to update only if the camera went 200 units away from the last position
     float len;
     XMStoreFloat( &len, XMVector3Length( oldP - XMLoadFloat3( &cameraPosition ) ) );
     if ( (len < 64 &&
         // And is on even space
         (cameraPosition.x - static_cast<int>(cameraPosition.x)) < 0.1f &&
         // but don't let it go too far
-        (cameraPosition.y - static_cast<int>(cameraPosition.y)) < 0.1f) || len < 600.0f ) {
+        (cameraPosition.y - static_cast<int>(cameraPosition.y)) < 0.1f) || len < 200.0f ) {
         WorldShadowCP = oldP;
     } else {
         oldP = XMLoadFloat3( &cameraPosition );
@@ -4691,9 +4673,9 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
     }
 
     // Set the camera height to the highest point in this section
-    FXMVECTOR p = WorldShadowCP + dir * 6000.0f;
+    FXMVECTOR p = WorldShadowCP + dir * 10000.0f;
 
-    FXMVECTOR lookAt = p - dir;
+    FXMVECTOR lookAt = WorldShadowCP;
 
     // Create shadowmap view-matrix
     static const XMVECTORF32 c_XM_Up = { { { 0, 1, 0, 0 } } };
@@ -4703,8 +4685,8 @@ XRESULT D3D11GraphicsEngine::DrawLighting( std::vector<VobLightInfo*>& lights ) 
         XMMatrixTranspose( XMMatrixOrthographicLH(
             WorldShadowmap1->GetSizeX() * Engine::GAPI->GetRendererState().RendererSettings.WorldShadowRangeScale,
             WorldShadowmap1->GetSizeX() * Engine::GAPI->GetRendererState().RendererSettings.WorldShadowRangeScale,
-            1,
-            20000.0f ) );
+            1.f,
+            20000.f ) );
 
     XMStoreFloat4x4( &cr.ViewReplacement, crViewRepl );
     XMStoreFloat4x4( &cr.ProjectionReplacement, crProjRepl );

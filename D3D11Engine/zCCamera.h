@@ -135,7 +135,9 @@ public:
         return SignBits;
     }
 
-    static zCCamera* GetCamera() { return *reinterpret_cast<zCCamera**>(GothicMemoryLocations::GlobalObjects::zCCamera); }
+    static zCCamera* GetCamera() {
+        return *reinterpret_cast<zCCamera**>(GothicMemoryLocations::GlobalObjects::zCCamera);
+    }
 
     /** Frustum Planes in world space */
     zTPlane FrustumPlanes[6];

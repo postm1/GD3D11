@@ -235,11 +235,8 @@ public:
     /** Draws PolyStrips (weapon and particle trails) */
     XRESULT DrawPolyStrips( bool noTextures = false );
 
-    /** Draws a single VOB */
-    virtual void DrawVobSingle( VobInfo* vob ) override;
-
-    /** Draws a multiple VOBs (used for inventory) */
-    virtual void DrawVobsList( const std::list<VobInfo*>& vobs, zCCamera& camera ) override;
+    /** Draws a VOB (used for inventory) */
+    virtual void DrawVobSingle( VobInfo* vob, zCCamera& camera ) override;
 
     /** Draws everything around the given position */
     void XM_CALLCONV DrawWorldAround( FXMVECTOR position, int sectionRange, float vobXZRange, bool cullFront = true, bool dontCull = false );

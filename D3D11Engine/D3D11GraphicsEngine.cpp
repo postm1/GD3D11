@@ -5176,70 +5176,20 @@ D3D11ENGINE_RENDER_STAGE D3D11GraphicsEngine::GetRenderingStage() {
     return RenderingStage;
 }
 
-/** Draws a single VOB */
-void D3D11GraphicsEngine::DrawVobSingle( VobInfo* vob ) {
-    GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(),
-        DepthStencilBuffer->GetDepthStencilView().Get() );
-
-    // Set backface culling
-    Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_BACK;
-    Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
-
-    XMMATRIX view = Engine::GAPI->GetViewMatrixXM();
-    Engine::GAPI->SetViewTransformXM( view );
-
-    SetActivePixelShader( "PS_Preview_Textured" );
-    SetActiveVertexShader( "VS_Ex" );
-
-    SetupVS_ExMeshDrawCall();
-    SetupVS_ExConstantBuffer();
-
-    ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( vob->Vob->GetWorldMatrixPtr() );
-    ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
-
-    for ( auto const& itm : vob->VisualInfo->Meshes ) {
-        // Cache & bind texture
-        zCTexture* texture;
-        if ( itm.first && (texture = itm.first->GetTexture()) != nullptr ) {
-            if ( texture->CacheIn( 0.6f ) == zRES_CACHED_IN ) {
-                texture->Bind( 0 );
-            } else {
-                continue;
-            }
-        } else {
-            continue;
-        }
-        for ( auto const& itm2nd : itm.second ) {
-            // Draw instances
-            DrawVertexBufferIndexed(
-                itm2nd->MeshVertexBuffer, itm2nd->MeshIndexBuffer,
-                itm2nd->Indices.size() );
-        }
-    }
-
-    GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(), nullptr );
-
-    // Disable culling again
-    Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_NONE;
-    Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
-}
-
-/** Draws a multiple VOBs (used for inventory) */
-void D3D11GraphicsEngine::DrawVobsList( const std::list<VobInfo*>& vobs, zCCamera& camera ) {
+/** Draws a VOB (used for inventory) */
+void D3D11GraphicsEngine::DrawVobSingle( VobInfo* vob, zCCamera& camera ) {
 #if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
     // System Pack Animated_Inventory workaround
-    for ( auto const& vob : vobs ) {
-        XMMATRIX worldMatrix = vob->Vob->GetWorldMatrixXM();
-        const uint32_t mask = _mm_movemask_epi8( _mm_packs_epi32(
-            _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[0], worldMatrix.r[1] ) ),
-            _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[2], worldMatrix.r[3] ) )
-        ) );
-        if ( mask != 0xFFFF ) { // Check whether there are any NAN's in the mask
-            // Sometimes items position doesn't get initialized properly
-            // let's just call RotateForInventory to restart them
-            reinterpret_cast<void( __fastcall* )( zCVob*, int, int )>( 0x672560 )( vob->Vob, 0, 1 );
-            return;
-        }
+    XMMATRIX worldMatrix = vob->Vob->GetWorldMatrixXM();
+    const uint32_t mask = _mm_movemask_epi8( _mm_packs_epi32(
+        _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[0], worldMatrix.r[1] ) ),
+        _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[2], worldMatrix.r[3] ) )
+    ) );
+    if ( mask != 0xFFFF ) { // Check whether there are any NAN's in the mask
+        // Sometimes items position doesn't get initialized properly
+        // let's just call RotateForInventory to restart them
+        reinterpret_cast<void( __fastcall* )( zCVob*, int, int )>( 0x672560 )( vob->Vob, 0, 1 );
+        return;
     }
 #endif
 
@@ -5257,28 +5207,26 @@ void D3D11GraphicsEngine::DrawVobsList( const std::list<VobInfo*>& vobs, zCCamer
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
 
-    for ( auto const& vob : vobs ) {
-        ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( vob->Vob->GetWorldMatrixPtr() );
-        ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
+    ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( vob->Vob->GetWorldMatrixPtr() );
+    ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
         
-        for ( auto const& itm : vob->VisualInfo->Meshes ) {
-            // Cache & bind texture
-            zCTexture* texture;
-            if ( itm.first && ( texture = itm.first->GetTexture() ) != nullptr ) {
-                if ( texture->CacheIn( 0.6f ) == zRES_CACHED_IN ) {
-                    texture->Bind( 0 );
-                } else {
-                    continue;
-                }
+    for ( auto const& itm : vob->VisualInfo->Meshes ) {
+        // Cache & bind texture
+        zCTexture* texture;
+        if ( itm.first && ( texture = itm.first->GetTexture() ) != nullptr ) {
+            if ( texture->CacheIn( 0.6f ) == zRES_CACHED_IN ) {
+                texture->Bind( 0 );
             } else {
                 continue;
             }
-            for ( auto const& itm2nd : itm.second ) {
-                // Draw instances
-                DrawVertexBufferIndexed(
-                    itm2nd->MeshVertexBuffer, itm2nd->MeshIndexBuffer,
-                    itm2nd->Indices.size() );
-            }
+        } else {
+            continue;
+        }
+        for ( auto const& itm2nd : itm.second ) {
+            // Draw instances
+            DrawVertexBufferIndexed(
+                itm2nd->MeshVertexBuffer, itm2nd->MeshIndexBuffer,
+                itm2nd->Indices.size() );
         }
     }
 
@@ -6129,7 +6077,7 @@ void D3D11GraphicsEngine::DrawFrameParticles(
         if ( textureParticle.second.empty() ) continue;
 
         ParticleRenderInfo* ri = &info[textureParticle.first];
-        if( ri->BlendMode == zRND_ALPHA_FUNC_ADD )
+        if ( ri->BlendMode == zRND_ALPHA_FUNC_ADD )
             pvecAdd.push_back( std::make_tuple( textureParticle.first, ri, &textureParticle.second ) );
         else
             pvecRest.push_back( std::make_tuple( textureParticle.first, ri, &textureParticle.second ) );

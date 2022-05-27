@@ -186,11 +186,8 @@ public:
     /** Draws a fullscreenquad, copying the given texture to the viewport */
     virtual void DrawQuad( INT2 position, INT2 size ) {}
 
-    /** Draws a single VOB */
-    virtual void DrawVobSingle( VobInfo* vob ) {}
-
-    /** Draws a multiple VOBs (used for inventory) */
-    virtual void DrawVobsList( const std::list<VobInfo*>& vobs, zCCamera& camera ) {};
+    /** Draws a VOB (used for inventory) */
+    virtual void DrawVobSingle( VobInfo* vob, zCCamera& camera ) {};
 
     /** Message-Callback for the main window */
     virtual LRESULT OnWindowMessage( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) { return 0; }

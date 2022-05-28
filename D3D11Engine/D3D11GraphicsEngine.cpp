@@ -3711,9 +3711,12 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
 
         for ( auto const& it : RenderedVobs ) {
             if ( !it->IsIndoorVob ) {
-                VobInstanceInfo vii;
-                vii.world = it->WorldMatrix;
-                static_cast<MeshVisualInfo*>(it->VisualInfo)->Instances.emplace_back( vii );
+                //VobInstanceInfo vii;
+                //vii.world = it->WorldMatrix;
+                //static_cast<MeshVisualInfo*>(it->VisualInfo)->Instances.emplace_back( vii );
+
+                // We don't need vob world matrix because the data is already in buffer
+                static_cast<MeshVisualInfo*>(it->VisualInfo)->Instances.emplace_back();
             }
         }
 
@@ -3902,7 +3905,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     }
 
     // Need to collect alpha-meshes to render them laterdy
-    std::list<std::pair<MeshKey, std::pair<MeshVisualInfo*, MeshInfo*>>>
+    std::list<std::tuple<MeshKey, MeshVisualInfo*, MeshInfo*, size_t>>
         AlphaMeshes;
 
     if ( Engine::GAPI->GetRendererState().RendererSettings.DrawVOBs ) {
@@ -3973,7 +3976,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         MeshVisualInfo* info = staticMeshVisual.second;
                         for ( MeshInfo* mesh : mlist ) {
                             AlphaMeshes.emplace_back(
-                                std::make_pair( itt.first, std::make_pair( info, mesh ) ) );
+                                itt.first, info, mesh, staticMeshVisual.second->Instances.size() );
                         }
 
                         doReset = false;
@@ -4164,19 +4167,18 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
         DepthStencilBuffer->GetDepthStencilView().Get() );
 
     for ( auto const& alphaMesh : AlphaMeshes ) {
-        zCTexture* tx = alphaMesh.first.Material->GetAniTexture();
-
+        const MeshKey& mk = std::get<0>( alphaMesh );
+        zCTexture* tx = mk.Material->GetAniTexture();
         if ( !tx ) continue;
 
         // Check for alphablending on world mesh
-        bool blendAdd = alphaMesh.first.Material->GetAlphaFunc() == zMAT_ALPHA_FUNC_ADD;
-        bool blendBlend =
-            alphaMesh.first.Material->GetAlphaFunc() == zMAT_ALPHA_FUNC_BLEND;
+        bool blendAdd = mk.Material->GetAlphaFunc() == zMAT_ALPHA_FUNC_ADD;
+        bool blendBlend = mk.Material->GetAlphaFunc() == zMAT_ALPHA_FUNC_BLEND;
 
         // Bind texture
-
-        MeshInfo* mi = alphaMesh.second.second;
-        MeshVisualInfo* vi = alphaMesh.second.first;
+        MeshInfo* mi = std::get<2>( alphaMesh );
+        MeshVisualInfo* vi = std::get<1>( alphaMesh );
+        size_t instances = std::get<3>( alphaMesh );
 
         if ( tx->CacheIn( 0.6f ) == zRES_CACHED_IN ) {
             MyDirectDrawSurface7* surface = tx->GetSurface();
@@ -4209,7 +4211,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                 UpdateRenderStates();
             }
 
-            MaterialInfo* info = alphaMesh.first.Info;
+            MaterialInfo* info = mk.Info;
             if ( !info->Constantbuffer ) info->UpdateConstantbuffer();
 
             info->Constantbuffer->BindToPixelShader( 2 );
@@ -4218,14 +4220,8 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
         // Draw batch
         DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBuffer, mi->Indices.size(),
             DynamicInstancingBuffer.get(), sizeof( VobInstanceInfo ),
-            vi->Instances.size(), sizeof( ExVertexStruct ),
+            instances, sizeof( ExVertexStruct ),
             vi->StartInstanceNum );
-    }
-
-    // Loop again, now that all alpha-meshes have been rendered
-    // so we can reset their visuals, too.
-    for ( auto const& alphaMesh : AlphaMeshes ) {
-        MeshVisualInfo* vi = alphaMesh.second.first;
 
         // Reset visual
         vi->StartNewFrame();

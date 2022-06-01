@@ -380,7 +380,7 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_WorldPosX = 0x48;
         static const unsigned int Offset_WorldPosY = 0x58;
         static const unsigned int Offset_WorldPosZ = 0x68;
-
+        static const unsigned int Offset_WorldBBOX = 0x7C;
         static const unsigned int Offset_SleepingMode = 0x10C;
         static const unsigned int MASK_SkeepingMode = 3;
 

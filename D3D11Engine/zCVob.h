@@ -197,6 +197,11 @@ public:
         return box;
     }
 
+    /** Return the world/global bbox of the vob */
+    zTBBox3D GetBBox() {
+        return *reinterpret_cast<zTBBox3D*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_WorldBBOX ));
+    }
+
     /** Returns a pointer to this vobs world-matrix */
     XMFLOAT4X4* GetWorldMatrixPtr() {
         return reinterpret_cast<XMFLOAT4X4*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_WorldMatrixPtr ));

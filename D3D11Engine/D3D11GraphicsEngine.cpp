@@ -2281,7 +2281,10 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     // TODO: Only get them once!
     if ( Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects ) {
         std::vector<zCVob*> decals;
+
         Engine::GAPI->GetVisibleDecalList( decals );
+
+
         // Draw stuff like candle-flames
         DrawDecalList( decals, false );
 
@@ -4140,7 +4143,11 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     if ( RenderingStage == DES_MAIN ) {
         if ( Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects ) {
             std::vector<zCVob*> decals;
+
+            zCCamera::GetCamera()->Activate();
+
             Engine::GAPI->GetVisibleDecalList( decals );
+
             DrawDecalList( decals, true );
 
             DrawQuadMarks();

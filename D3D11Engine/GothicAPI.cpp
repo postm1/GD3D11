@@ -1021,7 +1021,11 @@ void GothicAPI::DrawParticlesSimple() {
     ParticleFrameData data;
 
     if ( RendererState.RendererSettings.DrawParticleEffects ) {
+
         std::vector<zCVob*> renderedParticleFXs;
+
+        zCCamera::GetCamera()->Activate();
+
         GetVisibleParticleEffectsList( renderedParticleFXs );
 
         // now it is save to render
@@ -1142,6 +1146,14 @@ void GothicAPI::GetVisibleParticleEffectsList( std::vector<zCVob*>& pfxList ) {
             if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
                 continue;
 
+
+            int clipFlags = 15;
+            zTCam_ClipType result = zCCamera::GetCamera()->BBox3DInFrustum( it->GetBBox() );
+
+            if ( result == ZTCAM_CLIPTYPE_OUT ) {
+                continue;
+            }
+
             if ( it->GetVisual() && it->GetShowVisual() ) {
                 pfxList.push_back( it );
             }
@@ -1164,9 +1176,33 @@ void GothicAPI::GetVisibleDecalList( std::vector<zCVob*>& decals ) {
         if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
             continue;
 
+        int clipFlags = 15;
+        zTCam_ClipType result = zCCamera::GetCamera()->BBox3DInFrustum( it->GetBBox() );
+
+        /*
+        bool render = result != ZTCAM_CLIPTYPE_OUT;
+        
+        LogInfo() << it->GetName() << " (" << result << ") r: " << render << " " 
+            << camPosUsual.x
+            << ", " << camPosUsual.y
+            << ", " << camPosUsual.z
+            << " Dist: " << dist
+
+            << " Min: " << it->GetBBox().Min.x << " " << it->GetBBox().Min.y << " " << it->GetBBox().Min.z << " "
+            << " Max: " << it->GetBBox().Max.x << " " << it->GetBBox().Max.y << " " << it->GetBBox().Max.z << " "
+            << "\n";
+        */
+
+        if ( result == ZTCAM_CLIPTYPE_OUT ) {
+            continue;
+        }
+
+
         if ( it->GetVisual() && it->GetShowVisual() ) {
             decalDistances.push_back( std::make_pair( it, dist ) );
         }
+
+
     }
 
     // Sort back to front

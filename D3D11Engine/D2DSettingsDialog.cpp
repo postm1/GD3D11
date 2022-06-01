@@ -374,7 +374,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 	worldDDSlider->AlignUnder( worldDDLabel, 5 );
 	worldDDSlider->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius );
 	worldDDSlider->SetIsIntegralSlider( true );
-	worldDDSlider->SetMinMax( 1.0f, 10.0f );
+	worldDDSlider->SetMinMax( 1.0f, 20.0f );
 	worldDDSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius) );
 
     SV_Label* shadowmapSizeLabel = new SV_Label( MainView, MainPanel );

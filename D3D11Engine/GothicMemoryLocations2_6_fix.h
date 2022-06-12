@@ -574,6 +574,15 @@ struct GothicMemoryLocations {
         static const unsigned int zCTexture = 0x0099B2F8;
     };
 
+    struct oCInformationManager
+    {
+        static const unsigned int GetInformationManager = 0x0065F790;
+        static const unsigned int IsDoneOffset = 0x2C;
+    };
+    
+   
+
+
     class VobTypes // vftables
     {
     public:

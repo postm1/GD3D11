@@ -904,6 +904,16 @@ void GothicAPI::BuildStaticMeshInstancingCache() {
     }
 }
 
+/** Returns if a player is NOT in a dialog with a npc */
+int GothicAPI::DialogFinished() {
+
+   static GetInformationManagerProc GetInformationManager = (GetInformationManagerProc)GothicMemoryLocations::oCInformationManager::GetInformationManager;
+
+   int& dialogDone = *(int*)(((int)GetInformationManager()) + GothicMemoryLocations::oCInformationManager::IsDoneOffset);
+
+   return dialogDone;
+}
+
 /** Draws the world-mesh */
 void GothicAPI::DrawWorldMeshNaive() {
     if ( !zCCamera::GetCamera() || !oCGame::GetGame() )
@@ -912,6 +922,7 @@ void GothicAPI::DrawWorldMeshNaive() {
     static float setfovH = RendererState.RendererSettings.FOVHoriz;
     static float setfovV = RendererState.RendererSettings.FOVVert;
 
+/*
 #ifdef BUILD_GOTHIC_1_08k
     if ( RendererState.RendererSettings.ForceFOV ) {
         setfovH = RendererState.RendererSettings.FOVHoriz;
@@ -923,27 +934,35 @@ void GothicAPI::DrawWorldMeshNaive() {
         CurrentCamera = zCCamera::GetCamera();
     }
 #else
+*/
+#if defined(BUILD_GOTHIC_1_08k) || defined(BUILD_1_12F) || defined(BUILD_GOTHIC_2_6_fix)
     if ( RendererState.RendererSettings.ForceFOV ) {
-        float fovH = 90.0f, fovV = 90.0f;
+
         if ( zCCamera::GetCamera() )
-            zCCamera::GetCamera()->GetFOV( fovH, fovV );
+            zCCamera::GetCamera()->GetFOV( setfovH, setfovV );
 
-        // TODO: FOV is being reset after a dialog!
-        if ( zCCamera::GetCamera() && (zCCamera::GetCamera() != CurrentCamera
-            || setfovH != RendererState.RendererSettings.FOVHoriz
-            || setfovV != RendererState.RendererSettings.FOVVert
-            || (fovH == 90.0f && fovV == 90.0f)) ) // FIXME: This is being reset after a dialog!
+        if ( zCCamera::GetCamera() 
+            
+             // FIXME: This is being reset after a dialog!
+            && (zCCamera::GetCamera() != CurrentCamera || setfovH != RendererState.RendererSettings.FOVHoriz || setfovV != RendererState.RendererSettings.FOVVert || (setfovH == 90.0f && setfovV == 90.0f)) ) 
         {
-            setfovH = RendererState.RendererSettings.FOVHoriz;
-            setfovV = RendererState.RendererSettings.FOVVert;
+            // if player is in a dialog state with a npc, we do not change FOV, or create an option for it in F11 menu
+            if ( DialogFinished() ) {
+                setfovH = RendererState.RendererSettings.FOVHoriz;
+                setfovV = RendererState.RendererSettings.FOVVert;
 
-            // Fix camera FOV-Bug
-            zCCamera::GetCamera()->SetFOV( RendererState.RendererSettings.FOVHoriz, (Engine::GraphicsEngine->GetResolution().y / static_cast<float>(Engine::GraphicsEngine->GetResolution().x)) * RendererState.RendererSettings.FOVVert );
 
-            CurrentCamera = zCCamera::GetCamera();
+                // Fixing camera FOV-Bug, set it with DX11 settings
+                zCCamera::GetCamera()->SetFOV( RendererState.RendererSettings.FOVHoriz,
+                    (Engine::GraphicsEngine->GetResolution().y / static_cast<float>(Engine::GraphicsEngine->GetResolution().x)) * RendererState.RendererSettings.FOVVert );
+
+                CurrentCamera = zCCamera::GetCamera();
+            }
+            
         }
     }
 #endif
+//#endif
 
     FrameParticleInfo.clear();
     FrameParticles.clear();

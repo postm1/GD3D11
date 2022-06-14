@@ -950,6 +950,9 @@
     <ClCompile Include="SteamOverlay.cpp">
       <Filter>Tools</Filter>
     </ClCompile>
+    <ClCompile Include="zBinkPlayer.cpp">
+      <Filter>ZenGin\Classes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ddraw.def">

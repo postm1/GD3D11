@@ -86,10 +86,6 @@ public:
         if ( _stricmp( var, "zWaterAniEnabled" ) == 0 ) {
             Engine::GAPI->SetIntParamFromConfig( "zWaterAniEnabled", 0 );
             return 0; // Disable water animations
-        } else if ( _stricmp( var, "scaleVideos" ) == 0 ) // Force scaleVideos to get them into the upper left corner
-        {
-            Engine::GAPI->SetIntParamFromConfig( "scaleVideos", 0 );
-            return 0;
         } else if ( _stricmp( var, "zStartupWindowed" ) == 0 ) {
             Engine::GAPI->SetIntParamFromConfig( "zStartupWindowed", r );
             return 1;

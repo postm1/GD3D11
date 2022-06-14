@@ -73,12 +73,6 @@ void HookedFunctionInfo::InitHooks() {
     //XHook(original_HandledWinMain, GothicMemoryLocations::Functions::HandledWinMain, HookedFunctionInfo::hooked_HandledWinMain);
     //XHook(original_ExitGameFunc, GothicMemoryLocations::Functions::ExitGameFunc, HookedFunctionInfo::hooked_ExitGameFunc);
 
-    // Hook the single bink-function
-    XHook( GothicMemoryLocations::zCBinkPlayer::GetPixelFormat, HookedFunctionInfo::hooked_zBinkPlayerGetPixelFormat );
-
-#if defined(BUILD_GOTHIC_2_6_fix) || defined(BUILD_GOTHIC_1_08k)
-    XHook( original_zCBinkPlayerOpenVideo, GothicMemoryLocations::zCBinkPlayer::OpenVideo, HookedFunctionInfo::hooked_zBinkPlayerOpenVideo );
-#endif
     original_Alg_Rotation3DNRad = reinterpret_cast<Alg_Rotation3DNRad>(GothicMemoryLocations::Functions::Alg_Rotation3DNRad);
     
 //G1 patches
@@ -384,43 +378,6 @@ void __cdecl HookedFunctionInfo::hooked_ExitGameFunc() {
 
 long __stdcall HookedFunctionInfo::hooked_zCExceptionHandlerUnhandledExceptionFilter( EXCEPTION_POINTERS* exceptionPtrs ) {
     return HookedFunctions::OriginalFunctions.original_zCExceptionHandler_UnhandledExceptionFilter( exceptionPtrs );
-}
-
-/** Returns the pixelformat of a bink-surface */
-long __fastcall HookedFunctionInfo::hooked_zBinkPlayerGetPixelFormat( void* thisptr, void* unknwn, zTRndSurfaceDesc& desc ) {
-    // Return values seems to be:
-    // 3 - bgra
-    // 4 - rgba
-    
-    // Union/Systempack FixBink seems to work only with bgra format
-    if ( Engine::GAPI->GetRendererState().RendererInfo.FixBink )
-        return 3;
-
-    // Use rgba format with disabled FixBink because for some reason there seem to be some ugly graphical glitches
-    return 4;
-}
-
-int __fastcall HookedFunctionInfo::hooked_zBinkPlayerOpenVideo( void* thisptr, void* unknwn, zSTRING str ) {
-    // Need to save window resolution before starting video
-    // Union/Systempack reads these values from Gothic.ini when opening video
-    Engine::GAPI->SaveWindowResolution();
-    Engine::GAPI->GetRendererState().RendererInfo.FirstVideoFrame = 1;
-    int r = HookedFunctions::OriginalFunctions.original_zCBinkPlayerOpenVideo( thisptr, str );
-
-    struct BinkInfo {
-        unsigned int ResX;
-        unsigned int ResY;
-        // ... unimportant
-    };
-
-    // Grab the resolution
-    // This structure stores width and height as first two parameters, as ints.
-    BinkInfo* res = *reinterpret_cast<BinkInfo**>(reinterpret_cast<DWORD>(thisptr) + GothicMemoryLocations::zCBinkPlayer::Offset_VideoHandle);
-    if ( res ) {
-        Engine::GAPI->GetRendererState().RendererInfo.PlayingMovieResolution = INT2( res->ResX, res->ResY );
-    }
-
-    return r;
 }
 
 int __cdecl HookedFunctionInfo::hooked_GetNumDevices() {

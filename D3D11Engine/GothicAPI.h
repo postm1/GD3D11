@@ -604,12 +604,6 @@ public:
     /** Returns the wetness of the scene. Lasts longer than RainFXWeight */
     float GetSceneWetness();
 
-    /** Loads the FixBink value from SystemPack.ini */
-    void LoadFixBinkValue();
-
-    /** Saves the window resolution to Gothic.ini */
-    void SaveWindowResolution();
-
     /** Saves the users settings from the menu */
     XRESULT SaveMenuSettings( const std::string& file );
 

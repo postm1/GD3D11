@@ -2281,13 +2281,10 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     // TODO: Only get them once!
     if ( Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects ) {
         std::vector<zCVob*> decals;
-
         Engine::GAPI->GetVisibleDecalList( decals );
-
 
         // Draw stuff like candle-flames
         DrawDecalList( decals, false );
-
         DrawMQuadMarks();
     }
 
@@ -3172,6 +3169,12 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
     XMMATRIX view = Engine::GAPI->GetViewMatrixXM();
     Engine::GAPI->SetViewTransformXM( view );  // Update view transform
 
+    // Setup render states for z-prepass
+    Engine::GAPI->GetRendererState().BlendState.ColorWritesEnabled =
+        false; // Rasterization is faster without writes
+    Engine::GAPI->GetRendererState().BlendState.SetDirty();
+    UpdateRenderStates();
+
     // Bind vertex water shader
     ActivePS = nullptr;
     SetActiveVertexShader( "VS_ExWater" );
@@ -3198,6 +3201,14 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
                 mesh->Indices.size(), mesh->BaseIndexLocation );
         }
     }
+
+    // Disable depth writes after z-prepass
+    Engine::GAPI->GetRendererState().BlendState.ColorWritesEnabled = true;
+    Engine::GAPI->GetRendererState().BlendState.SetDirty();
+    Engine::GAPI->GetRendererState().DepthState.DepthWriteEnabled =
+        false; // Rasterization is faster without writes
+    Engine::GAPI->GetRendererState().DepthState.SetDirty();
+    UpdateRenderStates();
 
     // Bind pixel water shader
     SetActivePixelShader( "PS_Water" );
@@ -4143,13 +4154,10 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     if ( RenderingStage == DES_MAIN ) {
         if ( Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects ) {
             std::vector<zCVob*> decals;
-
             zCCamera::GetCamera()->Activate();
-
             Engine::GAPI->GetVisibleDecalList( decals );
 
             DrawDecalList( decals, true );
-
             DrawQuadMarks();
         }
 

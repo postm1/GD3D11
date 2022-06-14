@@ -617,6 +617,7 @@ struct GothicRendererSettings {
         EnablePointlightShadows = PLS_UPDATE_DYNAMIC;
         MinLightShadowUpdateRange = 300.0f;
         PartialDynamicShadowUpdates = true;
+        DrawSectionIntersections = true;
 
         EnableGodRays = true;
 
@@ -740,6 +741,7 @@ struct GothicRendererSettings {
     EPointLightShadowMode EnablePointlightShadows;
     float MinLightShadowUpdateRange;
     bool PartialDynamicShadowUpdates;
+    bool DrawSectionIntersections;
 
     int MaxNumFaces;
 
@@ -885,9 +887,6 @@ struct GothicRendererInfo {
     GothicRendererInfo() {
         VOBVerticesDataSize = 0;
         SkeletalVerticesDataSize = 0;
-        FirstVideoFrame = 0;
-        FixBink = 0;
-        PlayingMovieResolution = INT2( 0, 0 );
         Reset();
     }
 
@@ -945,11 +944,6 @@ struct GothicRendererInfo {
 
     unsigned int VOBVerticesDataSize;
     unsigned int SkeletalVerticesDataSize;
-
-    /** Bink Video specific variables */
-    int FirstVideoFrame;
-    int FixBink;
-    INT2 PlayingMovieResolution;
 };
 
 /** This handles more device specific settings */

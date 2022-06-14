@@ -424,6 +424,13 @@ XRESULT D2DSettingsDialog::InitControls() {
 	dynShadowSlider->SetDisplayValues( { "Disabled", "Static", "Update dynamic", "Full" } );
 	dynShadowSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.EnablePointlightShadows) );
 
+    SV_Checkbox* drawSectionIntersectionsCheckbox = new SV_Checkbox( MainView, MainPanel );
+    drawSectionIntersectionsCheckbox->SetSize( D2D1::SizeF( 160, 35 ) );
+    drawSectionIntersectionsCheckbox->SetCaption( L"Draw World Section Intersections" );
+    drawSectionIntersectionsCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.DrawSectionIntersections );
+    drawSectionIntersectionsCheckbox->AlignUnder( dynShadowSlider, 17 );
+    drawSectionIntersectionsCheckbox->SetChecked( Engine::GAPI->GetRendererState().RendererSettings.DrawSectionIntersections );
+
 	// Third column
 	// FOV
 	SV_Checkbox* fovOverrideCheckbox = new SV_Checkbox( MainView, MainPanel );

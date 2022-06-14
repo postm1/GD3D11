@@ -189,7 +189,6 @@ void GothicAPI::OnGameStart() {
     // Get threadid of main thread here because DllMain can be called from different thread
     MainThreadID = GetCurrentThreadId();
 
-    LoadFixBinkValue();
     LoadMenuSettings( MENU_SETTINGS_FILE );
 
     LogInfo() << "Running with Commandline: " << zCOption::GetOptions()->GetCommandline();
@@ -230,6 +229,9 @@ void GothicAPI::OnGameStart() {
     Inventory = std::make_unique<GInventory>();
 
     UpdateMTResourceManager();
+
+    void RegisterBinkPlayerHooks();
+    RegisterBinkPlayerHooks();
 }
 
 /** Called to update the multi thread resource manager state */
@@ -906,12 +908,8 @@ void GothicAPI::BuildStaticMeshInstancingCache() {
 
 /** Returns if a player is NOT in a dialog with a npc */
 int GothicAPI::DialogFinished() {
-
-   static GetInformationManagerProc GetInformationManager = (GetInformationManagerProc)GothicMemoryLocations::oCInformationManager::GetInformationManager;
-
-   int& dialogDone = *(int*)(((int)GetInformationManager()) + GothicMemoryLocations::oCInformationManager::IsDoneOffset);
-
-   return dialogDone;
+    static GetInformationManagerProc GetInformationManager = reinterpret_cast<GetInformationManagerProc>(GothicMemoryLocations::oCInformationManager::GetInformationManager);
+    return *reinterpret_cast<int*>(GetInformationManager() + GothicMemoryLocations::oCInformationManager::IsDoneOffset);
 }
 
 /** Draws the world-mesh */
@@ -937,28 +935,26 @@ void GothicAPI::DrawWorldMeshNaive() {
 */
 #if defined(BUILD_GOTHIC_1_08k) || defined(BUILD_1_12F) || defined(BUILD_GOTHIC_2_6_fix)
     if ( RendererState.RendererSettings.ForceFOV ) {
+        zCCamera* camera = zCCamera::GetCamera();
+        if ( camera )
+            camera->GetFOV( setfovH, setfovV );
 
-        if ( zCCamera::GetCamera() )
-            zCCamera::GetCamera()->GetFOV( setfovH, setfovV );
-
-        if ( zCCamera::GetCamera() 
-            
-             // FIXME: This is being reset after a dialog!
-            && (zCCamera::GetCamera() != CurrentCamera || setfovH != RendererState.RendererSettings.FOVHoriz || setfovV != RendererState.RendererSettings.FOVVert || (setfovH == 90.0f && setfovV == 90.0f)) ) 
-        {
+        if ( camera
+            // FIXME: This is being reset after a dialog!
+            && (camera != CurrentCamera || setfovH != RendererState.RendererSettings.FOVHoriz || setfovV != RendererState.RendererSettings.FOVVert || (setfovH == 90.0f && setfovV == 90.0f)) ) {
             // if player is in a dialog state with a npc, we do not change FOV, or create an option for it in F11 menu
             if ( DialogFinished() ) {
                 setfovH = RendererState.RendererSettings.FOVHoriz;
                 setfovV = RendererState.RendererSettings.FOVVert;
 
-
                 // Fixing camera FOV-Bug, set it with DX11 settings
-                zCCamera::GetCamera()->SetFOV( RendererState.RendererSettings.FOVHoriz,
+                camera->SetFOV( RendererState.RendererSettings.FOVHoriz,
                     (Engine::GraphicsEngine->GetResolution().y / static_cast<float>(Engine::GraphicsEngine->GetResolution().x)) * RendererState.RendererSettings.FOVVert );
+                camera->Activate();
 
-                CurrentCamera = zCCamera::GetCamera();
+                CurrentCamera = camera;
             }
-            
+
         }
     }
 #endif
@@ -1040,11 +1036,8 @@ void GothicAPI::DrawParticlesSimple() {
     ParticleFrameData data;
 
     if ( RendererState.RendererSettings.DrawParticleEffects ) {
-
         std::vector<zCVob*> renderedParticleFXs;
-
         zCCamera::GetCamera()->Activate();
-
         GetVisibleParticleEffectsList( renderedParticleFXs );
 
         // now it is save to render
@@ -1165,11 +1158,8 @@ void GothicAPI::GetVisibleParticleEffectsList( std::vector<zCVob*>& pfxList ) {
             if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
                 continue;
 
-
-            int clipFlags = 15;
-            zTCam_ClipType result = zCCamera::GetCamera()->BBox3DInFrustum( it->GetBBox() );
-
-            if ( result == ZTCAM_CLIPTYPE_OUT ) {
+            int flags = 15; // Frustum check, no farplane
+            if ( zCCamera::GetCamera()->BBox3DInFrustum( it->GetBBox(), flags ) == ZTCAM_CLIPTYPE_OUT ) {
                 continue;
             }
 
@@ -1195,33 +1185,14 @@ void GothicAPI::GetVisibleDecalList( std::vector<zCVob*>& decals ) {
         if ( dist > RendererState.RendererSettings.VisualFXDrawRadius )
             continue;
 
-        int clipFlags = 15;
-        zTCam_ClipType result = zCCamera::GetCamera()->BBox3DInFrustum( it->GetBBox() );
-
-        /*
-        bool render = result != ZTCAM_CLIPTYPE_OUT;
-        
-        LogInfo() << it->GetName() << " (" << result << ") r: " << render << " " 
-            << camPosUsual.x
-            << ", " << camPosUsual.y
-            << ", " << camPosUsual.z
-            << " Dist: " << dist
-
-            << " Min: " << it->GetBBox().Min.x << " " << it->GetBBox().Min.y << " " << it->GetBBox().Min.z << " "
-            << " Max: " << it->GetBBox().Max.x << " " << it->GetBBox().Max.y << " " << it->GetBBox().Max.z << " "
-            << "\n";
-        */
-
-        if ( result == ZTCAM_CLIPTYPE_OUT ) {
+        int flags = 15; // Frustum check, no farplane
+        if ( zCCamera::GetCamera()->BBox3DInFrustum( it->GetBBox(), flags ) == ZTCAM_CLIPTYPE_OUT ) {
             continue;
         }
-
 
         if ( it->GetVisual() && it->GetShowVisual() ) {
             decalDistances.push_back( std::make_pair( it, dist ) );
         }
-
-
     }
 
     // Sort back to front
@@ -3015,23 +2986,42 @@ void GothicAPI::CollectVisibleSections( std::vector<WorldMeshSectionInfo*>& sect
     const XMFLOAT3 camPos = Engine::GAPI->GetCameraPosition();
     const INT2 camSection = WorldConverter::GetSectionOfPos( camPos );
 
-    // run through every section and check for range and frustum
-    const int sectionViewDist = Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius;
-    for ( auto& itx : WorldSections ) {
-        if ( abs( itx.first - camSection.x ) >= sectionViewDist ) {
-            continue;
+    if ( Engine::GAPI->GetRendererState().RendererSettings.DrawSectionIntersections ) {
+        extern const float WORLD_SECTION_SIZE;
+        const float sectionViewDist = Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius * WORLD_SECTION_SIZE;
+        for ( auto& itx : WorldSections ) {
+            for ( auto& ity : itx.second ) {
+                WorldMeshSectionInfo& section = ity.second;
+
+                float dist = Toolbox::ComputePointAABBDistance( camPos, section.BoundingBox.Min, section.BoundingBox.Max );
+                if ( dist < sectionViewDist ) {
+                    int flags = 15; // Frustum check, no farplane
+                    if ( zCCamera::GetCamera()->BBox3DInFrustum( section.BoundingBox, flags ) == ZTCAM_CLIPTYPE_OUT )
+                        continue;
+
+                    sections.push_back( &section );
+                }
+            }
         }
+    } else {
+        // run through every section and check for range and frustum
+        const int sectionViewDist = Engine::GAPI->GetRendererState().RendererSettings.SectionDrawRadius;
+        for ( auto& itx : WorldSections ) {
+            if ( abs( itx.first - camSection.x ) >= sectionViewDist ) {
+                continue;
+            }
 
-        for ( auto& ity : itx.second ) {
-            WorldMeshSectionInfo& section = ity.second;
+            for ( auto& ity : itx.second ) {
+                WorldMeshSectionInfo& section = ity.second;
 
-            // Simple range-check
-            if ( abs( ity.first - camSection.y ) < sectionViewDist ) {
-                int flags = 15; // Frustum check, no farplane
-                if ( zCCamera::GetCamera()->BBox3DInFrustum( section.BoundingBox, flags ) == ZTCAM_CLIPTYPE_OUT )
-                    continue;
+                // Simple range-check
+                if ( abs( ity.first - camSection.y ) < sectionViewDist ) {
+                    int flags = 15; // Frustum check, no farplane
+                    if ( zCCamera::GetCamera()->BBox3DInFrustum( section.BoundingBox, flags ) == ZTCAM_CLIPTYPE_OUT )
+                        continue;
 
-                sections.push_back( &section );
+                    sections.push_back( &section );
+                }
             }
         }
     }
@@ -3893,38 +3883,6 @@ XRESULT GothicAPI::LoadVegetation( const std::string& file ) {
     return XR_SUCCESS;
 }
 
-/** Loads the FixBink value from SystemPack.ini */
-void GothicAPI::LoadFixBinkValue() {
-    TCHAR NPath[MAX_PATH];
-    // Returns Gothic directory.
-    int len = GetCurrentDirectory( MAX_PATH, NPath );
-    // Get path to Gothic.Ini
-    auto ini = std::string( NPath, len ).append( "\\system\\SystemPack.ini" );
-
-    if ( !Toolbox::FileExists( ini ) ) {
-        return;
-    }
-
-    std::string FixBinkValue = GetPrivateProfileStringA( "DEBUG", "FixBink", "", ini );
-    if ( FixBinkValue == "1" || _stricmp( FixBinkValue.c_str(), "true" ) == 0 ) {
-        RendererState.RendererInfo.FixBink = 1;
-    }
-}
-
-/** Saves the window resolution to Gothic.ini */
-void GothicAPI::SaveWindowResolution() {
-    TCHAR NPath[MAX_PATH];
-    // Returns Gothic directory.
-    int len = GetCurrentDirectory( MAX_PATH, NPath );
-    // Get path to Gothic.Ini
-    auto ini = std::string( NPath, len ).append( "\\system\\Gothic.ini" );
-
-    auto res = Engine::GraphicsEngine->GetResolution();
-    WritePrivateProfileStringA( "GAME", "scaleVideos", "1", ini.c_str() );
-    WritePrivateProfileStringA( "VIDEO", "zVidResFullscreenX", std::to_string( res.x ).c_str(), ini.c_str() );
-    WritePrivateProfileStringA( "VIDEO", "zVidResFullscreenY", std::to_string( res.y ).c_str(), ini.c_str() );
-}
-
 /** Saves the users settings from the menu */
 XRESULT GothicAPI::SaveMenuSettings( const std::string& file ) {
     TCHAR NPath[MAX_PATH];
@@ -3950,6 +3908,7 @@ XRESULT GothicAPI::SaveMenuSettings( const std::string& file ) {
     WritePrivateProfileStringA( "General", "MultiThreadResourceManager", std::to_string( s.MTResoureceManager ? TRUE : FALSE ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "CompressBackBuffer", std::to_string( s.CompressBackBuffer ? TRUE : FALSE ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "AnimateStaticVobs", std::to_string( s.AnimateStaticVobs ? TRUE : FALSE ).c_str(), ini.c_str() );
+    WritePrivateProfileStringA( "General", "DrawWorldSectionIntersections", std::to_string( s.DrawSectionIntersections ? TRUE : FALSE ).c_str(), ini.c_str() );
 
     /*
     * Draw-distance is saved on a per World basis using SaveRendererWorldSettings
@@ -4044,6 +4003,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
     s.MTResoureceManager = GetPrivateProfileBoolA( "General", "MultiThreadResourceManager", defaultRendererSettings.MTResoureceManager, ini );
     s.CompressBackBuffer = GetPrivateProfileBoolA( "General", "CompressBackBuffer", defaultRendererSettings.CompressBackBuffer, ini );
     s.AnimateStaticVobs = GetPrivateProfileBoolA( "General", "AnimateStaticVobs", defaultRendererSettings.AnimateStaticVobs, ini );
+    s.DrawSectionIntersections = GetPrivateProfileBoolA( "General", "DrawWorldSectionIntersections", defaultRendererSettings.DrawSectionIntersections, ini );
 
     /*
     * Draw-distance is Loaded on a per World basis using LoadRendererWorldSettings

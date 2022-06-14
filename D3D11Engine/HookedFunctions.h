@@ -77,14 +77,12 @@ typedef void( __thiscall* oCWorldEnableVob )(void*, zCVob*, zCVob*);
 typedef void( __thiscall* oCWorldRemoveVob )(void*, zCVob*);
 typedef void( __thiscall* oCWorldDisableVob )(void*, zCVob*);
 typedef void( __fastcall* oCWorldRemoveFromLists )(void*, zCVob*);
-typedef int( __thiscall* zCBinkPlayerOpenVideo )(void*, class zSTRING);
 typedef int( __thiscall* zCModelPrototypeLoadModelASC )(void*, class zSTRING const&);
 typedef int( __thiscall* zCModelPrototypeReadMeshAndTreeMSB )(void*, int&, class zCFileBIN&);
 
 typedef void( __thiscall* zCActiveSndAutoCalcObstruction )(void*, int);
 
-typedef void* (__cdecl* GetInformationManagerProc)();
-
+typedef DWORD( __cdecl* GetInformationManagerProc )();
 
 #ifdef BUILD_GOTHIC_1_08k
 typedef void( __thiscall* zCVobEndMovement )(void*);
@@ -149,7 +147,6 @@ struct HookedFunctionInfo {
     oCWorldEnableVob original_oCWorldEnableVob;
     oCWorldRemoveVob original_oCWorldRemoveVob;
     oCWorldRemoveFromLists original_oCWorldRemoveFromLists;
-    zCBinkPlayerOpenVideo original_zCBinkPlayerOpenVideo;
     zCVobEndMovement original_zCVobEndMovement;
     zCBspBaseCollectPolysInBBox3D original_zCBspBaseCollectPolysInBBox3D;
     zCBspBaseCheckRayAgainstPolys original_zCBspBaseCheckRayAgainstPolys;

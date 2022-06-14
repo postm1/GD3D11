@@ -83,6 +83,9 @@ typedef int( __thiscall* zCModelPrototypeReadMeshAndTreeMSB )(void*, int&, class
 
 typedef void( __thiscall* zCActiveSndAutoCalcObstruction )(void*, int);
 
+typedef void* (__cdecl* GetInformationManagerProc)();
+
+
 #ifdef BUILD_GOTHIC_1_08k
 typedef void( __thiscall* zCVobEndMovement )(void*);
 #else

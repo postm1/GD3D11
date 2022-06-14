@@ -451,6 +451,12 @@ struct GothicMemoryLocations {
         static const unsigned int oCVisualFX = 0x008AF438;
     };
 
+    struct oCInformationManager
+    {
+        static const unsigned int GetInformationManager = 0x00768F70;
+        static const unsigned int IsDoneOffset = 0x2C;
+    };
+
     class VobTypes // vftables
     {
     public:

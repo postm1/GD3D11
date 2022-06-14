@@ -318,6 +318,9 @@ public:
     /** Sets the world matrix */
     void ResetWorldTransform();
 
+    /** Gets if player is NOT in dialog */
+    int DialogFinished();
+
     /** Sets the world matrix */
     void ResetViewTransform();
 

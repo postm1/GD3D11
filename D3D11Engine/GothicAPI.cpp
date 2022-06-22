@@ -141,6 +141,7 @@ GothicAPI::GothicAPI() {
     MainThreadID = GetCurrentThreadId();
 
     _canRain = false;
+    _canClearVobsByVisual = true;
 }
 
 GothicAPI::~GothicAPI() {
@@ -664,7 +665,7 @@ void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) 
 
 /** Called when the game is about to load a new level */
 void GothicAPI::OnLoadWorld( const std::string& levelName, int loadMode ) {
-    _canClearVobsByVisual = true;
+    //_canClearVobsByVisual = true;
     if ( (loadMode == 0 || loadMode == 2) && !levelName.empty() ) {
         std::string name = levelName;
         const size_t last_slash_idx = name.find_last_of( "\\/" );
@@ -757,7 +758,7 @@ void GothicAPI::OnWorldLoaded() {
     Engine::GraphicsEngine->OnUIEvent( BaseGraphicsEngine::UI_OpenEditor );
 #endif
 
-    _canClearVobsByVisual = false;
+    //_canClearVobsByVisual = false;
 }
 
 void GothicAPI::LoadRendererWorldSettings( GothicRendererSettings& s ) {
@@ -1512,7 +1513,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
         for ( unsigned int i = 0; i < nodes->size(); i++ ) {
             BspInfo* node = (*nodes)[i];
             if ( vi ) {
-                for ( std::vector<VobInfo*>::iterator bit = node->IndoorVobs.begin(); bit != node->IndoorVobs.end(); ++bit ) {
+                for ( auto bit = node->IndoorVobs.begin(); bit != node->IndoorVobs.end(); ++bit ) {
                     if ( (*bit) == vi ) {
                         (*bit) = node->IndoorVobs.back();
                         node->IndoorVobs.pop_back();
@@ -1520,7 +1521,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
                     }
                 }
 
-                for ( std::vector<VobInfo*>::iterator bit = node->Vobs.begin(); bit != node->Vobs.end(); ++bit ) {
+                for ( auto bit = node->Vobs.begin(); bit != node->Vobs.end(); ++bit ) {
                     if ( (*bit) == vi ) {
                         (*bit) = node->Vobs.back();
                         node->Vobs.pop_back();
@@ -1528,7 +1529,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
                     }
                 }
 
-                for ( std::vector<VobInfo*>::iterator bit = node->SmallVobs.begin(); bit != node->SmallVobs.end(); ++bit ) {
+                for ( auto bit = node->SmallVobs.begin(); bit != node->SmallVobs.end(); ++bit ) {
                     if ( (*bit) == vi ) {
                         (*bit) = node->SmallVobs.back();
                         node->SmallVobs.pop_back();
@@ -1538,7 +1539,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
             }
 
             if ( li && nodes ) {
-                for ( std::vector<VobLightInfo*>::iterator bit = node->Lights.begin(); bit != node->Lights.end(); ++bit ) {
+                for ( auto bit = node->Lights.begin(); bit != node->Lights.end(); ++bit ) {
                     if ( (*bit)->Vob == static_cast<zCVobLight*>(vob) ) {
                         (*bit) = node->Lights.back();
                         node->Lights.pop_back();
@@ -1546,7 +1547,7 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
                     }
                 }
 
-                for ( std::vector<VobLightInfo*>::iterator bit = node->IndoorLights.begin(); bit != node->IndoorLights.end(); ++bit ) {
+                for ( auto bit = node->IndoorLights.begin(); bit != node->IndoorLights.end(); ++bit ) {
                     if ( (*bit)->Vob == static_cast<zCVobLight*>(vob) ) {
                         (*bit) = node->IndoorLights.back();
                         node->IndoorLights.pop_back();
@@ -1556,8 +1557,8 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
             }
 
             if ( svi && nodes ) {
-                for ( std::vector<SkeletalVobInfo*>::iterator bit = node->Mobs.begin(); bit != node->Mobs.end(); ++bit ) {
-                    if ( (*bit)->Vob == static_cast<zCVobLight*>(vob) ) {
+                for ( auto bit = node->Mobs.begin(); bit != node->Mobs.end(); ++bit ) {
+                    if ( (*bit)->Vob == vob ) {
                         (*bit) = node->Mobs.back();
                         node->Mobs.pop_back();
                         break;
@@ -1566,7 +1567,6 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
             }
         }
     }
-    SkeletalVobMap.erase( vob );
 
     // Erase the vob from the section
     if ( vi && vi->VobSection ) {
@@ -1601,7 +1601,12 @@ void GothicAPI::OnRemovedVob( zCVob* vob, zCWorld* world ) {
     auto vit = VobMap.find( vob );
     if ( vit != VobMap.end() ) {
         delete (*vit).second;
-        VobMap.erase( vob );
+        VobMap.erase( vit );
+    }
+    auto svit = SkeletalVobMap.find( vob );
+    if ( svit != SkeletalVobMap.end() ) {
+        delete (*svit).second;
+        SkeletalVobMap.erase( svit );
     }
 
     // delete light info, if valid

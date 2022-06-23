@@ -217,8 +217,8 @@ int __fastcall BinkPlayerPlayDoFrame(DWORD BinkPlayer)
 	if(video->updateVolume)
     {
 		float volume = video->globalVolume * video->videoVolume;
-		if(NewBinkSetVolume) reinterpret_cast<void(__stdcall*)(void*, int, DWORD)>(BinkSetVolume)(video->vid, 0, static_cast<DWORD>(volume * 65536.f));
-		else reinterpret_cast<void(__stdcall*)(void*, DWORD)>(BinkSetVolume)(video->vid, static_cast<DWORD>(volume * 65536.f));
+		//if(NewBinkSetVolume) reinterpret_cast<void(__stdcall*)(void*, int, DWORD)>(BinkSetVolume)(video->vid, 0, static_cast<DWORD>(volume * 65536.f));
+		//else reinterpret_cast<void(__stdcall*)(void*, DWORD)>(BinkSetVolume)(video->vid, static_cast<DWORD>(volume * 65536.f));
 		video->updateVolume = false;
 	}
 	reinterpret_cast<void(__stdcall*)(void*)>(BinkDoFrame)(video->vid);
@@ -560,8 +560,8 @@ int __fastcall BinkPlayerOpenVideo(DWORD BinkPlayer, DWORD _EDX, zSTRING videoNa
 	if(videoHandle)
 	{
 		reinterpret_cast<void(__stdcall*)(void*, int)>(BinkSetSoundOnOff)(videoHandle, 1);
-		if(NewBinkSetVolume) reinterpret_cast<void(__stdcall*)(void*, int, DWORD)>(BinkSetVolume)(videoHandle, 0, 65536);
-		else reinterpret_cast<void(__stdcall*)(void*, DWORD)>(BinkSetVolume)(videoHandle, 65536);
+		//if(NewBinkSetVolume) reinterpret_cast<void(__stdcall*)(void*, int, DWORD)>(BinkSetVolume)(videoHandle, 0, 65536);
+		//else reinterpret_cast<void(__stdcall*)(void*, DWORD)>(BinkSetVolume)(videoHandle, 65536);
 		*reinterpret_cast<BinkVideo**>(BinkPlayer + GothicMemoryLocations::zCBinkPlayer::Offset_VideoHandle) = new BinkVideo(videoHandle);
 	}
 

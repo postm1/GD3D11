@@ -141,7 +141,7 @@ GothicAPI::GothicAPI() {
     MainThreadID = GetCurrentThreadId();
 
     _canRain = false;
-    _canClearVobsByVisual = true;
+    _canClearVobsByVisual = false;
 }
 
 GothicAPI::~GothicAPI() {
@@ -665,7 +665,7 @@ void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) 
 
 /** Called when the game is about to load a new level */
 void GothicAPI::OnLoadWorld( const std::string& levelName, int loadMode ) {
-    //_canClearVobsByVisual = true;
+    _canClearVobsByVisual = true;
     if ( (loadMode == 0 || loadMode == 2) && !levelName.empty() ) {
         std::string name = levelName;
         const size_t last_slash_idx = name.find_last_of( "\\/" );
@@ -758,7 +758,7 @@ void GothicAPI::OnWorldLoaded() {
     Engine::GraphicsEngine->OnUIEvent( BaseGraphicsEngine::UI_OpenEditor );
 #endif
 
-    //_canClearVobsByVisual = false;
+    _canClearVobsByVisual = false;
 }
 
 void GothicAPI::LoadRendererWorldSettings( GothicRendererSettings& s ) {

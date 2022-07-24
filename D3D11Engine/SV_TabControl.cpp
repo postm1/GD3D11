@@ -154,7 +154,7 @@ bool SV_TabControl::OnWindowMessage( HWND hWnd, unsigned int msg, WPARAM wParam,
             float width = D2DView::GetLabelTextWidth( it->second.CaptionLayout, it->first.length() );
 
             D2D1_RECT_F tabRect = D2D1::RectF( x + ViewRect.left, ViewRect.top, x + ViewRect.left + width + 10.0f, ViewRect.top + SV_TABCONTROL_HEADER_SIZE_Y );
-            if ( PointInsideRect( D2D1::Point2F( (float)p.x, (float)p.y ), tabRect ) ) {
+            if ( PointInsideRect( D2D1::Point2F( static_cast<float>(p.x), static_cast<float>(p.y) ), tabRect ) ) {
                 SetActiveTab( it->second.Caption );
                 return false;
             }

@@ -14,7 +14,6 @@ D3D11OcclusionQuerry::D3D11OcclusionQuerry() {
     FrameID = 0;
 }
 
-
 D3D11OcclusionQuerry::~D3D11OcclusionQuerry() {
     for ( size_t i = 0; i < Predicates.size(); i++ ) {
         SAFE_RELEASE( Predicates[i] );
@@ -23,7 +22,7 @@ D3D11OcclusionQuerry::~D3D11OcclusionQuerry() {
 
 /** Creates a new predication-object and returns its ID */
 unsigned int D3D11OcclusionQuerry::AddPredicationObject() {
-    D3D11GraphicsEngine* g = (D3D11GraphicsEngine*)Engine::GraphicsEngine;
+    D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
 
     HRESULT hr;
     Microsoft::WRL::ComPtr<ID3D11Predicate> p;
@@ -44,7 +43,7 @@ void D3D11OcclusionQuerry::DoOcclusionForBSP( BspInfo* root ) {
     if ( !root || !root->OriginalNode )
         return;
 
-    D3D11GraphicsEngine* g = (D3D11GraphicsEngine*)Engine::GraphicsEngine;
+    D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
 
     // Check if this node has it's queryID
     if ( root->OcclusionInfo.QueryID == -1 ) {
@@ -137,7 +136,7 @@ void D3D11OcclusionQuerry::DoOcclusionForBSP( BspInfo* root ) {
 
 /** Begins the occlusion-checks */
 void D3D11OcclusionQuerry::BeginOcclusionPass() {
-    D3D11GraphicsEngine* g = (D3D11GraphicsEngine*)Engine::GraphicsEngine;
+    D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
 
     // Bind shaders and constant buffers
     g->SetupVS_ExMeshDrawCall();
@@ -209,9 +208,9 @@ void D3D11OcclusionQuerry::CreateOcclusionNodeMeshFor( BspInfo* node ) {
     node->OcclusionInfo.NodeMesh = mi;
 }
 
-void D3D11OcclusionQuerry::DebugVisualizeNodeMesh( MeshInfo* m, const DirectX::XMFLOAT4& color ) {
+void D3D11OcclusionQuerry::DebugVisualizeNodeMesh( MeshInfo* m, const XMFLOAT4& color ) {
     for ( unsigned int i = 0; i < m->Indices.size(); i += 3 ) {
-        DirectX::XMFLOAT3 tri[3];
+        XMFLOAT3 tri[3];
 
         tri[0] = *m->Vertices[m->Indices[i]].Position.toXMFLOAT3();
 

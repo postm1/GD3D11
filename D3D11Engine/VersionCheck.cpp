@@ -8,7 +8,7 @@
 
 #include "Logger.h"
 
-//#define DISABLE_EXECUTABLE_CHECKSUM_CHECK
+#define DISABLE_EXECUTABLE_CHECKSUM_CHECK
 
 namespace VersionCheck {
 

@@ -6,13 +6,10 @@
 #include "GothicAPI.h"
 #include "D3D11VertexBuffer.h"
 
-using namespace DirectX;
-
 D3D11LineRenderer::D3D11LineRenderer() {
     LineBuffer = nullptr;
     LineBufferSize = 0;
 }
-
 
 D3D11LineRenderer::~D3D11LineRenderer() {
     delete LineBuffer;
@@ -42,7 +39,7 @@ XRESULT D3D11LineRenderer::AddLineScreenSpace( const LineVertex& v1, const LineV
 
 /** Flushes the cached lines */
 XRESULT D3D11LineRenderer::Flush() {
-    D3D11GraphicsEngineBase* engine = (D3D11GraphicsEngineBase*)Engine::GraphicsEngine;
+    D3D11GraphicsEngineBase* engine = reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine);
 
     if ( LineCache.size() == 0 )
         return XR_SUCCESS;
@@ -90,7 +87,7 @@ XRESULT D3D11LineRenderer::Flush() {
 
 /** Flushes the cached lines */
 XRESULT D3D11LineRenderer::FlushScreenSpace() {
-    D3D11GraphicsEngineBase* engine = (D3D11GraphicsEngineBase*)Engine::GraphicsEngine;
+    D3D11GraphicsEngineBase* engine = reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine);
 
     if ( ScreenSpaceLineCache.size() == 0 )
         return XR_SUCCESS;

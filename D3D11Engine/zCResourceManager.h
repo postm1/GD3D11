@@ -24,15 +24,8 @@ public:
 
     static void __fastcall hooked_CacheOut( void* thisptr, void* unknwn, class zCResource* res ) {
         hook_infunc
-            //Engine::GAPI->EnterResourceCriticalSection(); // Protect the game from running into a deadlock
-            //Sleep(0);
-            //Engine::GAPI->LeaveResourceCriticalSection();
-
-            //GetResourceManagerMutex().lock();
 
             HookedFunctions::OriginalFunctions.original_zCResourceManagerCacheOut( thisptr, res );
-
-        //GetResourceManagerMutex().unlock();
 
         hook_outfunc
     }
@@ -57,5 +50,5 @@ public:
             ( GothicMemoryLocations::zCResourceManager::SetThreadingEnabled )( this, 0, enabled );
     }
 
-    static zCResourceManager* GetResourceManager() { return *(zCResourceManager**)GothicMemoryLocations::GlobalObjects::zCResourceManager; }
+    static zCResourceManager* GetResourceManager() { return *reinterpret_cast<zCResourceManager**>(GothicMemoryLocations::GlobalObjects::zCResourceManager); }
 };

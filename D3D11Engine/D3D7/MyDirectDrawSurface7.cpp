@@ -171,26 +171,23 @@ HRESULT MyDirectDrawSurface7::QueryInterface( REFIID riid, LPVOID* ppvObj ) {
 
 ULONG MyDirectDrawSurface7::AddRef() {
     DebugWriteTex( "IDirectDrawSurface7(%p)::AddRef(%i)" );
-
-    refCount++;
-    return refCount;
+    return ++refCount;
 }
 
 ULONG MyDirectDrawSurface7::Release() {
-    refCount--;
-    ULONG uRet = refCount;
     DebugWriteTex( "IDirectDrawSurface7(%p)::Release(%i)" );
-
-    if ( uRet == 0 ) {
+    if ( --refCount == 0 ) {
         delete this;
+        return 0;
     }
 
-    return uRet;
+    return refCount;
 }
 
 HRESULT MyDirectDrawSurface7::AddAttachedSurface( LPDIRECTDRAWSURFACE7 lpDDSAttachedSurface ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::AddAttachedSurface()" );
-    attachedSurfaces.push_back( (MyDirectDrawSurface7*)lpDDSAttachedSurface );
+    lpDDSAttachedSurface->AddRef();
+    attachedSurfaces.push_back( static_cast<MyDirectDrawSurface7*>(lpDDSAttachedSurface) );
     return S_OK;
 }
 
@@ -231,7 +228,6 @@ HRESULT MyDirectDrawSurface7::EnumOverlayZOrders( DWORD dwFlags, LPVOID lpContex
 
 HRESULT MyDirectDrawSurface7::Flip( LPDIRECTDRAWSURFACE7 lpDDSurfaceTargetOverride, DWORD dwFlags ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::Flip() #####" );
-
     return S_OK;
 }
 
@@ -255,7 +251,6 @@ HRESULT MyDirectDrawSurface7::GetBltStatus( DWORD dwFlags ) {
 HRESULT MyDirectDrawSurface7::GetCaps( LPDDSCAPS2 lpDDSCaps2 ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::GetCaps()" );
     *lpDDSCaps2 = OriginalSurfaceDesc.ddsCaps;
-
     return S_OK;
 }
 
@@ -328,6 +323,7 @@ HRESULT MyDirectDrawSurface7::Lock( LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurf
         reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->ResetPresentPending();
         Engine::GraphicsEngine->OnStartWorldRendering();
         Engine::GraphicsEngine->GetBackbufferData( &data, pixelSize );
+        reinterpret_cast<D3D11GraphicsEngineBase*>(Engine::GraphicsEngine)->ResetPresentPending();
 
         lpDDSurfaceDesc->ddpfPixelFormat.dwRGBBitCount = 32;
         lpDDSurfaceDesc->ddpfPixelFormat.dwRBitMask = 0x000000FF;
@@ -339,10 +335,6 @@ HRESULT MyDirectDrawSurface7::Lock( LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurf
         lpDDSurfaceDesc->lPitch = 256 * pixelSize;
         lpDDSurfaceDesc->dwWidth = 256;
         lpDDSurfaceDesc->dwHeight = 256;
-
-        /*lpDDSurfaceDesc->lPitch = Engine::GraphicsEngine->GetBackbufferResolution().x * pixelSize;
-        lpDDSurfaceDesc->dwWidth = Engine::GraphicsEngine->GetBackbufferResolution().x;
-        lpDDSurfaceDesc->dwHeight = Engine::GraphicsEngine->GetBackbufferResolution().y;*/
         lpDDSurfaceDesc->lpSurface = data;
 
         LockedData = data;
@@ -370,11 +362,6 @@ HRESULT MyDirectDrawSurface7::Lock( LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurf
         // don't deallocate the memory after unlock, since only the changing parts in videos will get updated
         if ( !LockedData )
             LockedData = new unsigned char[EngineTexture->GetSizeInBytes( 0 )];
-
-        // First movie frame - reset data
-        if ( Engine::GAPI->GetRendererState().RendererInfo.FirstVideoFrame ) {
-            memset( LockedData, 0, EngineTexture->GetSizeInBytes( 0 ) );
-        }
     } else {
         // Allocate some temporary data
         delete[] LockedData;
@@ -428,9 +415,9 @@ HRESULT MyDirectDrawSurface7::Unlock( LPRECT lpRect ) {
             unsigned char redComponent = (pixel_data >> 11) & 0x1F;
 
             // Extract red, green and blue components from the 16 bits
-            dst[4 * i + 0] = (unsigned char)((redComponent / 32.0) * 255.0f);
-            dst[4 * i + 1] = (unsigned char)((greenComponent / 32.0) * 255.0f);
-            dst[4 * i + 2] = (unsigned char)((blueComponent / 32.0) * 255.0f);
+            dst[4 * i + 0] = static_cast<unsigned char>((redComponent / 32.0) * 255.0f);
+            dst[4 * i + 1] = static_cast<unsigned char>((greenComponent / 32.0) * 255.0f);
+            dst[4 * i + 2] = static_cast<unsigned char>((blueComponent / 32.0) * 255.0f);
             dst[4 * i + 3] = 255;
         }
 
@@ -446,80 +433,13 @@ HRESULT MyDirectDrawSurface7::Unlock( LPRECT lpRect ) {
 
         delete[] dst;
     } else {
-        if ( bpp == 24 ) {
-            // First movie frame - clear backbuffers
-            if ( Engine::GAPI->GetRendererState().RendererInfo.FirstVideoFrame ) {
-                Engine::GraphicsEngine->Clear( float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
-                Engine::GAPI->GetRendererState().RendererInfo.FirstVideoFrame = 0;
-            }
-
-            if ( Engine::GAPI->GetRendererState().RendererInfo.FixBink ) {
-                // SSE2 BGRA -> RGBA conversion
-                __m128i mask = _mm_setr_epi8( -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0, -1, 0 );
-                int32_t textureDataSize = static_cast<int32_t>(EngineTexture->GetSizeInBytes( 0 )) - 32;
-                int32_t i = 0;
-                for ( ; i <= textureDataSize; i += 32 ) {
-                    __m128i data0 = _mm_loadu_si128( reinterpret_cast<const __m128i*>(&LockedData[i]) );
-                    __m128i data1 = _mm_loadu_si128( reinterpret_cast<const __m128i*>(&LockedData[i + 16]) );
-                    __m128i gaComponents0 = _mm_andnot_si128( mask, data0 );
-                    __m128i brComponents0 = _mm_and_si128( data0, mask );
-                    __m128i gaComponents1 = _mm_andnot_si128( mask, data1 );
-                    __m128i brComponents1 = _mm_and_si128( data1, mask );
-                    __m128i brSwapped0 = _mm_shufflehi_epi16( _mm_shufflelo_epi16( brComponents0, _MM_SHUFFLE( 2, 3, 0, 1 ) ), _MM_SHUFFLE( 2, 3, 0, 1 ) );
-                    __m128i brSwapped1 = _mm_shufflehi_epi16( _mm_shufflelo_epi16( brComponents1, _MM_SHUFFLE( 2, 3, 0, 1 ) ), _MM_SHUFFLE( 2, 3, 0, 1 ) );
-                    _mm_storeu_si128( reinterpret_cast<__m128i*>(&LockedData[i]), _mm_or_si128( gaComponents0, brSwapped0 ) );
-                    _mm_storeu_si128( reinterpret_cast<__m128i*>(&LockedData[i + 16]), _mm_or_si128( gaComponents1, brSwapped1 ) );
-                }
-                textureDataSize += 32;
-                for ( ; i < textureDataSize; i += 4 ) {
-                    unsigned char R = LockedData[i + 0];
-                    unsigned char G = LockedData[i + 2];
-                    LockedData[i + 0] = G;
-                    LockedData[i + 2] = R;
-                }
-            }
-
-            // This is a movie frame, draw it to the sceen
-            EngineTexture->UpdateData( LockedData, 0 );
-            EngineTexture->BindToPixelShader( 0 );
-
-            Engine::GAPI->GetRendererState().BlendState.SetDefault();
-            Engine::GAPI->GetRendererState().BlendState.SetDirty();
-
-            if ( Engine::GAPI->GetRendererState().RendererInfo.FixBink ) {
-                Engine::GraphicsEngine->DrawQuad( INT2( 0, 0 ), Engine::GraphicsEngine->GetResolution() );
-            } else {
-                INT2 vidRes = Engine::GAPI->GetRendererState().RendererInfo.PlayingMovieResolution;
-                if ( vidRes.x == 0 || vidRes.y == 0 )
-                    vidRes = Engine::GraphicsEngine->GetResolution();
-
-                const INT2 engineRes = Engine::GraphicsEngine->GetResolution();
-
-                // Compute how much we would have to scale the video on both axis
-                float scaleX = engineRes.x / (float)vidRes.x;
-                float scaleY = engineRes.y / (float)vidRes.y;
-
-                // select the smaller one
-                float scale = std::min( scaleX, scaleY ) * 0.75f;
-
-                // I am honestly not sure how this is correct, but after an hour of fiddeling this works fine. You probably don't want to touch it.
-                float tlx = -engineRes.x * scale + (float)engineRes.x;
-                float tly = -engineRes.y * scale + (float)engineRes.y;
-
-                float brx = engineRes.x * scale;
-                float bry = engineRes.y * scale;
-
-                Engine::GraphicsEngine->DrawQuad( INT2( tlx, tly ), INT2( brx - tlx, bry - tly ) );
-            }
+        // No conversion needed
+        if ( Engine::GAPI->GetMainThreadID() != GetCurrentThreadId() ) {
+            EngineTexture->UpdateDataDeferred( LockedData, 0 );
+            Engine::GAPI->AddFrameLoadedTexture( this );
         } else {
-            // No conversion needed
-            if ( Engine::GAPI->GetMainThreadID() != GetCurrentThreadId() ) {
-                EngineTexture->UpdateDataDeferred( LockedData, 0 );
-                Engine::GAPI->AddFrameLoadedTexture( this );
-            } else {
-                EngineTexture->UpdateData( LockedData, 0 );
-                SetReady( true ); // No need to load other stuff to get this ready
-            }
+            EngineTexture->UpdateData( LockedData, 0 );
+            SetReady( true ); // No need to load other stuff to get this ready
         }
     }
 
@@ -547,8 +467,7 @@ HRESULT MyDirectDrawSurface7::SetClipper( LPDIRECTDRAWCLIPPER lpDDClipper ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::SetClipper()" );
     hook_infunc
 
-
-        HWND hWnd;
+    HWND hWnd;
     lpDDClipper->GetHWnd( &hWnd );
     Engine::GAPI->OnSetWindow( hWnd );
 
@@ -571,7 +490,6 @@ HRESULT MyDirectDrawSurface7::SetPalette( LPDIRECTDRAWPALETTE lpDDPalette ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::SetPalette()" );
     return S_OK;
 }
-
 
 HRESULT MyDirectDrawSurface7::UpdateOverlay( LPRECT lpSrcRect, LPDIRECTDRAWSURFACE7 lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx ) {
     DebugWriteTex( "IDirectDrawSurface7(%p)::UpdateOverlay()" );
@@ -634,6 +552,7 @@ HRESULT MyDirectDrawSurface7::SetSurfaceDesc( LPDDSURFACEDESC2 lpDDSurfaceDesc, 
     case 24:
     case 32:
         format = D3D11Texture::ETextureFormat::TF_R8G8B8A8;
+        break;
 
     case 0:
     {

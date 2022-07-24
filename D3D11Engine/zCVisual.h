@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Engine.h"
 #include "GothicAPI.h"
 #include "HookedFunctions.h"
@@ -78,9 +77,9 @@ private:
     }
 
     const zSTRING* __GetFileExtension( int i ) {
-        int* vtbl = (int*)((int*)this)[0];
+        DWORD* vtbl = reinterpret_cast<DWORD*>(*reinterpret_cast<DWORD*>(this));
 
-        zCVisualGetFileExtension fn = (zCVisualGetFileExtension)vtbl[GothicMemoryLocations::zCVisual::VTBL_GetFileExtension];
+        zCVisualGetFileExtension fn = reinterpret_cast<zCVisualGetFileExtension>(vtbl[GothicMemoryLocations::zCVisual::VTBL_GetFileExtension]);
         return fn( this, i );
     }
 };

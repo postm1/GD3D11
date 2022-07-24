@@ -1,7 +1,4 @@
 #pragma once
-#ifndef MYDIRECTDRAW_H
-#define MYDIRECTDRAW_H
-
 #include "../pch.h"
 #include "MyDirect3D7.h"
 #include "MyDirectDrawSurface7.h"
@@ -24,24 +21,21 @@ public:
 	/*** IUnknown methods ***/
 	HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void** ppvObj ) {
 		DebugWrite( "MyDirectDraw::QueryInterface\n" );
-		HRESULT hr = S_OK;//this->directDraw7->QueryInterface(riid, ppvObj);
 		if ( riid == IID_IDirect3D7 ) {
-			*ppvObj = new MyDirect3D7( (IDirect3D7*)*ppvObj );
+			*ppvObj = new MyDirect3D7( reinterpret_cast<IDirect3D7*>(*ppvObj) );
 		}
 
-		return hr;
+		return S_OK;
 	}
 
 	ULONG STDMETHODCALLTYPE AddRef() {
 		DebugWrite( "MyDirectDraw::AddRef\n" );
-		RefCount++;
-		return RefCount;
+		return ++RefCount;
 	}
 
 	ULONG STDMETHODCALLTYPE Release() {
 		DebugWrite( "MyDirectDraw::Release\n" );
-		RefCount--;
-		if ( RefCount == 0 ) {
+		if ( --RefCount == 0 ) {
 			delete this;
 			return 0;
 		}
@@ -62,7 +56,6 @@ public:
 
 	HRESULT STDMETHODCALLTYPE SetCooperativeLevel( HWND hWnd, DWORD dwFlags ) {
 		DebugWrite( "MyDirectDraw::SetCooperativeLevel\n" );
-
 		return S_OK;
 	}
 
@@ -70,7 +63,11 @@ public:
 		DebugWrite( "MyDirectDraw::GetDeviceIdentifier\n" );
 
 		ZeroMemory( lpdddi, sizeof( DDDEVICEIDENTIFIER2 ) );
-		strcpy( lpdddi->szDescription, "DirectX11" );
+        if ( Engine::GraphicsEngine ) {
+            strcpy( lpdddi->szDescription, Engine::GraphicsEngine->GetGraphicsDeviceName().c_str() );
+        } else {
+            strcpy( lpdddi->szDescription, "DirectX11" );
+        }
 		strcpy( lpdddi->szDriver, "DirectX11" );
         lpdddi->guidDeviceIdentifier = { 0xF5049E78, 0x4861, 0x11D2, {0xA4, 0x07, 0x00, 0xA0, 0xC9, 0x06, 0x29, 0xA8} };
 
@@ -86,11 +83,6 @@ public:
 
 	HRESULT STDMETHODCALLTYPE SetDisplayMode( DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags ) {
 		DebugWrite( "MyDirectDraw::SetDisplayMode\n" );
-
-		//LogInfo() << "SetDisplayMode:";
-		//LogInfo() << "Width: " << dwWidth;
-		//LogInfo() << "Height: " << dwHeight;
-		//LogInfo() << "BPP: " << dwBPP;
 
 		DisplayMode.dwWidth = dwWidth;
 		DisplayMode.dwHeight = dwHeight;
@@ -144,29 +136,13 @@ public:
 	HRESULT STDMETHODCALLTYPE CreateClipper( DWORD dwFlags, LPDIRECTDRAWCLIPPER FAR* lplpDDClipper, IUnknown FAR* pUnkOuter ) {
 		DebugWrite( "MyDirectDraw::CreateClipper\n" );
 
-		MyClipper* clipper = new MyClipper;
-		clipper->AddRef();
-		*lplpDDClipper = clipper;
+		*lplpDDClipper = new MyClipper;
 
 		return S_OK;
 	}
 
 	HRESULT STDMETHODCALLTYPE CreatePalette( DWORD dwFlags, LPPALETTEENTRY lpDDColorArray, LPDIRECTDRAWPALETTE FAR* lplpDDPalette, IUnknown FAR* pUnkOuter ) {
 		DebugWrite( "MyDirectDraw::CreatePalette\n" );
-		return S_OK;
-	}
-
-
-
-	static HRESULT WINAPI EnumSurfacesCallback2( LPDIRECTDRAWSURFACE7 lpDDSurface, LPDDSURFACEDESC2 lpDDSurfaceDesc, LPVOID lpContext ) {
-		DDSURFACEDESC2 desc = *lpDDSurfaceDesc;
-
-		LogInfo() << "MMDESC:\n";
-		LogInfo() << "\n - MMSUBLEVEL: " << ((desc.ddsCaps.dwCaps2 & DDSCAPS2_MIPMAPSUBLEVEL) != 0);
-		LogInfo() << "\n - MM: " << ((desc.ddsCaps.dwCaps & DDSCAPS_MIPMAP) != 0);
-		LogInfo() << "\n - MMCOUNT: " << desc.dwMipMapCount;
-		LogInfo() << "\n - SIZE: " << desc.dwWidth << ", " << desc.dwHeight;
-
 		return S_OK;
 	}
 
@@ -178,7 +154,7 @@ public:
 			// Set up the pixel format for 24-bit RGB (8-8-8).
 			lpDDSurfaceDesc2->ddpfPixelFormat.dwSize = sizeof( DDPIXELFORMAT );
 			lpDDSurfaceDesc2->ddpfPixelFormat.dwFlags = DDPF_RGB;
-			lpDDSurfaceDesc2->ddpfPixelFormat.dwRGBBitCount = (DWORD)3 * 8;
+			lpDDSurfaceDesc2->ddpfPixelFormat.dwRGBBitCount = 24;
 			lpDDSurfaceDesc2->ddpfPixelFormat.dwRBitMask = 0x00FF0000;
 			lpDDSurfaceDesc2->ddpfPixelFormat.dwGBitMask = 0x0000FF00;
 			lpDDSurfaceDesc2->ddpfPixelFormat.dwBBitMask = 0x000000FF;
@@ -227,9 +203,7 @@ public:
 			int level = 1;
 			while ( desc.dwMipMapCount > 1 ) {
 				FakeDirectDrawSurface7* mip = new FakeDirectDrawSurface7;
-				desc.dwMipMapCount--;
-				//desc.dwHeight /= 2;
-				//desc.dwWidth /= 2;
+				--desc.dwMipMapCount;
 				desc.ddsCaps.dwCaps2 |= DDSCAPS2_MIPMAPSUBLEVEL;
 				mip->InitFakeSurface( &desc, mySurface, level );
 
@@ -363,5 +337,3 @@ private:
 	int RefCount;
 	DDSURFACEDESC2 DisplayMode;
 };
-
-#endif

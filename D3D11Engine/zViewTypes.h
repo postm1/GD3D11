@@ -9,7 +9,6 @@ class zFont;
 struct zColor;
 class _zCView;
 
-
 class zCViewFont {
 public:
     zTRnd_AlphaBlendFunc FuncAlphaBlend;
@@ -18,7 +17,6 @@ public:
     int Alpha;
     int EnabledBlend;
 };
-
 
 class zCViewText {
 public:
@@ -33,7 +31,6 @@ public:
     int timed;
     int colored;
 };
-
 
 class _zCView {
 public:
@@ -107,22 +104,22 @@ public:
     }
 
     int _zCView::rnd2( float x ) const {
-        if ( x > 0 ) return (int)(x + 0.5);
-        else return (int)(x - 0.5);
-    }
-    int _zCView::nax( int x ) const {
-        return rnd2( (float)(x * psizex) / 8192 );
+        if ( x > 0 ) return static_cast<int>(x + 0.5);
+        else return static_cast<int>(x - 0.5);
     }
 
+    int _zCView::nax( int x ) const {
+        return rnd2( static_cast<float>(x * psizex) / 8192.f );
+    }
     int _zCView::nay( int y ) const {
-        return rnd2( (float)(y * psizey) / 8192 );
+        return rnd2( static_cast<float>(y * psizey) / 8192.f );
     }
 
     int _zCView::anx( int x ) const {
-        return rnd2( (float)(x * 8192) / psizex );
+        return rnd2( static_cast<float>(x * 8192) / psizex );
     }
     int _zCView::any( int x ) const {
-        return rnd2( (float)(x * 8192) / psizey );
+        return rnd2( static_cast<float>(x * 8192) / psizey );
     }
 
     void _zCView::CheckAutoScroll() {

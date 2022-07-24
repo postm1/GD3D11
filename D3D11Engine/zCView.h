@@ -29,10 +29,10 @@ public:
         zCViewDraw::Hook();
         DWORD dwProtect;
 
-        VirtualProtect( (void*)GothicMemoryLocations::zCView::SetMode, 0x1B9, PAGE_EXECUTE_READWRITE, &dwProtect ); // zCView::SetMode
-
-        // Replace the actual mode-change in zCView::SetVirtualMode. Only do the UI-Changes.
-        REPLACE_RANGE( GothicMemoryLocations::zCView::REPL_SetMode_ModechangeStart, GothicMemoryLocations::zCView::REPL_SetMode_ModechangeEnd - 1, INST_NOP );
+        if ( VirtualProtect( reinterpret_cast<void*>(GothicMemoryLocations::zCView::SetMode), 0x1B9, PAGE_EXECUTE_READWRITE, &dwProtect ) ) {
+            // Replace the actual mode-change in zCView::SetVirtualMode. Only do the UI-Changes.
+            REPLACE_RANGE( GothicMemoryLocations::zCView::REPL_SetMode_ModechangeStart, GothicMemoryLocations::zCView::REPL_SetMode_ModechangeEnd - 1, INST_NOP );
+        }
 
 #if BUILD_GOTHIC_2_6_fix
         // .text:007A62A0; void __thiscall zCView::BlitText(zCView * __hidden this)
@@ -136,7 +136,7 @@ public:
             Engine::GraphicsEngine->DrawString( text->text.ToChar(), x, y, text->font, fontColor );
         }
     }
-    static _zCView* GetScreen() { return *(_zCView**)GothicMemoryLocations::GlobalObjects::screen; }
+    static _zCView* GetScreen() { return *reinterpret_cast<_zCView**>(GothicMemoryLocations::GlobalObjects::screen); }
 
 #endif
 

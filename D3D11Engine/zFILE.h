@@ -12,7 +12,6 @@ public:
     /** Hooks the functions of this Class */
     static void Hook() {
         XHook( HookedFunctions::OriginalFunctions.original_zFILEOpen, GothicMemoryLocations::zFILE::Open, zFILE::hooked_Open );
-        //(zCBspNodeRenderOutdoor)DetourFunction((BYTE *)GothicMemoryLocations::zCBspNode::RenderOutdoor, (BYTE *)zCBspNode::hooked_zCBspNodeRenderOutdoor);
     }
 
     static int __fastcall hooked_Open( void* thisptr, void* unknwn, zSTRING& str, bool b ) {

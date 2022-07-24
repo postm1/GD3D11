@@ -109,7 +109,7 @@ __declspec(align(4)) struct GothicPipelineState {
     /** Sets this state dirty, which means that it will be updated before next rendering */
     void SetDirty() {
         StateDirty = true;
-        HashThis( (char*)this, StructSize );
+        HashThis( reinterpret_cast<char*>(this), StructSize );
     }
 
     /** Hashes the whole struct */
@@ -454,20 +454,20 @@ struct GothicSamplerStateInfo : public GothicPipelineState {
 struct GothicTransformInfo {
     /** Sets the default values for this struct */
     void SetDefault() {
-        XMMATRIX const& idMatrix = DirectX::XMMatrixIdentity();
+        XMMATRIX const& idMatrix = XMMatrixIdentity();
         XMStoreFloat4x4( &TransformWorld, idMatrix );
         XMStoreFloat4x4( &TransformView, idMatrix );
         XMStoreFloat4x4( &TransformProj, idMatrix );
     }
 
     /** This is actually world * view. Gothic never sets the view matrix */
-    DirectX::XMFLOAT4X4 TransformWorld;
+    XMFLOAT4X4 TransformWorld;
 
     /** Though never really set by Gothic, it's listed here for completeness sake */
-    DirectX::XMFLOAT4X4 TransformView;
+    XMFLOAT4X4 TransformView;
 
     /** Projectionmatrix */
-    DirectX::XMFLOAT4X4 TransformProj;
+    XMFLOAT4X4 TransformProj;
 };
 
 struct HBAOSettings {
@@ -547,6 +547,14 @@ struct GothicRendererSettings {
         OutdoorSmallVobDrawRadius = 10000.0f;
         SmallVobSize = 1500.0f;
 
+
+#ifdef  BUILD_SPACER_NET
+        OutdoorSmallVobDrawRadius = 30000.0f;
+        IndoorVobDrawRadius = 10000.0f;
+        SectionDrawRadius = 8;
+#endif //  BUILD_SPACER_NET
+
+
 #ifdef BUILD_GOTHIC_1_08k
         SetupOldWorldSpecificValues();
 #else
@@ -609,6 +617,7 @@ struct GothicRendererSettings {
         EnablePointlightShadows = PLS_UPDATE_DYNAMIC;
         MinLightShadowUpdateRange = 300.0f;
         PartialDynamicShadowUpdates = true;
+        DrawSectionIntersections = true;
 
         EnableGodRays = true;
 
@@ -621,11 +630,11 @@ struct GothicRendererSettings {
         RainHeightRange = 1000.0f;
         RainNumParticles = 50000;
         RainMoveParticles = true;
-        RainGlobalVelocity = DirectX::XMFLOAT3( 250, -1000, 0 );
+        RainGlobalVelocity = XMFLOAT3( 250, -1000, 0 );
         RainUseInitialSet = false;
         RainSceneWettness = 0.0f;
         RainSunLightStrength = 0.50f;
-        RainFogColor = DirectX::XMFLOAT3( 0.28f, 0.28f, 0.28f );
+        RainFogColor = XMFLOAT3( 0.28f, 0.28f, 0.28f );
         RainFogDensity = 0.00500f;
 
         EnableRain = true;
@@ -732,6 +741,7 @@ struct GothicRendererSettings {
     EPointLightShadowMode EnablePointlightShadows;
     float MinLightShadowUpdateRange;
     bool PartialDynamicShadowUpdates;
+    bool DrawSectionIntersections;
 
     int MaxNumFaces;
 
@@ -788,11 +798,11 @@ struct GothicRendererSettings {
     UINT RainNumParticles;
     bool RainMoveParticles;
     bool RainUseInitialSet;
-    DirectX::XMFLOAT3 RainGlobalVelocity;
+    XMFLOAT3 RainGlobalVelocity;
     float RainSceneWettness;
 
     float RainSunLightStrength;
-    DirectX::XMFLOAT3 RainFogColor;
+    XMFLOAT3 RainFogColor;
     float RainFogDensity;
 
     bool EnableRain;
@@ -877,9 +887,6 @@ struct GothicRendererInfo {
     GothicRendererInfo() {
         VOBVerticesDataSize = 0;
         SkeletalVerticesDataSize = 0;
-        FirstVideoFrame = 0;
-        FixBink = 0;
-        PlayingMovieResolution = INT2( 0, 0 );
         Reset();
     }
 
@@ -937,11 +944,6 @@ struct GothicRendererInfo {
 
     unsigned int VOBVerticesDataSize;
     unsigned int SkeletalVerticesDataSize;
-
-    /** Bink Video specific variables */
-    int FirstVideoFrame;
-    int FixBink;
-    INT2 PlayingMovieResolution;
 };
 
 /** This handles more device specific settings */

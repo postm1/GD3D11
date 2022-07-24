@@ -46,7 +46,7 @@ public:
     }
 
     /** Reads config stuff */
-    static void __fastcall hooked_oCNPCEnable( zCVob* thisptr, void* unknwn, DirectX::XMFLOAT3& position ) {
+    static void __fastcall hooked_oCNPCEnable( zCVob* thisptr, void* unknwn, XMFLOAT3& position ) {
         hook_infunc
             HookedFunctions::OriginalFunctions.original_oCNPCEnable( thisptr, position );
 
@@ -68,8 +68,8 @@ public:
         hook_outfunc
     }
 
-    void ResetPos( const DirectX::XMFLOAT3& pos ) {
-        reinterpret_cast<void( __fastcall* )( oCNPC*, int, const DirectX::XMFLOAT3& )>( GothicMemoryLocations::oCNPC::ResetPos )( this, 0, pos );
+    void ResetPos( const XMFLOAT3& pos ) {
+        reinterpret_cast<void( __fastcall* )( oCNPC*, int, const XMFLOAT3& )>( GothicMemoryLocations::oCNPC::ResetPos )( this, 0, pos );
     }
 
     int IsAPlayer() {

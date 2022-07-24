@@ -227,7 +227,7 @@ struct BaseVisualInfo {
     zTBBox3D BBox;
 
     /** Meshes midpoint */
-    DirectX::XMFLOAT3 MidPoint;
+    XMFLOAT3 MidPoint;
 
     /** Games visual */
     zCVisual* Visual;
@@ -342,7 +342,7 @@ struct VobInfo : public BaseVobInfo {
     D3D11ConstantBuffer* VobConstantBuffer;
 
     /** Position the vob was at while being rendered last time */
-    DirectX::XMFLOAT3 LastRenderPosition;
+    XMFLOAT3 LastRenderPosition;
 
     /** True if this is an indoor-vob */
     bool IsIndoorVob;
@@ -354,7 +354,7 @@ struct VobInfo : public BaseVobInfo {
     WorldMeshSectionInfo* VobSection;
 
     /** Current world transform */
-    DirectX::XMFLOAT4X4 WorldMatrix;
+    XMFLOAT4X4 WorldMatrix;
 
     /** BSP-Node this is stored in */
     std::vector<BspInfo*> ParentBSPNodes;
@@ -370,6 +370,7 @@ struct VobLightInfo {
         Vob = nullptr;
         LightShadowBuffers = nullptr;
         VisibleInRenderPass = false;
+        IsPFXVobLight = false;
         IsIndoorVob = false;
         DynamicShadows = false;
         UpdateShadows = true;
@@ -384,6 +385,7 @@ struct VobLightInfo {
 
     /** Flag to see if this vob was drawn in the current render pass. Used to collect the same vob only once. */
     bool VisibleInRenderPass;
+    bool IsPFXVobLight;
 
     /** True if this is an indoor-vob */
     bool IsIndoorVob;
@@ -397,7 +399,7 @@ struct VobLightInfo {
     bool UpdateShadows; // Whether to update this lights shadows on the next occasion
 
     /** Position where we were rendered the last time */
-    DirectX::XMFLOAT3 LastRenderedPosition;
+    XMFLOAT3 LastRenderedPosition;
 };
 
 
@@ -438,7 +440,7 @@ struct SkeletalVobInfo : public BaseVobInfo {
     bool VisibleInRenderPass;
 
     /** Current world transform */
-    DirectX::XMFLOAT4X4 WorldMatrix;
+    XMFLOAT4X4 WorldMatrix;
 
     /** BSP-Node this is stored in */
     std::vector<BspInfo*> ParentBSPNodes;
@@ -464,8 +466,8 @@ class D3D11Texture;
 /** Describes a world-section for the renderer */
 struct WorldMeshSectionInfo {
     WorldMeshSectionInfo() {
-        BoundingBox.Min = DirectX::XMFLOAT3( FLT_MAX, FLT_MAX, FLT_MAX );
-        BoundingBox.Max = DirectX::XMFLOAT3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
+        BoundingBox.Min = XMFLOAT3( FLT_MAX, FLT_MAX, FLT_MAX );
+        BoundingBox.Max = XMFLOAT3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
         FullStaticMesh = nullptr;
     }
 
@@ -518,7 +520,7 @@ struct WorldMeshSectionInfo {
     std::list<VobInfo*> Vobs;
 
     /** Loaded ocean-polys of this section */
-    std::vector<DirectX::XMFLOAT3> OceanPoints;
+    std::vector<XMFLOAT3> OceanPoints;
 
     // This is filled in case we have loaded a custom worldmesh
     std::vector<zCPolygon*> SectionPolygons;
@@ -546,7 +548,7 @@ struct WorldInfo {
         CustomWorldLoaded = false;
     }
 
-    DirectX::XMFLOAT2 MidPoint;
+    XMFLOAT2 MidPoint;
     float LowestVertex;
     float HighestVertex;
     zCBspTree* BspTree;

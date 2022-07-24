@@ -21,7 +21,7 @@ public:
     }
 
     /** Reads config stuff */
-    static void __fastcall hooked_oCSpawnManagerSpawnNpc( zCVob* thisptr, void* unknwn, oCNPC* npc, const DirectX::XMFLOAT3& position, float f ) {
+    static void __fastcall hooked_oCSpawnManagerSpawnNpc( zCVob* thisptr, void* unknwn, oCNPC* npc, const XMFLOAT3& position, float f ) {
         hook_infunc
             HookedFunctions::OriginalFunctions.original_oCSpawnManagerSpawnNpc( thisptr, npc, position, f );
 

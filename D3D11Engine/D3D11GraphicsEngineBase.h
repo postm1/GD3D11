@@ -1,5 +1,4 @@
 #pragma once
-
 #include "basegraphicsengine.h"
 #include <dxgi1_5.h>
 

@@ -11,6 +11,14 @@
 #include "Engine.h"
 #include "Threadpool.h"
 
+#include "D3D11GraphicsEngineBase.h"
+#include <d3dcompiler.h>
+
+// Patch HLSL-Compiler for http://support.microsoft.com/kb/2448404
+#if D3DX_VERSION == 0xa2b
+#pragma ruledisable 0x0802405f
+#endif
+
 const int NUM_MAX_BONES = 96;
 
 D3D11ShaderManager::D3D11ShaderManager() {
@@ -19,6 +27,50 @@ D3D11ShaderManager::D3D11ShaderManager() {
 
 D3D11ShaderManager::~D3D11ShaderManager() {
     DeleteShaders();
+}
+
+//--------------------------------------------------------------------------------------
+// Find and compile the specified shader
+//--------------------------------------------------------------------------------------
+HRESULT D3D11ShaderManager::CompileShaderFromFile( const CHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut, const std::vector<D3D_SHADER_MACRO>& makros ) {
+    HRESULT hr = S_OK;
+
+    char dir[260];
+    GetCurrentDirectoryA( 260, dir );
+    SetCurrentDirectoryA( Engine::GAPI->GetStartDirectory().c_str() );
+
+    DWORD dwShaderFlags = 0;
+#if defined(DEBUG) || defined(_DEBUG)
+    // Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
+    // Setting this flag improves the shader debugging experience, but still allows 
+    // the shaders to be optimized and to run exactly the way they will run in 
+    // the release configuration of this program.
+    //dwShaderFlags |= D3DCOMPILE_DEBUG;
+#else
+    dwShaderFlags |= D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
+    // Construct makros
+    std::vector<D3D_SHADER_MACRO> m;
+    D3D11GraphicsEngineBase::ConstructShaderMakroList( m );
+
+    // Push these to the front
+    m.insert( m.begin(), makros.begin(), makros.end() );
+
+    Microsoft::WRL::ComPtr<ID3DBlob> pErrorBlob;
+    hr = D3DCompileFromFile( Toolbox::ToWideChar( szFileName ).c_str(), &m[0], D3D_COMPILE_STANDARD_FILE_INCLUDE, szEntryPoint, szShaderModel, dwShaderFlags, 0, ppBlobOut, &pErrorBlob );
+    if ( FAILED( hr ) ) {
+        LogInfo() << "Shader compilation failed!";
+        if ( pErrorBlob.Get() ) {
+            LogErrorBox() << reinterpret_cast<char*>(pErrorBlob->GetBufferPointer()) << "\n\n (You can ignore the next error from Gothic about too small video memory!)";
+        }
+
+        SetCurrentDirectoryA( dir );
+        return hr;
+    }
+
+    SetCurrentDirectoryA( dir );
+    return S_OK;
 }
 
 /** Creates list with ShaderInfos */
@@ -91,23 +143,23 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.push_back( ShaderInfo( "VS_ExSkeletal", "VS_ExSkeletal.hlsl", "v", 3 ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstanceSkeletal ) );
-    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( DirectX::XMFLOAT4X4 ) );
+    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( XMFLOAT4X4 ) );
 
     Shaders.push_back( ShaderInfo( "VS_ExSkeletalVN", "VS_ExSkeletalVN.hlsl", "v", 3 ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstanceSkeletal ) );
-    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( DirectX::XMFLOAT4X4 ) );
+    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( XMFLOAT4X4 ) );
 
     Shaders.push_back( ShaderInfo( "VS_ExSkeletalCube", "VS_ExSkeletalCube.hlsl", "v", 3 ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstanceSkeletal ) );
-    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( DirectX::XMFLOAT4X4 ) );
+    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( XMFLOAT4X4 ) );
 
 #if ENABLE_TESSELATION > 0
     Shaders.push_back( ShaderInfo( "VS_PNAEN_Skeletal", "VS_PNAEN_Skeletal.hlsl", "v", 3 ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstanceSkeletal ) );
-    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( DirectX::XMFLOAT4X4 ) );
+    Shaders.back().cBufferSizes.push_back( NUM_MAX_BONES * sizeof( XMFLOAT4X4 ) );
 #endif
 
     Shaders.push_back( ShaderInfo( "VS_TransformedEx", "VS_TransformedEx.hlsl", "v", 1 ) );
@@ -657,6 +709,7 @@ ShaderInfo D3D11ShaderManager::GetShaderInfo( const std::string& shader, bool& o
     ok = false;
     return ShaderInfo( "", "", "" );
 }
+
 void D3D11ShaderManager::UpdateShaderInfo( ShaderInfo& shader ) {
     for ( size_t i = 0; i < Shaders.size(); i++ ) {
         if ( Shaders[i].name == shader.name ) {

@@ -12,8 +12,6 @@
 #include <d3dcompiler.h>
 #include <DDSTextureLoader.h>
 
-using namespace DirectX;
-
 D3D11PFX_SMAA::D3D11PFX_SMAA( D3D11PfxRenderer* rnd ) : D3D11PFX_Effect( rnd ) {
 	EdgesTex = nullptr;
 	BlendTex = nullptr;
@@ -43,7 +41,7 @@ HRESULT D3DX11CreateEffectFromFile_RES(
 
 	char* Errors;
 	if ( ErrorsBuffer.Get() ) {
-		Errors = (char*)ErrorsBuffer->GetBufferPointer();
+		Errors = reinterpret_cast<char*>(ErrorsBuffer->GetBufferPointer());
 		if ( SUCCEEDED( hr ) ) {
 			LogWarn() << Errors;
 		} else {
@@ -60,7 +58,7 @@ HRESULT D3DX11CreateEffectFromFile_RES(
 bool D3D11PFX_SMAA::Init() {
 	HRESULT hr;
 
-	D3D11GraphicsEngine* engine = (D3D11GraphicsEngine*)Engine::GraphicsEngine;
+	D3D11GraphicsEngine* engine = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
 
 	LE( D3DX11CreateEffectFromFile_RES( "System\\GD3D11\\Shaders\\SMAA.fx", nullptr, "fx_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, engine->GetDevice().Get(), nullptr, SMAAShader.GetAddressOf(), nullptr ) );
 
@@ -94,7 +92,7 @@ bool D3D11PFX_SMAA::Init() {
 
 /** Renders the PostFX */
 void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& renderTargetSRV ) {
-	D3D11GraphicsEngine* engine = (D3D11GraphicsEngine*)Engine::GraphicsEngine;
+	D3D11GraphicsEngine* engine = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
 	engine->SetDefaultStates();
 	engine->UpdateRenderStates();
 
@@ -103,8 +101,8 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 	vp.TopLeftY = 0.0f;
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
-	vp.Width = (float)FxRenderer->GetTempBuffer().GetSizeX();
-	vp.Height = (float)FxRenderer->GetTempBuffer().GetSizeY();
+	vp.Width = static_cast<float>(FxRenderer->GetTempBuffer().GetSizeX());
+	vp.Height = static_cast<float>(FxRenderer->GetTempBuffer().GetSizeY());
 
 	engine->GetShaderManager().GetVShader( "VS_PFX" )->Apply(); // Apply vertexlayout for PP-Effects
 
@@ -114,8 +112,8 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 		OnResize( INT2( engine->GetResolution().x, engine->GetResolution().y ) );
 	}
 
-	engine->GetContext()->ClearRenderTargetView( EdgesTex->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
-	engine->GetContext()->ClearRenderTargetView( BlendTex->GetRenderTargetView().Get(), (float*)&float4( 0, 0, 0, 0 ) );
+	engine->GetContext()->ClearRenderTargetView( EdgesTex->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
+	engine->GetContext()->ClearRenderTargetView( BlendTex->GetRenderTargetView().Get(), reinterpret_cast<float*>(&float4( 0, 0, 0, 0 )) );
 
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> OldRTV;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> OldDSV;
@@ -187,7 +185,7 @@ void D3D11PFX_SMAA::RenderPostFX(const Microsoft::WRL::ComPtr<ID3D11ShaderResour
 
 /** Called on resize */
 void D3D11PFX_SMAA::OnResize( const INT2& size ) {
-	D3D11GraphicsEngine* engine = (D3D11GraphicsEngine*)Engine::GraphicsEngine;
+	D3D11GraphicsEngine* engine = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
 
 	delete EdgesTex;
 	delete BlendTex;
@@ -204,7 +202,7 @@ void D3D11PFX_SMAA::OnResize( const INT2& size ) {
 	std::vector<D3D_SHADER_MACRO> Makros;
 
 	char ResStr[256];
-	sprintf( ResStr, "float2(1.0f/%d, 1.0f/%d)", (int)(size.x), (int)(size.y) );
+	sprintf( ResStr, "float2(1.0f/%d, 1.0f/%d)", size.x, size.y );
 	D3D_SHADER_MACRO PixelSize = { "SMAA_PIXEL_SIZE", ResStr };
 	Makros.push_back( PixelSize );
 

@@ -20,7 +20,7 @@ jobs:
         configuration: [Release_AVX, Release_G1_AVX, Release, Release_G1, Spacer_NET, Launcher]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1

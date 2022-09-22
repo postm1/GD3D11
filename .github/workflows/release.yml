@@ -20,10 +20,12 @@ jobs:
       run: |
         $tagName = $Env:GITHUB_REF -replace 'refs/tags/', ''
         $dirName = "GD3D11-${tagName}"
+        $shortHash = $Env:GITHUB_SHA.Substring(0, 9)
         echo "Tag: ${tagName}"
         echo "Directory: ${dirName}"
         echo "RELEASE_VERSION=${tagName}" >> $Env:GITHUB_ENV
         echo "RELEASE_DIR=${dirName}" >> $Env:GITHUB_ENV
+        echo "CL=/DVERSION_NUMBER#\\\"${tagName}-${shortHash}\\\"" >> $Env:GITHUB_ENV
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1

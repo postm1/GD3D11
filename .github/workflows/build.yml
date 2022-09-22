@@ -26,6 +26,11 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
 
+    - name: Set tag and directory name env
+      run: |
+        $shortHash = $Env:GITHUB_SHA.Substring(0, 9)
+        echo (-join("CL=/DVERSION_NUMBER#",'\"',"unstable-${shortHash}",'\"')) >> $Env:GITHUB_ENV
+
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore .
@@ -56,7 +61,6 @@ jobs:
         echo "Directory: ${dirName}"
         echo "RELEASE_VERSION=${tagName}" >> $Env:GITHUB_ENV
         echo "RELEASE_DIR=${dirName}" >> $Env:GITHUB_ENV
-        echo (-join("CL=/DVERSION_NUMBER#",'\"',"unstable-${shortHash}",'\"')) >> $Env:GITHUB_ENV
 
     - uses: actions/download-artifact@v3
     

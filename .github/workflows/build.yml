@@ -29,7 +29,7 @@ jobs:
     - name: Set tag and directory name env
       run: |
         $shortHash = $Env:GITHUB_SHA.Substring(0, 9)
-        echo (-join("CL=/DVERSION_NUMBER#",'\"',"unstable-${shortHash}",'\"')) >> $Env:GITHUB_ENV
+        echo (-join("CL=/DVERSION_NUMBER#",'\"',"-git-${shortHash}",'\"')) >> $Env:GITHUB_ENV
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}

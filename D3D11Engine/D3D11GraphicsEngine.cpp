@@ -6394,14 +6394,6 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     if ( str.empty() ) return;
     if ( !font ) return;
     if ( !font->tex ) return;
-    float UIScale = 1.0f;
-    static int savedBarSize = -1;
-    if ( oCGame::GetGame() ) {
-        if ( savedBarSize == -1 ) {
-            savedBarSize = oCGame::GetGame()->swimBar->psizex;
-        }
-        UIScale = static_cast<float>(savedBarSize) / 180.f;
-    }
 
     constexpr float FONT_CACHE_PRIO = -1;
     zCTexture* tx = font->tex;
@@ -6466,7 +6458,7 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
         maxLen--;
     }
 
-    UI::zFont::AppendGlyphs( vertices, str, maxLen, x, y, font, fontColor, UIScale, zCCamera::GetCamera() );
+    UI::zFont::AppendGlyphs( vertices, str, maxLen, x, y, font, fontColor, oCGame::GetGame() && oCGame::GetGame()->swimBar ? static_cast<float>(oCGame::GetGame()->swimBar->psizex) / 180.f : 1.0f, zCCamera::GetCamera() );
 
     //if (str[0] == '(') {
     //	int o = 1;

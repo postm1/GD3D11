@@ -59,6 +59,7 @@ const int NUM_MIN_FRAME_SHADOW_UPDATES =
 4;  // Minimum lights to update per frame
 const int MAX_IMPORTANT_LIGHT_UPDATES = 1;
 
+
 D3D11GraphicsEngine::D3D11GraphicsEngine() {
     DebugPointlight = nullptr;
     OutputWindow = nullptr;
@@ -86,6 +87,7 @@ D3D11GraphicsEngine::D3D11GraphicsEngine() {
         Engine::GAPI->GetRendererState().RendererSettings.LoadedResolution;
     CachedRefreshRate.Numerator = 0;
     CachedRefreshRate.Denominator = 0;
+    unionCurrentCustomFontMultiplier = 1.0;
 }
 
 D3D11GraphicsEngine::~D3D11GraphicsEngine() {
@@ -257,6 +259,10 @@ XRESULT D3D11GraphicsEngine::Init() {
     PS_Diffuse = ShaderManager->GetPShader( "PS_Diffuse" );
     PS_DiffuseNormalmappedAlphatest = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphaTest" );
     PS_DiffuseAlphatest = ShaderManager->GetPShader( "PS_DiffuseAlphaTest" );
+
+    PS_PortalDiffuse = ShaderManager->GetPShader( "PS_PortalDiffuse" );
+
+    PS_WaterfallFoam = ShaderManager->GetPShader( "PS_WaterfallFoam" );
 
     TempVertexBuffer = std::make_unique<D3D11VertexBuffer>();
     TempVertexBuffer->Init(
@@ -2213,6 +2219,8 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     RenderedVobs.clear();
     FrameWaterSurfaces.clear();
     FrameTransparencyMeshes.clear();
+    FrameTransparencyMeshesPortal.clear();
+    FrameTransparencyMeshesWaterfall.clear();
 
     // TODO: TODO: Hack for texture caching!
     zCTextureCacheHack::NumNotCachedTexturesInFrame = 0;
@@ -2258,6 +2266,14 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
 
     // Draw light-shafts
     DrawMeshInfoListAlphablended( FrameTransparencyMeshes );
+
+    //draw forest / door portals
+    if ( Engine::GAPI->GetRendererState().RendererSettings.DrawG1ForestPortals ) {
+        DrawMeshInfoListAlphablended( FrameTransparencyMeshesPortal );
+    }
+
+    //draw waterfall foam
+    DrawMeshInfoListAlphablended( FrameTransparencyMeshesWaterfall );
 
     // Draw ghosts
     D3D11ENGINE_RENDER_STAGE oldStage = RenderingStage;
@@ -2613,9 +2629,10 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
             // Bind both
             GetContext()->PSSetShaderResources( 0, 3, srv );
 
-            // Get the right shader for it
             int alphaFunc = it.first.Material->GetAlphaFunc();
-            BindShaderForTexture( texture, false, alphaFunc );
+
+            //Get the right shader for it
+            BindShaderForTexture( texture, false, alphaFunc, it.first.Info->MaterialType );
 
             // Check for alphablending on world mesh
             if ( lastAlphaFunc != alphaFunc ) {
@@ -2645,6 +2662,7 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
             // Draw the section-part
             DrawVertexBufferIndexedUINT( nullptr, nullptr, it.second->Indices.size(),
                 it.second->BaseIndexLocation );
+
         }
     }
 
@@ -2739,9 +2757,15 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
                 }
 
                 // Check for alphablending
-                if (worldMesh.first.Material->GetAlphaFunc() > zMAT_ALPHA_FUNC_NONE &&
-                    worldMesh.first.Material->GetAlphaFunc() != zMAT_ALPHA_FUNC_TEST) {
-                    FrameTransparencyMeshes.push_back(worldMesh);
+                if ( worldMesh.first.Material->GetAlphaFunc() > zMAT_ALPHA_FUNC_NONE &&
+                    worldMesh.first.Material->GetAlphaFunc() != zMAT_ALPHA_FUNC_TEST ) {
+                    if ( worldMesh.first.Info->MaterialType == MaterialInfo::MT_Portal ) {
+                        FrameTransparencyMeshesPortal.push_back( worldMesh );
+                    } else if ( worldMesh.first.Info->MaterialType == MaterialInfo::MT_WaterfallFoam ) {
+                        FrameTransparencyMeshesWaterfall.push_back( worldMesh );
+                    } else {
+                        FrameTransparencyMeshes.push_back( worldMesh );
+                    }
                 } else {
                     // Create a new pair using the animated texture
                     meshList.emplace_back( key, worldMesh.second );
@@ -3270,7 +3294,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
     bool noNPCs, std::list<VobInfo*>* renderedVobs,
     std::list<SkeletalVobInfo*>* renderedMobs,
     std::map<MeshKey, WorldMeshInfo*, cmpMeshKey>* worldMeshCache ) {
-
+        
     // Setup renderstates
     Engine::GAPI->GetRendererState().RasterizerState.SetDefault();
     Engine::GAPI->GetRendererState().RasterizerState.CullMode =
@@ -3351,6 +3375,7 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
                 // Bind texture
                 if ( meshInfoByKey->first.Material && meshInfoByKey->first.Material->GetTexture() ) {
                     // Check surface type
+
                     if ( meshInfoByKey->first.Info->MaterialType == MaterialInfo::MT_Water ) {
                         continue;
                     }
@@ -3376,7 +3401,6 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
                 DrawVertexBufferIndexedUINT( nullptr, nullptr,
                     meshInfoByKey->second->Indices.size(), meshInfoByKey->second->BaseIndexLocation );
             }
-
         } else {
             for ( auto&& itx : Engine::GAPI->GetWorldSections() ) {
                 for ( auto&& ity : itx.second ) {
@@ -5541,10 +5565,11 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     *data = d;
 }
 
-/** Binds the right shader for the given texture */
+/* Binds the right shader for the given texture */ 
 void D3D11GraphicsEngine::BindShaderForTexture( zCTexture* texture,
     bool forceAlphaTest,
-    int zMatAlphaFunc ) {
+    int zMatAlphaFunc,
+    MaterialInfo::EMaterialType materialInfo ) {
     auto active = ActivePS;
     auto newShader = ActivePS;
 
@@ -5552,7 +5577,11 @@ void D3D11GraphicsEngine::BindShaderForTexture( zCTexture* texture,
     bool blendBlend = zMatAlphaFunc == zMAT_ALPHA_FUNC_BLEND;
     bool linZ = (Engine::GAPI->GetRendererState().GraphicsState.FF_GSwitches & GSWITCH_LINEAR_DEPTH) != 0;
 
-    if ( linZ ) {
+    if ( materialInfo == MaterialInfo::MT_Portal ) {
+        newShader = PS_PortalDiffuse;
+    } else if ( materialInfo == MaterialInfo::MT_WaterfallFoam ) {
+        newShader = PS_WaterfallFoam;
+    } else if ( linZ ) {
         newShader = PS_LinDepth;
     } else if ( blendAdd || blendBlend ) {
         newShader = PS_Simple;
@@ -6390,10 +6419,18 @@ namespace UI::zFont {
     }
 }
 
+
+float  D3D11GraphicsEngine::UpdateCustomFontMultiplierFontRendering( float multiplier ) {
+    float res = unionCurrentCustomFontMultiplier;
+    unionCurrentCustomFontMultiplier = multiplier;
+    return res; 
+}
+
 void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, const zFont* font, zColor& fontColor ) {
     if ( str.empty() ) return;
     if ( !font ) return;
     if ( !font->tex ) return;
+
     float UIScale = 1.0f;
     static int savedBarSize = -1;
     if ( oCGame::GetGame() ) {
@@ -6409,6 +6446,8 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     if ( tx->CacheIn( FONT_CACHE_PRIO ) != zRES_CACHED_IN ) {
         return;
     }
+    
+    UIScale *= unionCurrentCustomFontMultiplier;
 
     //
     // Backup old renderstates, BlendState can be ignored here.

@@ -1,6 +1,7 @@
 #pragma once
 #include "D3D11GraphicsEngineBase.h"
 #include "fpslimiter.h"
+#include "GothicAPI.h"
 
 struct RenderToDepthStencilBuffer;
 
@@ -313,7 +314,7 @@ public:
     void DrawUnderwaterEffects();
 
     /** Binds the right shader for the given texture */
-    void BindShaderForTexture( zCTexture* texture, bool forceAlphaTest = false, int zMatAlphaFunc = 0 );
+    void BindShaderForTexture( zCTexture* texture, bool forceAlphaTest = false, int zMatAlphaFunc = 0, MaterialInfo::EMaterialType materialInfo = MaterialInfo::MT_None );
 
     /** Copies the depth stencil buffer to DepthStencilBufferCopy */
     void CopyDepthStencil();
@@ -337,6 +338,9 @@ public:
     RenderToTextureBuffer* GetDummyCubeRT() { return DummyShadowCubemapTexture.get(); }
 
     void EnsureTempVertexBufferSize( std::unique_ptr<D3D11VertexBuffer>& buffer, UINT size );
+
+    float UpdateCustomFontMultiplierFontRendering( float multiplier );
+
 protected:
     std::unique_ptr<FpsLimiter> m_FrameLimiter;
     int m_LastFrameLimit;
@@ -399,6 +403,12 @@ protected:
     /** List of worldmeshes we have to render using alphablending */
     std::vector<std::pair<MeshKey, MeshInfo*>> FrameTransparencyMeshes;
 
+    /** List of portal worldmeshes we have to render using alphablending */
+    std::vector<std::pair<MeshKey, MeshInfo*>> FrameTransparencyMeshesPortal;
+
+    /** List of waterfall worldmeshes we have to render using alphablending */
+    std::vector<std::pair<MeshKey, MeshInfo*>> FrameTransparencyMeshesWaterfall;
+
     /** Reflection */
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ReflectionCube;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ReflectionCube2;
@@ -438,4 +448,5 @@ protected:
     bool m_HDR;
     int m_previousFpsLimit;
     bool m_isWindowActive;
+    float unionCurrentCustomFontMultiplier;
 };

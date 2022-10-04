@@ -337,6 +337,9 @@ public:
     RenderToTextureBuffer* GetDummyCubeRT() { return DummyShadowCubemapTexture.get(); }
 
     void EnsureTempVertexBufferSize( std::unique_ptr<D3D11VertexBuffer>& buffer, UINT size );
+
+    float UpdateCustomFontMultiplierFontRendering( float multiplier );
+
 protected:
     std::unique_ptr<FpsLimiter> m_FrameLimiter;
     int m_LastFrameLimit;
@@ -438,4 +441,5 @@ protected:
     bool m_HDR;
     int m_previousFpsLimit;
     bool m_isWindowActive;
+    float unionCurrentCustomFontMultiplier;
 };

@@ -417,3 +417,45 @@ FARPROC WINAPI HookedFunctionInfo::hooked_GetProcAddress( HMODULE mod, const cha
     }
     return GetProcAddress( mod, procName );
 }
+
+#if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
+void HookedFunctionInfo::InitAnimatedInventoryHooks() {
+    if ( *reinterpret_cast<BYTE*>(0x67303D) != 0xD8 ) {
+        // Remove Animated_Inventory SystemPack memory jump and insert our function instead that doesn't fuckup items world matrix
+        PatchAddr( 0x67303D, "\xD8\x1D\xA4\x08\x7D\x00" );
+        DWORD FixAnimation = reinterpret_cast<DWORD>(VirtualAlloc( nullptr, 32, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE ));
+        if ( FixAnimation ) {
+            PatchAddr( FixAnimation, "\x8B\xCF\xE8\x00\x00\x00\x00\xE9\x00\x00\x00\x00\x6A\x01\x8B\xCF\xE8\x00\x00\x00\x00\xE9\x00\x00\x00\x00" );
+            PatchCall( FixAnimation + 2, reinterpret_cast<DWORD>(&HookedFunctionInfo::hooked_RotateInInventory) );
+            PatchCall( FixAnimation + 16, 0x672560 );
+            PatchJMP( FixAnimation + 7, 0x673053 );
+            PatchJMP( FixAnimation + 21, 0x673053 );
+            PatchJMP( 0x673049, FixAnimation );
+            PatchJMP( 0x67304E, FixAnimation + 12 );
+            PatchAddr( 0x673048, "\x0F\x8A" );
+        }
+    }
+}
+
+void __fastcall HookedFunctionInfo::hooked_RotateInInventory( DWORD oCItem ) {
+    // Call RotateForInventory to reset world matrix
+    reinterpret_cast<void( __thiscall* )( DWORD, int )>( 0x672560 )( oCItem, 1 );
+
+    float rotAxis[3] = { 0.f, 0.f, 0.f };
+    float* bbox3d = reinterpret_cast<float*>(oCItem + 0x7C);
+
+    float val = -1.f;
+    int index = 0;
+    for ( int i = 0; i < 3; ++i ) {
+        float v = (bbox3d[i + 3] - bbox3d[i]);
+        if ( v > val ) {
+            val = v;
+            index = i;
+        }
+    }
+    rotAxis[index] = 1.f;
+
+    // Call RotateLocal to rotate item world matrix
+    reinterpret_cast<void( __thiscall* )( DWORD, float*, float )>( 0x5EE100 )( oCItem, rotAxis, 20.f * (*reinterpret_cast<float*>(0x8CF1F0) / 1000.f) );
+}
+#endif

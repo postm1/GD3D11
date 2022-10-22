@@ -27,6 +27,28 @@ static void PatchAddr( unsigned int adr, const T( &v )[n] ) {
     }
 }
 
+static void PatchCall( unsigned int adr, unsigned int func ) {
+    DWORD dwOldProtect, dwNewProtect, dwNewCall;
+    dwNewCall = func - adr - 5;
+    if ( VirtualProtect( reinterpret_cast<void*>(adr), 5, PAGE_EXECUTE_READWRITE, &dwOldProtect ) ) {
+        *reinterpret_cast<BYTE*>(adr) = 0xE8;
+        *reinterpret_cast<DWORD*>(adr + 1) = dwNewCall;
+        VirtualProtect( reinterpret_cast<void*>(adr), 5, dwOldProtect, &dwNewProtect );
+        FlushInstructionCache( GetCurrentProcess(), reinterpret_cast<void*>(adr), 5 );
+    }
+}
+
+static void PatchJMP( unsigned int adr, unsigned int jmp ) {
+    DWORD dwOldProtect, dwNewProtect, dwNewCall;
+    dwNewCall = jmp - adr - 5;
+    if ( VirtualProtect( reinterpret_cast<void*>(adr), 5, PAGE_EXECUTE_READWRITE, &dwOldProtect ) ) {
+        *reinterpret_cast<BYTE*>(adr) = 0xE9;
+        *reinterpret_cast<DWORD*>(adr + 1) = dwNewCall;
+        VirtualProtect( reinterpret_cast<void*>(adr), 5, dwOldProtect, &dwNewProtect );
+        FlushInstructionCache( GetCurrentProcess(), reinterpret_cast<void*>(adr), 5 );
+    }
+}
+
 #define INST_NOP 0x90
 #define REPLACE_OP(addr, op) {unsigned char* a = (unsigned char*)addr; *a = op;}
 #define REPLACE_RANGE(start, end_incl, op) {for(int i=start; i<=end_incl;i++){REPLACE_OP(i, op);}}

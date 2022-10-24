@@ -173,6 +173,11 @@ struct HookedFunctionInfo {
     static void __fastcall hooked_SetLightmap( void* polygonPtr );
 
     static FARPROC WINAPI hooked_GetProcAddress( HMODULE mod, const char* procName );
+
+#if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
+    void InitAnimatedInventoryHooks();
+    static void __fastcall hooked_RotateInInventory( DWORD oCItem );
+#endif
 };
 
 namespace HookedFunctions {

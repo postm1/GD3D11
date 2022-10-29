@@ -4043,6 +4043,8 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
     s.EnableDynamicLighting = GetPrivateProfileBoolA( "Shadows", "EnableDynamicLighting", defaultRendererSettings.EnableDynamicLighting, ini );
     s.SmoothShadowCameraUpdate = GetPrivateProfileBoolA( "Shadows", "SmoothCameraUpdate", defaultRendererSettings.SmoothShadowCameraUpdate, ini );
     s.ShadowStrength = GetPrivateProfileFloatA( "Shadows", "ShadowStrength", defaultRendererSettings.ShadowStrength, ini );
+    s.ShadowAOStrength = GetPrivateProfileFloatA( "Shadows", "ShadowAOStrength", defaultRendererSettings.ShadowAOStrength, ini );
+    s.WorldAOStrength = GetPrivateProfileFloatA( "Shadows", "WorldAOStrength", defaultRendererSettings.WorldAOStrength, ini );
 
     INT2 res = {};
     RECT desktopRect;

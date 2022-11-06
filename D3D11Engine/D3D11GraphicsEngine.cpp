@@ -5196,21 +5196,6 @@ D3D11ENGINE_RENDER_STAGE D3D11GraphicsEngine::GetRenderingStage() {
 
 /** Draws a VOB (used for inventory) */
 void D3D11GraphicsEngine::DrawVobSingle( VobInfo* vob, zCCamera& camera ) {
-#if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
-    // System Pack Animated_Inventory workaround
-    XMMATRIX worldMatrix = vob->Vob->GetWorldMatrixXM();
-    const uint32_t mask = _mm_movemask_epi8( _mm_packs_epi32(
-        _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[0], worldMatrix.r[1] ) ),
-        _mm_castps_si128( _mm_cmpord_ps( worldMatrix.r[2], worldMatrix.r[3] ) )
-    ) );
-    if ( mask != 0xFFFF ) { // Check whether there are any NAN's in the mask
-        // Sometimes items position doesn't get initialized properly
-        // let's just call RotateForInventory to restart them
-        reinterpret_cast<void( __fastcall* )( zCVob*, int, int )>( 0x672560 )( vob->Vob, 0, 1 );
-        return;
-    }
-#endif
-
     Engine::GAPI->SetViewTransformXM( XMLoadFloat4x4( &camera.GetTransformDX( zCCamera::ETransformType::TT_VIEW ) ) );
     GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(),
         DepthStencilBuffer->GetDepthStencilView().Get() );

@@ -1021,6 +1021,7 @@ XRESULT D3D11GraphicsEngine::OnBeginFrame() {
     Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_NONE;
     Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
     UpdateRenderStates();
+    GetContext()->PSSetSamplers( 0, 1, ClampSamplerState.GetAddressOf() );
 
     // Bind HDR Back Buffer
     GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(), nullptr );
@@ -2361,6 +2362,7 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_NONE;
     Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
     UpdateRenderStates();
+    GetContext()->PSSetSamplers( 0, 1, ClampSamplerState.GetAddressOf() );
 
     // Save screenshot if wanted
     if ( SaveScreenshotNextFrame ) {
@@ -5203,6 +5205,7 @@ void D3D11GraphicsEngine::DrawVobSingle( VobInfo* vob, zCCamera& camera ) {
     // Set backface culling
     Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_BACK;
     Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
+    GetContext()->PSSetSamplers( 0, 1, DefaultSamplerState.GetAddressOf() );
 
     SetActivePixelShader( "PS_Preview_Textured" );
     SetActiveVertexShader( "VS_Ex" );
@@ -5238,6 +5241,7 @@ void D3D11GraphicsEngine::DrawVobSingle( VobInfo* vob, zCCamera& camera ) {
     // Disable culling again
     Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_NONE;
     Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
+    GetContext()->PSSetSamplers( 0, 1, ClampSamplerState.GetAddressOf() );
 }
 
 /** Update clipping cursor onto window */

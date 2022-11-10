@@ -250,7 +250,14 @@ namespace Toolbox {
 
     /** Linear interpolation */
     float lerp( float a, float b, float w ) {
+#if defined(_XM_FMA3_INTRINSICS_)
+        __m128 v0 = _mm_set_ss( a );
+        __m128 v1 = _mm_set_ss( b );
+        __m128 t  = _mm_set_ss( w );
+        return _mm_cvtss_f32( _mm_fmadd_ss( t, v1, _mm_fnmadd_ss( t, v0, v0 ) ) );
+#else
         return (1.0f - w) * a + w * b;
+#endif
     }
 
     /** Converts an errorcode into a string */

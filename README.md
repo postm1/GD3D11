@@ -1,9 +1,9 @@
 # GD3D11 (Gothic Direct3D 11) [![GitHub Actions](https://github.com/kirides/GD3D11/actions/workflows/build.yml/badge.svg)](https://github.com/Kirides/GD3D11/actions) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/Kirides/GD3D11?include_prereleases)](https://github.com/Kirides/GD3D11/releases)
 
-This mod for the games **Gothic** and **Gothic II** brings the engine of those games into a more modern state. Through a custom implementation of the DirectDraw-API and using hooking and assemblercode-modifications of Gothic's intern engine calls, this mod completely replaces Gothic's old rendering architecture. The new architecture is able to utilize more of the current GPU generation's power for rendering.
-Since Gothic's engine in its original state tries to cull as much as possible, this takes a lot of work from the CPU, which was slowing down the game even on today's processors. While the original renderer did a really great job with the tech from 2002, GPUs have grown much faster.
+This mod for the games **Gothic** and **Gothic II** brings the engine of those games into a more modern state. Through a custom implementation of the DirectDraw-API and using hooking and assemblercode-modifications of Gothic's intern engine calls, this mod completely replaces Gothic's old rendering architecture.
 
-And now, that they can actually use their power to render, we not only get a big performance boost on most systems, but also more features:
+The new architecture is able to utilize more of the current GPU generation's power for rendering.
+Since Gothic's engine in its original state tries to cull as much as possible, this takes a lot of work from the CPU, which was slowing down the game even on today's processors. While the original renderer did a really great job with the tech from 2002, GPUs have grown much faster. And now, that they can actually use their power to render, we not only get a big performance boost on most systems, but also more features:
 
 * Dynamic Shadows
 * Increased draw distance
@@ -66,9 +66,11 @@ When using a Release target, those same exceptions will very likely stop the exe
 - Run `CreateRedist_All.bat` to create separate zip files containing the required files
 > **Note**: On CI this process is different. Release builds will bundle all DLL files (SpacerNET is a seperate build) and the launcher will decide which version should be used at runtime. Therefore there is only one zip file for Gothic 1 and Gothic 2.
 
-### Other
+### Dependencies
 
-- Using HBAO+ files from https://github.com/dboleslawski/VVVV.HBAOPlus/tree/master/Dependencies/NVIDIA-HBAOPlus
+- HBAO+ files from [dboleslawski/VVVV.HBAOPlus](https://github.com/dboleslawski/VVVV.HBAOPlus/tree/master/Dependencies/NVIDIA-HBAOPlus)
+- [AntTweakBar](https://sourceforge.net/projects/anttweakbar/)
+- [assimp](https://github.com/assimp/assimp)
 
 ## Special Thanks
 

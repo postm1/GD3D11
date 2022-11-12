@@ -24,8 +24,8 @@ Since Gothic's engine in its original state tries to cull as much as possible, t
 > **Note**: In the past there used to be separate files for Gothic 1 and Gothic 2, this has now changed since the mod will automatically detect the game.
 1. Download the **GD3D11-*LATEST_VERSION*-ci.zip** file from the **Assets** section in the latest release of this repository (e.g. [kirides/releases](https://github.com/kirides/GD3D11/releases/latest)).
 3. Unpack the zip file and copy the content into the `Gothic\system\` or `Gothic2\system\` game folder.
-4. Start the game (the mod will detect whether G1 or G2 is running). You should see the version number of GD3D11 in the top-left corner.
-5. As soon as you start the game for the first time after the installation you should press F11 to open the renderer menu and press `Apply(*)`. This saves all the options in Gothic(2)\system\GD3D11\UserSettings.ini
+4. When starting the game you should see the version number of GD3D11 in the top-left corner.
+5. As soon as you start the game for the first time after the installation you should press F11 to open the renderer menu and press `Apply(*)`. This saves all the options in `Gothic(2)\system\GD3D11\UserSettings.ini`.
 
 ## Bugs & Problems
 
@@ -39,7 +39,7 @@ But first take a look at the [KNOWN ISSUES](./known_issues.md)
 Building the mod is currently only possible with windows, but should be easy to do for anyone. To build the Mod, you need to do the following:
 
 - Download & install **Git** (or any Git client) and clone this GitHub repository to get the GD3D11 code.
-- Download & install **Microsoft Visual Studio 2019** (Community Edition is fine, make sure to enable C++ Tools during installation!) from Microsoft. Might work on 2015 or 2017 but untested.
+- Download & install **Microsoft Visual Studio 2019** (Community Edition is fine, make sure to enable C++ Tools during installation!). Might work on 2015 or 2017 but untested.
 - ~~Download ... DirectX SDK ...~~ Not dependent on DirectX SDK anymore.
 - Optional: Set environment variables "G2_SYSTEM_PATH" and/or "G1_SYSTEM_PATH", which should point to the "system"-folders of the games.
 
@@ -59,7 +59,7 @@ Select the target for which you want to built (if you don't want to create a rel
 After that, the game will be automatically started and should now run with the GD3D11 code that you just built.
 
 When using a Develop target, you might get several exceptions during the start of the game. This is normal and you can safely continue to run the game for all of them (press continue, won't work for "real" exceptions of course).
-When using a Release target, those same exceptions will very likely stop the execution of the game, which is why you should use Develop targets from Visual Studio and test your release builds by starting Gothic 2 directly from the game folder yourself.
+When using a Release target, those same exceptions will very likely stop the execution of the game, which is why you should use Develop targets from Visual Studio and test your release builds by starting Gothic 1/2 directly from the game folder yourself.
 
 ### Producing the Redistributables
 - Compile all versions (e.g. by running `BuildAll.bat`)

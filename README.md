@@ -1,9 +1,8 @@
-# GD3D11 (Gothic Direct3D 11) [![GitHub Actions](https://github.com/kirides/GD3D11/actions/workflows/build.yml/badge.svg)](https://github.com/Kirides/GD3D11/actions) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/Kirides/GD3D11?include_prereleases)](https://github.com/Kirides/GD3D11/releases)
+# GD3D11 (Gothic Direct3D 11) Renderer [![GitHub Actions](https://github.com/kirides/GD3D11/actions/workflows/build.yml/badge.svg)](https://github.com/Kirides/GD3D11/actions) [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/Kirides/GD3D11?include_prereleases)](https://github.com/Kirides/GD3D11/releases)
 
-This mod for the games **Gothic** and **Gothic II** brings the engine of those games into a more modern state. Through a custom implementation of the DirectDraw-API and using hooking and assemblercode-modifications of Gothic's intern engine calls, this mod completely replaces Gothic's old rendering architecture.
+This mod for the games **Gothic** and **Gothic II** brings the engine of those games into a more modern state. Through a custom implementation of the DirectDraw-API and using hooking and assembler-code-modifications of Gothic's internal engine calls, this mod completely replaces Gothic's old rendering architecture.
 
-The new architecture is able to utilize more of the current GPU generation's power for rendering.
-Since Gothic's engine in its original state tries to cull as much as possible, this takes a lot of work from the CPU, which was slowing down the game even on today's processors. While the original renderer did a really great job with the tech from 2002, GPUs have grown much faster. And now, that they can actually use their power to render, we not only get a big performance boost on most systems, but also more features:
+The new renderer is able to utilize more of the current GPU generation's power. Since Gothic's engine in its original state tries to cull as much as possible, this takes a lot of work from the CPU, which was slowing down the game even on today's processors. While the original renderer did a really great job with the tech from 2002, GPUs have grown much faster. And now, that they can actually use their power to render, we not only get a big performance boost on most systems, but also more features:
 
 * Dynamic Shadows
 * Increased draw distance
@@ -25,7 +24,7 @@ Since Gothic's engine in its original state tries to cull as much as possible, t
 1. Download the **GD3D11-*LATEST_VERSION*-ci.zip** file from the **Assets** section in the latest release of this repository (e.g. [kirides/releases](https://github.com/kirides/GD3D11/releases/latest)).
 3. Unpack the zip file and copy the content into the `Gothic\system\` or `Gothic2\system\` game folder.
 4. When starting the game you should see the version number of GD3D11 in the top-left corner.
-5. As soon as you start the game for the first time after the installation you should press F11 to open the renderer menu and press `Apply(*)`. This saves all the options in `Gothic(2)\system\GD3D11\UserSettings.ini`.
+5. As soon as you start the game for the first time after the installation you should press F11 to open the renderer menu and press `Apply(*)`. This saves all the options to `Gothic(2)\system\GD3D11\UserSettings.ini`.
 
 ## Bugs & Problems
 
@@ -36,7 +35,7 @@ But first take a look at the [KNOWN ISSUES](./known_issues.md)
 
 ### Latest version
 
-Building the mod is currently only possible with windows, but should be easy to do for anyone. To build the Mod, you need to do the following:
+Building the mod is currently only possible with windows, but should be easy to do for anyone. To build the mod, you need to do the following:
 
 - Download & install **Git** (or any Git client) and clone this GitHub repository to get the GD3D11 code.
 - Download & install **Microsoft Visual Studio 2019** (Community Edition is fine, make sure to enable C++ Tools during installation!). Might work on 2015 or 2017 but untested.

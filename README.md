@@ -75,10 +75,10 @@ When using a Release target, those same exceptions will very likely stop the exe
 
 ... to the following people
 
-- [@ataulien](https://github.com/ataulien) ([Degenerated](https://forum.worldofplayers.de/forum/members/162334-Degenerated) @ WoG) for creating this project.
-- [@BonneCW](https://github.com/BonneCW) ([@Bonne6](https://forum.worldofplayers.de/forum/members/9465-Bonne6) @ WoG) for providing the base for this modified version.
+- [@ataulien](https://github.com/ataulien) (Degenerated @ WoG) for creating this project.
+- [@BonneCW](https://github.com/BonneCW) (Bonne6 @ WoG) for providing the base for this modified version.
 - [@lucifer602288](https://github.com/lucifer602288) (Keks1 @ WoG) for testing, helping with conversions and implementing several features.
-
+- [@SaiyansKing](https://github.com/SaiyansKing) for fixing a lot of issues and adding major features.
 
 <a href="https://github.com/kirides/GD3D11/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=kirides/GD3D11" />

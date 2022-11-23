@@ -100,6 +100,22 @@ public:
 
             REPLACE_RANGE( GothicMemoryLocations::zCSkyController_Outdoor::LOC_SunVisibleStart, GothicMemoryLocations::zCSkyController_Outdoor::LOC_SunVisibleEnd - 1, INST_NOP );
         }
+
+#ifdef BUILD_GOTHIC_1_08k
+#ifdef BUILD_1_12F
+        PatchAddr( 0x005DB0B3, "\x8B\xD0\xC1\xE2\x06\x8D\xB4\x11\xDC\x05\x00\x00\x3B\xC3\x75\x07\xE8\x00\x00\x00\x00\xEB\x14\xE8\x00\x00\x00\x00\xEB\x0D\x90" );
+        PatchCall( 0x005DB0C3, reinterpret_cast<DWORD>(&zCSkyController_Outdoor::FixSunWorldPosition) );
+        PatchCall( 0x005DB0CA, reinterpret_cast<DWORD>(&zCSkyController_Outdoor::FixMoonWorldPosition) );
+#else
+        PatchAddr( 0x005BD470, "\x8B\xD0\xC1\xE2\x06\x8D\xB4\x11\xDC\x05\x00\x00\x3B\xC3\x75\x07\xE8\x00\x00\x00\x00\xEB\x14\xE8\x00\x00\x00\x00\xEB\x0D\x90" );
+        PatchCall( 0x005BD480, reinterpret_cast<DWORD>(&zCSkyController_Outdoor::FixSunWorldPosition) );
+        PatchCall( 0x005BD487, reinterpret_cast<DWORD>(&zCSkyController_Outdoor::FixMoonWorldPosition) );
+#endif
+#elif defined(BUILD_GOTHIC_2_6_fix)
+        PatchAddr( 0x005E7860, "\x8B\xC8\xC1\xE1\x06\x8D\xB4\x29\xF4\x05\x00\x00\x8B\xCD\x85\xC0\x75\x07\xE8\x00\x00\x00\x00\xEB\x05\xE8\x00\x00\x00\x00\x33\xDB\xEB\x0E" );
+        PatchCall( 0x005E7872, reinterpret_cast<DWORD>(&zCSkyController_Outdoor::FixSunWorldPosition) );
+        PatchCall( 0x005E7879, reinterpret_cast<DWORD>(&zCSkyController_Outdoor::FixMoonWorldPosition) );
+#endif
     }
 
     /** Updates the rain-weight and sound-effects */
@@ -242,6 +258,50 @@ public:
         MatrixVector3Multiply( pos, XMVector3Normalize( sunPos ), XMLoadFloat4x4( &(HookedFunctions::OriginalFunctions.original_Alg_Rotation3DNRad( rotAxis, -angle )) ) );
 
         return pos;
+    }
+
+    static float __fastcall FixSunWorldPosition( zCSkyController_Outdoor* _THIS ) {
+        float skyTime = _THIS->GetMasterTime();
+        if ( skyTime >= 0.708f ) {
+            skyTime = Toolbox::lerp( 0.75f, 1.0f, (skyTime - 0.708f) / 0.292f );
+        } else if ( skyTime <= 0.292f ) {
+            skyTime = Toolbox::lerp( 0.0f, 0.25f, skyTime / 0.292f );
+        } else if ( skyTime >= 0.5f ) {
+            skyTime = Toolbox::lerp( 0.5f, 0.75f, (skyTime - 0.5f) / 0.208f );
+        } else {
+            skyTime = Toolbox::lerp( 0.25f, 0.5f, (skyTime - 0.292f) / 0.208f );
+        }
+
+        float timeScale = Engine::GAPI->GetSkyTimeScale();
+        float angle;
+        if ( timeScale <= -1 ) {
+            angle = 4.71375f;
+        } else {
+            angle = skyTime * timeScale * XM_2PI + XM_PIDIV2;
+        }
+        return angle;
+    }
+
+    static float __fastcall FixMoonWorldPosition( zCSkyController_Outdoor* _THIS ) {
+        float skyTime = _THIS->GetMasterTime();
+        if ( skyTime >= 0.708f ) {
+            skyTime = Toolbox::lerp( 0.75f, 1.0f, (skyTime - 0.708f) / 0.292f );
+        } else if ( skyTime <= 0.292f ) {
+            skyTime = Toolbox::lerp( 0.0f, 0.25f, skyTime / 0.292f );
+        } else if ( skyTime >= 0.5f ) {
+            skyTime = Toolbox::lerp( 0.5f, 0.75f, (skyTime - 0.5f) / 0.208f );
+        } else {
+            skyTime = Toolbox::lerp( 0.25f, 0.5f, (skyTime - 0.292f) / 0.208f );
+        }
+
+        float timeScale = Engine::GAPI->GetSkyTimeScale();
+        float angle;
+        if ( timeScale <= -1 ) {
+            angle = 4.71375f;
+        } else {
+            angle = skyTime * timeScale * XM_2PI - XM_PIDIV2;
+        }
+        return angle;
     }
 
     void SetCameraLocationHint( int hint ) {

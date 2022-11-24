@@ -34,7 +34,7 @@ public:
             REPLACE_RANGE( GothicMemoryLocations::zCView::REPL_SetMode_ModechangeStart, GothicMemoryLocations::zCView::REPL_SetMode_ModechangeEnd - 1, INST_NOP );
         }
 
-#if BUILD_GOTHIC_2_6_fix
+#if (defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)) || defined(BUILD_GOTHIC_2_6_fix)
         // .text:007A62A0; void __thiscall zCView::BlitText(zCView * __hidden this)
         XHook( HookedFunctions::OriginalFunctions.original_zCViewBlitText, GothicMemoryLocations::zCView::BlitText, hooked_BlitText );
         XHook( HookedFunctions::OriginalFunctions.original_zCViewPrint, GothicMemoryLocations::zCView::Print, hooked_Print );
@@ -52,7 +52,7 @@ public:
             ( GothicMemoryLocations::zCView::SetMode )( x, y, bpp, nullptr );
     }
 
-#if BUILD_GOTHIC_2_6_fix
+#if (defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)) || defined(BUILD_GOTHIC_2_6_fix)
     /*
     static void __fastcall hooked_Blit(_zCView* thisptr, void* unknwn) {
 
@@ -131,7 +131,7 @@ public:
             x = static_cast<float>(thisptr->pposx + thisptr->nax( text->posx ));
             y = static_cast<float>(thisptr->pposy + thisptr->nay( text->posy ));
 
-            if ( !thisptr->font ) continue;
+            if ( !text->font ) continue;
 
             Engine::GraphicsEngine->DrawString( text->text.ToChar(), x, y, text->font, fontColor );
         }

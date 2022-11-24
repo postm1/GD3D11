@@ -19,6 +19,7 @@ struct GothicMemoryLocations {
         static const unsigned int s_globFreePart = 0x00874374;
         static const unsigned int zCOption = 0x00869694;
         static const unsigned int zRenderer = 0x008C5ED0;
+        static const unsigned int screen = 0x008DE1BC;
         static const unsigned int sysEvents = 0x004F6AC0;
     };
 
@@ -467,9 +468,11 @@ struct GothicMemoryLocations {
         static const unsigned int REPL_SetMode_ModechangeStart = 0x007021A9;
         static const unsigned int REPL_SetMode_ModechangeEnd = 0x0007021B8;
         static const unsigned int PrintTimed = 0x006FE1A0;
-
-        static const unsigned int PrintChars = 0x006fff80;
-        static const unsigned int CreateText = 0x007006e0;
+        static const unsigned int PrintChars = 0x006FFF80;
+        static const unsigned int CreateText = 0x007006E0;
+        static const unsigned int BlitText = 0x006FC7B0;
+        static const unsigned int Print = 0x006FFEB0;
+        static const unsigned int Blit = 0x006FC8C0;
     };
 
     struct zCVobLight {

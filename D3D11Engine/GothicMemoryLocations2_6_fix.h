@@ -285,10 +285,10 @@ struct GothicMemoryLocations {
         static const unsigned int DInput7DeviceKeyboard = 0x008D1D64;
         static const unsigned int zCInput = 0x008D1650;
         static const unsigned int zCOption = 0x008CD988;
-        static const unsigned int zCParser = 0xAB40C0;
+        static const unsigned int zCParser = 0x00AB40C0;
         static const unsigned int zRenderer = 0x00982F08;
         static const unsigned int zSound = 0x0099B03C;
-        static const unsigned int screen = 0x00ab6468;
+        static const unsigned int screen = 0x00AB6468;
         static const unsigned int sysEvents = 0x005053E0;
 
         static const unsigned int NOP_FreelookWindowedCheckStart = 0x004816D7;

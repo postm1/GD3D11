@@ -658,11 +658,11 @@ struct GothicRendererSettings {
         //DisableEverything();
 
         LimitLightIntesity = false;
-        AllowNormalmaps = true;
+        AllowNormalmaps = false;
 
         AllowNumpadKeys = false;
         EnableDebugLog = true;
-        EnableCustomFontRendering = false;
+        EnableCustomFontRendering = true;
 
         ForceFOV = false;
 

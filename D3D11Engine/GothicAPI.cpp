@@ -4702,3 +4702,8 @@ void GothicAPI::ResetRenderStates() {
         renderer->ResetRenderState();
     }
 }
+
+/** Get sky timescale variable */
+float GothicAPI::GetSkyTimeScale() {
+    return SkyRenderer->GetAtmoshpereSettings().SkyTimeScale;
+}

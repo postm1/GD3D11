@@ -17,6 +17,7 @@ The new renderer is able to utilize more of the current GPU generation's power. 
 * Hardware Tessellation
 * Editor-Panel to insert some of the renderers features into the world
 * Custom-Built UI-Framework based on Direct2D
+* Rewritten bink player for better compatibility with bink videos
 * FPS-Limiter
 
 ## Installation & Usage

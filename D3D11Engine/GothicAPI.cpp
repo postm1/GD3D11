@@ -3990,7 +3990,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
     auto ini = std::string( NPath, len ).append( "\\" + file );
 
     GothicRendererSettings& s = RendererState.RendererSettings;
-    if ( !Toolbox::FileExists( ini ) ) {
+    if ( Toolbox::FileExists( ini ) ) {
         LogInfo() << "Loading menu settings from " << ini;
     
         GothicRendererSettings defaultRendererSettings;

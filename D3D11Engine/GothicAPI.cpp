@@ -4138,6 +4138,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
                 zCOption::GetOptions()->WriteString( section, "zStartupWindowed", defValue );
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "0", ini.c_str() );
                 WritePrivateProfileStringA( "Display", "LowLatency", "0", ini.c_str() );
+                WritePrivateProfileStringA( "Display", "StretchWindow", "1", ini.c_str() );
                 break;
             }
             case WINDOW_MODE_FULLSCREEN_BORDERLESS: {
@@ -4146,6 +4147,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
                 s.StretchWindow = true;
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "1", ini.c_str() );
                 WritePrivateProfileStringA( "Display", "LowLatency", "0", ini.c_str() );
+                WritePrivateProfileStringA( "Display", "StretchWindow", "1", ini.c_str() );
                 break;
             }
             case WINDOW_MODE_FULLSCREEN_LOWLATENCY: {
@@ -4154,6 +4156,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
                 s.StretchWindow = true;
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "1", ini.c_str() );
                 WritePrivateProfileStringA( "Display", "LowLatency", "1", ini.c_str() );
+                WritePrivateProfileStringA( "Display", "StretchWindow", "1", ini.c_str() );
                 break;
             }
             case WINDOW_MODE_WINDOWED: {
@@ -4163,6 +4166,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
                 zCOption::GetOptions()->WriteString( section, "zStartupWindowed", defValue );
                 WritePrivateProfileStringA( "Display", "DisplayFlip", "0", ini.c_str() );
                 WritePrivateProfileStringA( "Display", "LowLatency", "0", ini.c_str() );
+                WritePrivateProfileStringA( "Display", "StretchWindow", "0", ini.c_str() );
                 break;
             }
         }

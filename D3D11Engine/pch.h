@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <filesystem>
 
 #include "Logger.h"
 #include "Types.h"

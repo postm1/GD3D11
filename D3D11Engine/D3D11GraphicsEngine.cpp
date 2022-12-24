@@ -6260,6 +6260,12 @@ void D3D11GraphicsEngine::UpdateOcclusion() {
 void D3D11GraphicsEngine::SaveScreenshot() {
     HRESULT hr;
 
+    // Create new folder if needed
+    if ( !Toolbox::FolderExists( "system\\Screenshots" ) ) {
+        if ( !Toolbox::CreateDirectoryRecursive( "system\\Screenshots" ) )
+            return;
+    }
+
     // Buffer for scaling down the image
     auto rt = std::make_unique<RenderToTextureBuffer>(
         GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_R8G8B8A8_UNORM );
@@ -6295,9 +6301,6 @@ void D3D11GraphicsEngine::SaveScreenshot() {
     GetDateFormat( LOCALE_SYSTEM_DEFAULT, 0, nullptr, "yyyy-MM-dd", date, 50 );
     GetTimeFormat( LOCALE_SYSTEM_DEFAULT, 0, nullptr, "hh-mm-ss", time, 50 );
 
-    // Create new folder if needed
-    CreateDirectory( "system\\Screenshots", nullptr );
-
     std::string name = "system\\screenshots\\GD3D11_" + std::string( date ) +
         "__" + std::string( time ) + ".jpg";
 
@@ -6313,7 +6316,7 @@ void D3D11GraphicsEngine::SaveScreenshot() {
         varValues[0].vt = VT_R4;
         varValues[0].fltVal = 0.95f;
 
-        (void)props->Write( 1, options, varValues );
+        props->Write( 1, options, varValues );
         }, false ) );
 
     // Inform the user that a screenshot has been taken

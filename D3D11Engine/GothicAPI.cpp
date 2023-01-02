@@ -1295,9 +1295,12 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
 
     // This is a poly strip vob
     if ( strcmp( className, "zCPolyStrip" ) == 0 ) {
-        for ( auto it = PolyStripVisuals.begin(); it != PolyStripVisuals.end(); it++ ) {
-            if ( *it == reinterpret_cast<zCPolyStrip*>(visual) ) {
-                PolyStripVisuals.erase( *it );
+        for ( auto it = PolyStripVisuals.begin(); it != PolyStripVisuals.end(); ) {
+            zCPolyStrip* stripVisual = (*it);
+            if ( stripVisual == reinterpret_cast<zCPolyStrip*>(visual) ) {
+                it = PolyStripVisuals.erase( it );
+            } else {
+                ++it;
             }
         }
     }

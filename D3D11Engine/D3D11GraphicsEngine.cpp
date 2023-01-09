@@ -6419,9 +6419,18 @@ float  D3D11GraphicsEngine::UpdateCustomFontMultiplierFontRendering( float multi
 }
 
 void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, const zFont* font, zColor& fontColor ) {
-    if ( str.empty() ) return;
     if ( !font ) return;
     if ( !font->tex ) return;
+
+    //
+    // Glyphen anordnen und in den vertices Vector packen
+    // Ggf. Sonderzeichen am Ende entfernen.
+    // 
+    size_t maxLen = str.size();
+    while ( maxLen > 0 && str[maxLen - 1] == '/' ) {
+        --maxLen;
+    }
+    if ( !maxLen ) return;
 
     float UIScale = 1.0f;
     static int savedBarSize = -1;
@@ -6487,15 +6496,6 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
 
     static std::vector<ExVertexStruct> vertices;
     vertices.clear();
-
-    //
-    // Glyphen anordnen und in den vertices Vector packen
-    // Ggf. Sonderzeichen am Ende entfernen.
-    // 
-    size_t maxLen = str.size();
-    while ( str[maxLen - 1] == '/' ) {
-        maxLen--;
-    }
 
     UI::zFont::AppendGlyphs( vertices, str, maxLen, x, y, font, fontColor, UIScale, zCCamera::GetCamera() );
 

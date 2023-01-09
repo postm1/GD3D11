@@ -93,11 +93,14 @@ public:
         // Instantly blit Viewport/global-screen
         if ( (thisptr->viewID == 1)
             || (thisptr == GetScreen()) ) {
-            Engine::GraphicsEngine->DrawString(
-                s.ToChar(),
-                static_cast<float>(thisptr->pposx + thisptr->nax( x )),
-                static_cast<float>(thisptr->pposy + thisptr->nay( y )),
-                thisptr->font, thisptr->fontColor );
+            int len = s.Length();
+            if ( len > 0 ) {
+                Engine::GraphicsEngine->DrawString(
+                    std::string(s.ToChar(), len),
+                    static_cast<float>(thisptr->pposx + thisptr->nax( x )),
+                    static_cast<float>(thisptr->pposy + thisptr->nay( y )),
+                    thisptr->font, thisptr->fontColor );
+            }
         } else {
             // create a textview for later blitting
             thisptr->CreateText( x, y, s );
@@ -133,7 +136,10 @@ public:
 
             if ( !text->font ) continue;
 
-            Engine::GraphicsEngine->DrawString( text->text.ToChar(), x, y, text->font, fontColor );
+            int len = text->text.Length();
+            if ( len > 0 ) {
+                Engine::GraphicsEngine->DrawString( std::string(text->text.ToChar(), len), x, y, text->font, fontColor );
+            }
         }
     }
     static _zCView* GetScreen() { return *reinterpret_cast<_zCView**>(GothicMemoryLocations::GlobalObjects::screen); }

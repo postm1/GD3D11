@@ -6344,15 +6344,15 @@ namespace UI::zFont {
 
             auto topLeft = font->fontuv1[c];
             auto botRight = font->fontuv2[c];
-            auto widthPx = float( font->width[c] ) * scale;
+            auto widthPx = static_cast<float>( font->width[c] ) * scale;
 
             ExVertexStruct* vertex = &vertices[i * 6];
 
-            const float widthf = float( widthPx );
-            const float heightf = float( font->height ) * scale;
+            const float widthf = static_cast<float>( widthPx );
+            const float heightf = static_cast<float>( font->height ) * scale;
 
-            const float minx = float( xpos );
-            const float miny = float( ypos );
+            const float minx = static_cast<float>( xpos );
+            const float miny = static_cast<float>( ypos );
 
             // prepare for next glyph
             if ( c == '\n' ) { ypos += heightf; xpos = x; } else if ( c == ' ' ) { xpos += widthPx; continue; } else { xpos += widthPx + SpaceBetweenChars; }
@@ -6360,15 +6360,10 @@ namespace UI::zFont {
             const float maxx = (minx + widthf);
             const float maxy = (miny + heightf);
 
-            float halfTexel = 0.0f;
-
-            const float texelHalfW = halfTexel / widthf;
-            const float texelHalfH = halfTexel / heightf;
-
-            const float minu = topLeft.pos.x + texelHalfW;
-            const float maxu = botRight.pos.x - texelHalfW;
-            const float minv = topLeft.pos.y + texelHalfH;
-            const float maxv = texelHalfH + botRight.pos.y;
+            const float minu = topLeft.pos.x;
+            const float maxu = botRight.pos.x;
+            const float minv = topLeft.pos.y;
+            const float maxv = botRight.pos.y;
 
             for ( size_t j = 0; j < 6; j++ ) {
                 vertex[j].Normal = { 1, 0, 0 };

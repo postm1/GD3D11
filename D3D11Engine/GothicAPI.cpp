@@ -1295,19 +1295,12 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
 
     // This is a poly strip vob
     if ( strcmp( className, "zCPolyStrip" ) == 0 ) {
-        for ( auto it = PolyStripVisuals.begin(); it != PolyStripVisuals.end(); ) {
-            zCPolyStrip* stripVisual = (*it);
-            if ( stripVisual == reinterpret_cast<zCPolyStrip*>(visual) ) {
-                it = PolyStripVisuals.erase( it );
-            } else {
-                ++it;
-            }
-        }
+        PolyStripVisuals.erase( reinterpret_cast<zCPolyStrip*>(visual) );
     }
 
     // Check every extension
     for ( unsigned int i = 0; i < extv.size(); i++ ) {
-        std::string ext = extv[i];
+        std::string& ext = extv[i];
 
         // Delete according to the type
         if ( ext == ".3DS" ) {
@@ -1708,9 +1701,9 @@ void GothicAPI::OnAddVob( zCVob* vob, zCWorld* world ) {
             // Check for mainworld
             if ( world == oCGame::GetGame()->_zCSession_world ) {
                 VobMap[vob] = vi;
-                WorldSections[section.x][section.y].Vobs.push_back( vi );
 
                 vi->VobSection = &WorldSections[section.x][section.y];
+                vi->VobSection->Vobs.push_back( vi );
 
                 // Create this constantbuffer only for non-inventory vobs because it would be recreated for each vob every frame
                 Engine::GraphicsEngine->CreateConstantBuffer( &vi->VobConstantBuffer, nullptr, sizeof( VS_ExConstantBuffer_PerInstance ) );
@@ -2401,16 +2394,16 @@ VobInfo* GothicAPI::TraceStaticMeshVobsBB( const XMFLOAT3& origin, const XMFLOAT
     XMFLOAT3 min;
     XMFLOAT3 max;
 
-    for ( auto it = VobMap.begin(); it != VobMap.end(); ++it ) {
-        XMMATRIX world = XMMatrixTranspose( XMLoadFloat4x4( it->first->GetWorldMatrixPtr() ) );
-        XMStoreFloat3( &min, XMVector3TransformCoord( XMLoadFloat3( &it->second->VisualInfo->BBox.Min ), world ) );
-        XMStoreFloat3( &max, XMVector3TransformCoord( XMLoadFloat3( &it->second->VisualInfo->BBox.Max ), world ) );
+    for ( auto& [vob, vobInfo] : VobMap ) {
+        XMMATRIX world = XMMatrixTranspose( XMLoadFloat4x4( vob->GetWorldMatrixPtr() ) );
+        XMStoreFloat3( &min, XMVector3TransformCoord( XMLoadFloat3( &vobInfo->VisualInfo->BBox.Min ), world ) );
+        XMStoreFloat3( &max, XMVector3TransformCoord( XMLoadFloat3( &vobInfo->VisualInfo->BBox.Max ), world ) );
 
         float t = 0;
         if ( Toolbox::IntersectBox( min, max, origin, dir, t ) ) {
             if ( t < closest ) {
                 closest = t;
-                hitBBs.push_back( it->second );
+                hitBBs.push_back( vobInfo );
             }
         }
     }
@@ -2423,16 +2416,16 @@ VobInfo* GothicAPI::TraceStaticMeshVobsBB( const XMFLOAT3& origin, const XMFLOAT
     XMFLOAT3 localOrigin;
     XMFLOAT3 localDir;
 
-    for ( auto it = hitBBs.begin(); it != hitBBs.end(); ++it ) {
-        XMMATRIX invWorld = XMMatrixInverse( nullptr, XMMatrixTranspose( XMLoadFloat4x4( (*it)->Vob->GetWorldMatrixPtr() ) ) );
+    for ( VobInfo* vobInfo : hitBBs ) {
+        XMMATRIX invWorld = XMMatrixInverse( nullptr, XMMatrixTranspose( XMLoadFloat4x4( vobInfo->Vob->GetWorldMatrixPtr() ) ) );
         XMStoreFloat3( &localOrigin, XMVector3TransformCoord( XMLoadFloat3( &origin ), invWorld ) );
         XMStoreFloat3( &localDir, XMVector3TransformNormal( XMLoadFloat3( &dir ), invWorld ) );
 
         zCMaterial* hitMat = nullptr;
-        float t = TraceVisualInfo( localOrigin, localDir, (*it)->VisualInfo, &hitMat );
+        float t = TraceVisualInfo( localOrigin, localDir, vobInfo->VisualInfo, &hitMat );
         if ( t > 0.0f && t < closest ) {
             closest = t;
-            closestVob = (*it);
+            closestVob = vobInfo;
             closestMaterial = hitMat;
         }
     }
@@ -4331,10 +4324,12 @@ const stdext::unordered_map<zCQuadMark*, QuadMarkInfo>& GothicAPI::GetQuadMarks(
 
 /** Returns wether the camera is underwater or not */
 bool GothicAPI::IsUnderWater() {
-    if ( oCGame::GetGame() &&
-        oCGame::GetGame()->_zCSession_world &&
-        oCGame::GetGame()->_zCSession_world->GetSkyControllerOutdoor() ) {
-        return oCGame::GetGame()->_zCSession_world->GetSkyControllerOutdoor()->GetUnderwaterFX() != 0;
+    if ( oCGame* ogame = oCGame::GetGame() ) {
+        if ( zCWorld* world = ogame->_zCSession_world ) {
+            if ( zCSkyController_Outdoor* skyController = world->GetSkyControllerOutdoor() ) {
+                return skyController->GetUnderwaterFX() != 0;
+            }
+        }
     }
 
     return false;
@@ -4489,7 +4484,6 @@ void GothicAPI::PutCustomPolygonsIntoBspTreeRec( BspInfo* base ) {
                 }
             }
         }
-
     } else {
         PutCustomPolygonsIntoBspTreeRec( base->Front );
         PutCustomPolygonsIntoBspTreeRec( base->Back );
@@ -4638,10 +4632,15 @@ float GothicAPI::GetRainFXWeight() {
     float myRainFxWeight = RendererState.RendererSettings.RainSceneWettness;
     float gRainFxWeight = 0.0f;
 
-    if ( oCGame::GetGame() && oCGame::GetGame()->_zCSession_world
-        && oCGame::GetGame()->_zCSession_world->GetSkyControllerOutdoor()
-        && oCGame::GetGame()->_zCSession_world->GetSkyControllerOutdoor()->GetWeatherType() == zTWeather::zTWEATHER_RAIN )
-        gRainFxWeight = oCGame::GetGame()->_zCSession_world->GetSkyControllerOutdoor()->GetRainFXWeight();
+    if ( oCGame* ogame = oCGame::GetGame() ) {
+        if ( zCWorld* world = ogame->_zCSession_world ) {
+            if ( zCSkyController_Outdoor* skyController = world->GetSkyControllerOutdoor() ) {
+                if ( skyController->GetWeatherType() == zTWeather::zTWEATHER_RAIN ) {
+                    gRainFxWeight = skyController->GetRainFXWeight();
+                }
+            }
+        }
+    }
 
     // This doesn't seem to go as high as 1 or just very slowly. Scale it so it does go up quicker.
     gRainFxWeight = std::min( gRainFxWeight / 0.85f, 1.0f );

@@ -197,8 +197,8 @@ struct GothicDepthBufferStateInfo : public GothicPipelineState {
 
     /** Deletes all cached states */
     static void DeleteCachedObjects() {
-        for ( auto it = GothicStateCache::s_DepthBufferMap.begin(); it != GothicStateCache::s_DepthBufferMap.end(); ++it ) {
-            delete it->second;
+        for ( const auto& [k, depthBufferState] : GothicStateCache::s_DepthBufferMap ) {
+            delete depthBufferState;
         }
         GothicStateCache::s_DepthBufferMap.clear();
     }
@@ -342,10 +342,9 @@ struct GothicBlendStateInfo : public GothicPipelineState {
 
     /** Deletes all cached states */
     static void DeleteCachedObjects() {
-        for ( auto it = GothicStateCache::s_BlendStateMap.begin(); it != GothicStateCache::s_BlendStateMap.end(); ++it ) {
-            delete it->second;
+        for ( const auto& [k, blendState] : GothicStateCache::s_BlendStateMap ) {
+            delete blendState;
         }
-
         GothicStateCache::s_BlendStateMap.clear();
     }
 
@@ -417,10 +416,9 @@ struct GothicRasterizerStateInfo : public GothicPipelineState {
 
     /** Deletes all cached states */
     static void DeleteCachedObjects() {
-        for ( auto it = GothicStateCache::s_RasterizerStateMap.begin(); it != GothicStateCache::s_RasterizerStateMap.end(); ++it ) {
-            delete it->second;
+        for ( const auto& [k, rasterizerState] : GothicStateCache::s_RasterizerStateMap ) {
+            delete rasterizerState;
         }
-
         GothicStateCache::s_RasterizerStateMap.clear();
     }
 };

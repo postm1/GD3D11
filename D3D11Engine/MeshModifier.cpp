@@ -743,29 +743,27 @@ void MeshModifier::ComputeSmoothNormals( std::vector<ExVertexStruct>& inVertices
     }
 
     // Run through all the adj. vertices and average the normals between them
-    for ( auto it = VertexMap.begin(); it != VertexMap.end(); it++ ) {
-        std::vector<ExVertexStruct*>& vx = it->second;
+    for ( auto& [k, vx] : VertexMap ) {
         // Average all face normals
         XMFLOAT3 avgNormal;
         XMVECTOR XMV_avgNormal = XMVectorZero();
-        for ( unsigned int i = 0; i < vx.size(); i++ ) {
-            XMV_avgNormal += XMLoadFloat3( vx[i]->Normal.toXMFLOAT3() );
+        for ( ExVertexStruct* vert : vx ) {
+            XMV_avgNormal += XMLoadFloat3( vert->Normal.toXMFLOAT3() );
         }
         XMV_avgNormal /= static_cast<float>(vx.size());
         XMStoreFloat3( &avgNormal, XMV_avgNormal );
         // Lerp between the average and the face normal for every vertex
-        for ( unsigned int i = 0; i < vx.size(); i++ ) {
+        for ( ExVertexStruct* vert : vx ) {
             // Find out if we are a corner/border vertex
-            vx[i]->TexCoord2.x = 1.0f;
-            for ( unsigned int n = 0; n < vx.size(); n++ ) {
-                if ( !TexcoordSame( vx[i]->TexCoord, vx[n]->TexCoord ) ) {
-                    vx[i]->TexCoord2.x = 0.0f;
+            vert->TexCoord2.x = 1.0f;
+            for ( ExVertexStruct* vert2 : vx ) {
+                if ( !TexcoordSame( vert->TexCoord, vert2->TexCoord ) ) {
+                    vert->TexCoord2.x = 0.0f;
                     break;
                 }
             }
 
-            vx[i]->Normal = avgNormal;
-            //&vx[i]->Normal.toXMFLOAT3() = XMVectorLerpV(&avgNormal, &vx[i]->Normal.toXMFLOAT3(), 0.7f);
+            vert->Normal = avgNormal;
         }
     }
 }

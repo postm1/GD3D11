@@ -961,9 +961,9 @@ XRESULT D3D11GraphicsEngine::OnBeginFrame() {
     Engine::GAPI->EnterResourceCriticalSection();
 
     auto& stagingTextures = Engine::GAPI->GetStagingTextures();
-    for ( auto& it : stagingTextures ) {
-        GetContext()->CopySubresourceRegion( it.second, it.first.first, 0, 0, 0, it.first.second, 0, nullptr );
-        it.first.second->Release();
+    for ( auto& [res, texture] : stagingTextures ) {
+        GetContext()->CopySubresourceRegion( texture, res.first, 0, 0, 0, res.second, 0, nullptr );
+        res.second->Release();
     }
     stagingTextures.clear();
 
@@ -2612,9 +2612,9 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
     int lastAlphaFunc = 0;
 
     // Draw the list
-    for ( auto const& it : list ) {
+    for ( auto const& [meshKey, meshInfo] : list ) {
         int indicesNumMod = 1;
-        if ( zCTexture* texture = it.first.Material->GetAniTexture() ) {
+        if ( zCTexture* texture = meshKey.Material->GetAniTexture() ) {
             MyDirectDrawSurface7* surface = texture->GetSurface();
             ID3D11ShaderResourceView* srv[3];
 
@@ -2631,10 +2631,10 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
             // Bind both
             GetContext()->PSSetShaderResources( 0, 3, srv );
 
-            int alphaFunc = it.first.Material->GetAlphaFunc();
+            int alphaFunc = meshKey.Material->GetAlphaFunc();
 
             //Get the right shader for it
-            BindShaderForTexture( texture, false, alphaFunc, it.first.Info->MaterialType );
+            BindShaderForTexture( texture, false, alphaFunc, meshKey.Info->MaterialType );
 
             // Check for alphablending on world mesh
             if ( lastAlphaFunc != alphaFunc ) {
@@ -2653,7 +2653,7 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
                 lastAlphaFunc = alphaFunc;
             }
 
-            MaterialInfo* info = it.first.Info;
+            MaterialInfo* info = meshKey.Info;
             if ( !info->Constantbuffer ) info->UpdateConstantbuffer();
 
             info->Constantbuffer->BindToPixelShader( 2 );
@@ -2662,8 +2662,8 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
             texture->CacheIn( 0.6f );
 
             // Draw the section-part
-            DrawVertexBufferIndexedUINT( nullptr, nullptr, it.second->Indices.size(),
-                it.second->BaseIndexLocation );
+            DrawVertexBufferIndexedUINT( nullptr, nullptr, meshInfo->Indices.size(),
+                meshInfo->BaseIndexLocation );
 
         }
     }
@@ -2677,11 +2677,11 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
 
     // Draw again, but only to depthbuffer this time to make them work with
     // fogging
-    for ( auto const& it : list ) {
-        if ( it.first.Material->GetAniTexture() != nullptr ) {
+    for ( auto const& [meshKey, meshInfo] : list ) {
+        if ( meshKey.Material->GetAniTexture() != nullptr ) {
             // Draw the section-part
-            DrawVertexBufferIndexedUINT( nullptr, nullptr, it.second->Indices.size(),
-                it.second->BaseIndexLocation );
+            DrawVertexBufferIndexedUINT( nullptr, nullptr, meshInfo->Indices.size(),
+                meshInfo->BaseIndexLocation );
         }
     }
 
@@ -3221,9 +3221,9 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
     DrawVertexBufferIndexedUINT(
         Engine::GAPI->GetWrappedWorldMesh()->MeshVertexBuffer,
         Engine::GAPI->GetWrappedWorldMesh()->MeshIndexBuffer, 0, 0 );
-    for ( auto const& it : FrameWaterSurfaces ) {
+    for ( const auto& [texture, meshes] : FrameWaterSurfaces ) {
         // Draw surfaces
-        for ( auto const& mesh : it.second ) {
+        for ( const auto& mesh : meshes ) {
             DrawVertexBufferIndexedUINT( nullptr, nullptr,
                 mesh->Indices.size(), mesh->BaseIndexLocation );
         }
@@ -3265,15 +3265,14 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
 
     // Bind reflection cube
     GetContext()->PSSetShaderResources( 3, 1, ReflectionCube.GetAddressOf() );
-    for ( auto const& it : FrameWaterSurfaces ) {
+    for ( const auto& [texture, meshes] : FrameWaterSurfaces ) {
         // Bind diffuse
-        zCTexture* texture = it.first;
         texture->CacheIn( -1 );    // Force immediate cache in, because water
                                    // is important!
         texture->Bind( 0 );
 
         // Draw surfaces
-        for ( auto const& mesh : it.second ) {
+        for ( const auto& mesh : meshes ) {
             DrawVertexBufferIndexedUINT( nullptr, nullptr,
                 mesh->Indices.size(), mesh->BaseIndexLocation );
         }

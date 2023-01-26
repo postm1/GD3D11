@@ -210,8 +210,8 @@ void SV_TabControl::SetActiveTab( const std::string& tab ) {
         return; // Don't have that
 
     // Hide all
-    for ( std::map<std::string, SV_TabControl_Tab>::iterator it = Tabs.begin(); it != Tabs.end(); ++it ) {
-        SetTabVisibility( &it->second, true );
+    for ( auto& [k, tab] : Tabs ) {
+        SetTabVisibility( &tab, true );
     }
 
     // Set and Show active

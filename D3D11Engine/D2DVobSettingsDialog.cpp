@@ -165,13 +165,12 @@ void D2DVobSettingsDialog::SetVobInfo( BaseVobInfo* vob ) {
     std::map<zCTexture*, MeshInfo*> meshes;
 
     // Filter meshes by texture
-    for ( std::map<zCMaterial*, std::vector<MeshInfo*>>::iterator itm = vob->VisualInfo->Meshes.begin(); itm != vob->VisualInfo->Meshes.end(); itm++ ) {
-        if ( !(*itm).first )
+    for ( auto& [material, vmeshes] : vob->VisualInfo->Meshes ) {
+        if ( !material )
             continue;
 
-        for ( unsigned int i = 0; i < (*itm).second.size(); i++ ) {
-            meshes[(*itm).first->GetTexture()] = (*itm).second[i];
-            break;
+        if ( !vmeshes.empty() ) {
+            meshes[material->GetTexture()] = vmeshes.front();
         }
     }
 

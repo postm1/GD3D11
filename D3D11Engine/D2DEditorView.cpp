@@ -526,10 +526,10 @@ void D2DEditorView::DoVegetationPlacement() {
 
 /** Finds the GVegetationBox from its mesh-info */
 GVegetationBox* D2DEditorView::FindVegetationFromMeshInfo( MeshInfo* info ) {
-	for ( std::list<GVegetationBox*>::const_iterator it = Engine::GAPI->GetVegetationBoxes().begin(); it != Engine::GAPI->GetVegetationBoxes().end(); it++ ) {
-		if ( (*it)->GetWorldMeshPart() == info )
-			return (*it);
-	}
+    for ( GVegetationBox* vegetationBox : Engine::GAPI->GetVegetationBoxes() ) {
+        if ( vegetationBox->GetWorldMeshPart() == info )
+            return vegetationBox;
+    }
 
 	return nullptr;
 }
@@ -1215,17 +1215,17 @@ GVegetationBox* D2DEditorView::TraceVegetationBoxes( const XMFLOAT3& wPos, const
 	float nearest = FLT_MAX;
 	GVegetationBox* b = nullptr;
 
-	for ( std::list<GVegetationBox*>::const_iterator it = Engine::GAPI->GetVegetationBoxes().begin(); it != Engine::GAPI->GetVegetationBoxes().end(); it++ ) {
-		if ( (*it)->GetWorldMeshPart() )
+    for ( GVegetationBox* vegetationBox : Engine::GAPI->GetVegetationBoxes() ) {
+		if ( vegetationBox->GetWorldMeshPart() )
 			continue; // Only take the usual boxes
 
 		XMFLOAT3 bbMin, bbMax;
-		(*it)->GetBoundingBox( &bbMin, &bbMax );
+        vegetationBox->GetBoundingBox( &bbMin, &bbMax );
 
 		float t;
 		if ( Toolbox::IntersectBox( bbMin, bbMax, wPos, wDir, t ) ) {
 			if ( t < nearest ) {
-				b = (*it);
+				b = vegetationBox;
 				nearest = t;
 			}
 		}

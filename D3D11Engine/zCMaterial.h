@@ -32,9 +32,9 @@ class zCMaterial {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_zCMaterialDestructor, GothicMemoryLocations::zCMaterial::Destructor, zCMaterial::Hooked_Destructor );
-        //XHook(HookedFunctions::OriginalFunctions.original_zCMaterialConstruktor, GothicMemoryLocations::zCMaterial::Constructor, zCMaterial::Hooked_Constructor);
-        XHook( HookedFunctions::OriginalFunctions.original_zCMaterialInitValues, GothicMemoryLocations::zCMaterial::InitValues, zCMaterial::Hooked_InitValues );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCMaterialDestructor), Hooked_Destructor );
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCMaterialConstruktor), Hooked_Constructor );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCMaterialInitValues), Hooked_InitValues );
 
     }
 

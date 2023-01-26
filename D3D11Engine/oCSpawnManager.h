@@ -13,11 +13,10 @@ public:
 
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_oCSpawnManagerSpawnNpc, GothicMemoryLocations::oCSpawnManager::SpawnNpc, oCSpawnManager::hooked_oCSpawnManagerSpawnNpc );
-        //XHook(HookedFunctions::OriginalFunctions.original_oCSpawnManagerCheckInsertNpc, GothicMemoryLocations::oCSpawnManager::CheckInsertNpc, oCSpawnManager::hooked_oCSpawnManagerCheckInsertNpc);
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCSpawnManagerSpawnNpc), hooked_oCSpawnManagerSpawnNpc );
 
-        // TODO: #8
-        //XHook(HookedFunctions::OriginalFunctions.original_oCSpawnManagerCheckRemoveNpc, GothicMemoryLocations::oCSpawnManager::CheckRemoveNpc, oCSpawnManager::hooked_oCSpawnManagerCheckRemoveNpc);
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCSpawnManagerCheckInsertNpc), hooked_oCSpawnManagerCheckInsertNpc );
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCSpawnManagerCheckRemoveNpc), hooked_oCSpawnManagerCheckRemoveNpc );
     }
 
     /** Reads config stuff */

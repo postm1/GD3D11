@@ -68,12 +68,6 @@ void HookedFunctionInfo::InitHooks() {
     zCQuadMark::Hook();
     oCNPC::Hook();
     zCSkyController_Outdoor::Hook();
-
-    //XHook(original_zCExceptionHandler_UnhandledExceptionFilter, GothicMemoryLocations::Functions::zCExceptionHandler_UnhandledExceptionFilter, HookedFunctionInfo::hooked_zCExceptionHandlerUnhandledExceptionFilter);
-    //XHook(original_HandledWinMain, GothicMemoryLocations::Functions::HandledWinMain, HookedFunctionInfo::hooked_HandledWinMain);
-    //XHook(original_ExitGameFunc, GothicMemoryLocations::Functions::ExitGameFunc, HookedFunctionInfo::hooked_ExitGameFunc);
-
-    original_Alg_Rotation3DNRad = reinterpret_cast<Alg_Rotation3DNRad>(GothicMemoryLocations::Functions::Alg_Rotation3DNRad);
     
 //G1 patches
 #ifdef BUILD_GOTHIC_1_08k
@@ -140,7 +134,7 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x00557A11, "\xE9\xCB\x09\x00\x00" );
         PatchAddr( 0x005582C9, "\x8B\xCB\xE8\xA6\xEF\xFF\xFF\xEB\x2E\x90\x90" );
         PatchAddr( 0x00557276, "\xE9\x00\x00\x00\x00" );
-        XHook( 0x00557276, HookedFunctionInfo::hooked_SetLightmap );
+        PatchJMP( 0x00557276, reinterpret_cast<DWORD>(&HookedFunctionInfo::hooked_SetLightmap) );
     }
 
     LogInfo() << "Patching: Fix using settings in freelook mode";
@@ -184,7 +178,7 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x0042BB0D, "\xE8\xC7\x3A\x2F\x00\x90" );
         PatchAddr( 0x0042BBE1, "\xE8\x03\x3A\x2F\x00\x90" );
 
-        XHook( 0x0071F5D9, HookedFunctionInfo::hooked_GetNumDevices );
+        PatchJMP( 0x0071F5D9, reinterpret_cast<DWORD>(&HookedFunctionInfo::hooked_GetNumDevices) );
     }
 
     LogInfo() << "Patching: Show correct savegame thumbnail";
@@ -273,7 +267,7 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x005708AC, "\xE9\xFC\x08\x00\x00" );
         PatchAddr( 0x00571098, "\x8B\xCB\xE8\x13\x58\xFF\xFF\xEB\x2E\x90\x90" );
         PatchAddr( 0x005668B2, "\xE9\x00\x00\x00\x00" );
-        XHook( 0x005668B2, HookedFunctionInfo::hooked_SetLightmap );
+        PatchJMP( 0x005668B2, reinterpret_cast<DWORD>(&HookedFunctionInfo::hooked_SetLightmap) );
     }
 
     LogInfo() << "Patching: Fix using settings in freelook mode";
@@ -316,7 +310,7 @@ void HookedFunctionInfo::InitHooks() {
         PatchAddr( 0x0042DF1F, "\xE8\x85\x9F\x22\x00\x90" );
         PatchAddr( 0x0042E000, "\xE8\xB4\x9E\x22\x00\x90" );
 
-        XHook( 0x00657EA9, HookedFunctionInfo::hooked_GetNumDevices );
+        PatchJMP( 0x00657EA9, reinterpret_cast<DWORD>(&HookedFunctionInfo::hooked_GetNumDevices) );
     }
 
     LogInfo() << "Patching: Show correct savegame thumbnail";
@@ -358,26 +352,10 @@ void HookedFunctionInfo::InitHooks() {
 }
 
 /** Function hooks */
-int __stdcall HookedFunctionInfo::hooked_HandledWinMain( HINSTANCE hInstance, HINSTANCE hPrev, LPSTR szCmdLine, int sw ) {
-    int r = HookedFunctions::OriginalFunctions.original_HandledWinMain( hInstance, hPrev, szCmdLine, sw );
-
-    return r;
-}
-
 void __fastcall HookedFunctionInfo::hooked_zCActiveSndAutoCalcObstruction( void* thisptr, void* unknwn, int i ) {
     // Just do nothing here. Something was inside zCBspTree::Render that managed this and thus voices get really quiet in indoor locations
     // This function is for calculating the automatic volume-changes when the camera goes in/out buildings
     // We keep everything on the same level by removing it
-}
-
-void __cdecl HookedFunctionInfo::hooked_ExitGameFunc() {
-    Engine::OnShutDown();
-
-    HookedFunctions::OriginalFunctions.hooked_ExitGameFunc();
-}
-
-long __stdcall HookedFunctionInfo::hooked_zCExceptionHandlerUnhandledExceptionFilter( EXCEPTION_POINTERS* exceptionPtrs ) {
-    return HookedFunctions::OriginalFunctions.original_zCExceptionHandler_UnhandledExceptionFilter( exceptionPtrs );
 }
 
 int __cdecl HookedFunctionInfo::hooked_GetNumDevices() {
@@ -409,8 +387,8 @@ void __fastcall HookedFunctionInfo::hooked_SetLightmap( void* polygonPtr ) {
 FARPROC WINAPI HookedFunctionInfo::hooked_GetProcAddress( HMODULE mod, const char* procName ) {
     if ( Engine::GAPI && _stricmp( procName, "GDX_SetFogColor" ) == 0 ) {
         std::string gameName = Engine::GAPI->GetGameName();
-        std::transform( gameName.begin(), gameName.end(), gameName.end(), toupper );
-        if ( strstr( gameName.c_str(), "VINV" ) ) {
+        std::transform( gameName.begin(), gameName.end(), gameName.begin(), toupper );
+        if ( gameName.find( "VINV" ) != std::string::npos ) {
             // Remove "incompatible with DX11" message in "Shadows of the past" modification
             return reinterpret_cast<FARPROC>(0);
         }

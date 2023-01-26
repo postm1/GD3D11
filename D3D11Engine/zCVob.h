@@ -36,10 +36,9 @@ class zCVob {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_zCVobSetVisual, GothicMemoryLocations::zCVob::SetVisual, zCVob::Hooked_SetVisual );
-        XHook( HookedFunctions::OriginalFunctions.original_zCVobDestructor, GothicMemoryLocations::zCVob::Destructor, zCVob::Hooked_Destructor );
-
-        XHook( HookedFunctions::OriginalFunctions.original_zCVobEndMovement, GothicMemoryLocations::zCVob::EndMovement, zCVob::Hooked_EndMovement );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCVobSetVisual), Hooked_SetVisual );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCVobDestructor), Hooked_Destructor );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCVobEndMovement), Hooked_EndMovement );
     }
     
     /** Called when this vob got it's world-matrix changed */

@@ -119,11 +119,12 @@ class zCModelPrototype {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        //XHook(HookedFunctions::OriginalFunctions.original_zCModelPrototypeLoadModelASC, GothicMemoryLocations::zCModelPrototype::LoadModelASC, zCModelPrototype::Hooked_LoadModelASC);
-        //XHook(HookedFunctions::OriginalFunctions.original_zCModelPrototypeReadMeshAndTreeMSB, GothicMemoryLocations::zCModelPrototype::ReadMeshAndTreeMSB, zCModelPrototype::Hooked_ReadMeshAndTreeMSB);
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCModelPrototypeLoadModelASC), Hooked_LoadModelASC );
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCModelPrototypeReadMeshAndTreeMSB), Hooked_ReadMeshAndTreeMSB );
     }
 
     /** This is called on load time for models */
+    /*
     static int __fastcall Hooked_LoadModelASC( void* thisptr, void* unknwn, const zSTRING& file ) {
         LogInfo() << "Loading Model: " << file.ToChar();
         int r = HookedFunctions::OriginalFunctions.original_zCModelPrototypeLoadModelASC( thisptr, file );
@@ -134,8 +135,10 @@ public:
 
         return r;
     }
+    */
 
     /** This is called on load time for models */
+    /*
     static int __fastcall Hooked_ReadMeshAndTreeMSB( void* thisptr, void* unknwn, int& i, class zCFileBIN& f ) {
         LogInfo() << "Loading Model!";
         int r = HookedFunctions::OriginalFunctions.original_zCModelPrototypeReadMeshAndTreeMSB( thisptr, i, f );
@@ -146,6 +149,7 @@ public:
 
         return r;
     }
+    */
 
     /** This returns the list of nodes which hold information about the bones and attachments later */
     zCArray<zCModelNode*>* GetNodeList() {

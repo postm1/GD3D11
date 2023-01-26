@@ -18,18 +18,18 @@ class zCWorld {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_zCWorldRender, GothicMemoryLocations::zCWorld::Render, zCWorld::hooked_Render );
-        XHook( HookedFunctions::OriginalFunctions.original_zCWorldVobAddedToWorld, GothicMemoryLocations::zCWorld::VobAddedToWorld, zCWorld::hooked_VobAddedToWorld );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCWorldRender), hooked_Render );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCWorldVobAddedToWorld), hooked_VobAddedToWorld );
 
-        XHook( HookedFunctions::OriginalFunctions.original_zCWorldLoadWorld, GothicMemoryLocations::zCWorld::LoadWorld, zCWorld::hooked_LoadWorld );
-        XHook( HookedFunctions::OriginalFunctions.original_zCWorldVobRemovedFromWorld, GothicMemoryLocations::zCWorld::VobRemovedFromWorld, zCWorld::hooked_zCWorldVobRemovedFromWorld );
-        //XHook(HookedFunctions::OriginalFunctions.original_zCWorldDisposeWorld, GothicMemoryLocations::zCWorld::DisposeWorld, zCWorld::hooked_zCWorldDisposeWorld);
-        XHook( HookedFunctions::OriginalFunctions.original_zCWorldDisposeVobs, GothicMemoryLocations::zCWorld::DisposeVobs, zCWorld::hooked_zCWorldDisposeVobs );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCWorldLoadWorld), hooked_LoadWorld );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCWorldVobRemovedFromWorld), hooked_zCWorldVobRemovedFromWorld );
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCWorldDisposeWorld), hooked_zCWorldDisposeWorld );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCWorldDisposeVobs), hooked_zCWorldDisposeVobs );
 
-        XHook( HookedFunctions::OriginalFunctions.original_oCWorldRemoveFromLists, GothicMemoryLocations::oCWorld::RemoveFromLists, zCWorld::hooked_oCWorldRemoveFromLists );
-        XHook( HookedFunctions::OriginalFunctions.original_oCWorldEnableVob, GothicMemoryLocations::oCWorld::EnableVob, zCWorld::hooked_oCWorldEnableVob );
-        XHook( HookedFunctions::OriginalFunctions.original_oCWorldDisableVob, GothicMemoryLocations::oCWorld::DisableVob, zCWorld::hooked_oCWorldDisableVob );
-        XHook( HookedFunctions::OriginalFunctions.original_oCWorldRemoveVob, GothicMemoryLocations::oCWorld::RemoveVob, zCWorld::hooked_oCWorldRemoveVob );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCWorldRemoveFromLists), hooked_oCWorldRemoveFromLists );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCWorldEnableVob), hooked_oCWorldEnableVob );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCWorldDisableVob), hooked_oCWorldDisableVob );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCWorldRemoveVob), hooked_oCWorldRemoveVob );
     }
 
     static void __fastcall hooked_oCWorldEnableVob( zCWorld* thisptr, void* unknwn, zCVob* vob, zCVob* parent ) {
@@ -71,10 +71,12 @@ public:
         hook_outfunc
     }
 
+    /*
     static void __fastcall hooked_zCWorldDisposeWorld( void* thisptr, void* unknwn ) {
         //Engine::GAPI->ResetWorld();
         HookedFunctions::OriginalFunctions.original_zCWorldDisposeWorld( thisptr );
     }
+    */
 
     static void __fastcall hooked_zCWorldDisposeVobs( zCWorld* thisptr, void* unknwn, zCTree<zCVob>* tree ) {
         // Reset only if this is the main world, inventory worlds are handled differently

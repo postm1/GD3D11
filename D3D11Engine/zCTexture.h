@@ -20,8 +20,8 @@ class zCTexture {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        //XHook(HookedFunctions::OriginalFunctions.original_zCTex_D3DXTEX_BuildSurfaces, GothicMemoryLocations::zCTexture::XTEX_BuildSurfaces, zCTexture::hooked_XTEX_BuildSurfaces);
-        XHook( HookedFunctions::OriginalFunctions.ofiginal_zCTextureLoadResourceData, GothicMemoryLocations::zCTexture::LoadResourceData, zCTexture::hooked_LoadResourceData );
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCTex_D3DXTEX_BuildSurfaces), hooked_XTEX_BuildSurfaces );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.ofiginal_zCTextureLoadResourceData), hooked_LoadResourceData );
 
         zCTextureCacheHack::NumNotCachedTexturesInFrame = 0;
         zCTextureCacheHack::ForceCacheIn = false;
@@ -37,13 +37,14 @@ public:
         return ret;
     }
 
-
+    /*
     static int __fastcall hooked_XTEX_BuildSurfaces( void* thisptr, void* unknwn, int iVal ) {
         // Notify the texture and load resources
         int ret = HookedFunctions::OriginalFunctions.original_zCTex_D3DXTEX_BuildSurfaces( thisptr, iVal );
 
         return ret;
     }
+    */
 
     const char* GetName() {
         return __GetName().ToChar();

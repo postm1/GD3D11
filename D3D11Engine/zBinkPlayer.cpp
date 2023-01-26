@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "detours.h"
+#include "Detours/detours.h"
 #include "zSTRING.h"
 
 #include <ddraw.h>
@@ -637,65 +637,65 @@ void RegisterBinkPlayerHooks()
     DWORD playHandleEvents = reinterpret_cast<DWORD>(&BinkPlayerPlayHandleEvents);
     memcpy( binkPlayerVtable, &playHandleEvents, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::PlayHandleEvents_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::PlayHandleEvents_Func, BinkPlayerPlayHandleEvents );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::PlayHandleEvents_Func, reinterpret_cast<DWORD>(&BinkPlayerPlayHandleEvents) );
 
     DWORD setSoundVolume = reinterpret_cast<DWORD>(&BinkPlayerSetSoundVolume);
     memcpy( binkPlayerVtable, &setSoundVolume, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::SetSoundVolume_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::SetSoundVolume_Func, BinkPlayerSetSoundVolume );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::SetSoundVolume_Func, reinterpret_cast<DWORD>(&BinkPlayerSetSoundVolume) );
 
     DWORD toggleSound = reinterpret_cast<DWORD>(&BinkPlayerToggleSound);
     memcpy( binkPlayerVtable, &toggleSound, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::ToggleSound_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::ToggleSound_Func, BinkPlayerToggleSound );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::ToggleSound_Func, reinterpret_cast<DWORD>(&BinkPlayerToggleSound) );
 
     DWORD pause = reinterpret_cast<DWORD>(&BinkPlayerPause);
     memcpy( binkPlayerVtable, &pause, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::Pause_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::Pause_Func, BinkPlayerPause );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::Pause_Func, reinterpret_cast<DWORD>(&BinkPlayerPause) );
 
     DWORD unpause = reinterpret_cast<DWORD>(&BinkPlayerUnpause);
     memcpy( binkPlayerVtable, &unpause, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::Unpause_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::Unpause_Func, BinkPlayerUnpause );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::Unpause_Func, reinterpret_cast<DWORD>(&BinkPlayerUnpause) );
 
     DWORD isPlaying = reinterpret_cast<DWORD>(&BinkPlayerIsPlaying);
     memcpy( binkPlayerVtable, &isPlaying, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::IsPlaying_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::IsPlaying_Func, BinkPlayerIsPlaying );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::IsPlaying_Func, reinterpret_cast<DWORD>(&BinkPlayerIsPlaying) );
     
     DWORD playGotoNextFrame = reinterpret_cast<DWORD>(&BinkPlayerPlayGotoNextFrame);
     memcpy( binkPlayerVtable, &playGotoNextFrame, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::PlayGotoNextFrame_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::PlayGotoNextFrame_Func, BinkPlayerPlayGotoNextFrame );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::PlayGotoNextFrame_Func, reinterpret_cast<DWORD>(&BinkPlayerPlayGotoNextFrame) );
 
     DWORD playWaitNextFrame = reinterpret_cast<DWORD>(&BinkPlayerPlayWaitNextFrame);
     memcpy( binkPlayerVtable, &playWaitNextFrame, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::PlayWaitNextFrame_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::PlayWaitNextFrame_Func, BinkPlayerPlayWaitNextFrame );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::PlayWaitNextFrame_Func, reinterpret_cast<DWORD>(&BinkPlayerPlayWaitNextFrame) );
 
     DWORD playFrame = reinterpret_cast<DWORD>(&BinkPlayerPlayFrame);
     memcpy( binkPlayerVtable, &playFrame, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::PlayFrame_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::PlayFrame_Func, BinkPlayerPlayFrame );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::PlayFrame_Func, reinterpret_cast<DWORD>(&BinkPlayerPlayFrame) );
 
     DWORD playInit = reinterpret_cast<DWORD>(&BinkPlayerPlayInit);
     memcpy( binkPlayerVtable, &playInit, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::PlayInit_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::PlayInit_Func, BinkPlayerPlayInit );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::PlayInit_Func, reinterpret_cast<DWORD>(&BinkPlayerPlayInit) );
 
     DWORD playDeinit = reinterpret_cast<DWORD>(&BinkPlayerPlayDeinit);
     memcpy( binkPlayerVtable, &playDeinit, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::PlayDeinit_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::PlayDeinit_Func, BinkPlayerPlayDeinit );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::PlayDeinit_Func, reinterpret_cast<DWORD>(&BinkPlayerPlayDeinit) );
 
     DWORD openVideo = reinterpret_cast<DWORD>(&BinkPlayerOpenVideo);
     memcpy( binkPlayerVtable, &openVideo, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::OpenVideo_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::OpenVideo_Func, BinkPlayerOpenVideo );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::OpenVideo_Func, reinterpret_cast<DWORD>(&BinkPlayerOpenVideo) );
 
     DWORD closeVideo = reinterpret_cast<DWORD>(&BinkPlayerCloseVideo);
     memcpy( binkPlayerVtable, &closeVideo, 4 );
     PatchAddr( GothicMemoryLocations::zCBinkPlayer::CloseVideo_Vtable, binkPlayerVtable );
-    XHook( GothicMemoryLocations::zCBinkPlayer::CloseVideo_Func, BinkPlayerCloseVideo );
+    PatchJMP( GothicMemoryLocations::zCBinkPlayer::CloseVideo_Func, reinterpret_cast<DWORD>(&BinkPlayerCloseVideo) );
 }

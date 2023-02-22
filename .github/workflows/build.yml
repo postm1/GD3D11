@@ -67,7 +67,7 @@ jobs:
     - name: Display structure of downloaded files
       run: ls -R
     
-    - name: Create distribution zip
+    - name: Create distribution
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         mkdir "${{env.RELEASE_DIR}}\GD3D11\shaders\CSFFT"
@@ -88,6 +88,13 @@ jobs:
       with:
         name: ${{ env.RELEASE_DIR }}
         path: ${{ env.RELEASE_DIR }}
+
+    - name: zip distribution for nightly
+      if: ${{ env.GITHUB_REF == 'refs/heads/master' }}
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        cd "${{env.RELEASE_DIR}}"
+        7z a -tzip "..\${{env.RELEASE_DIR}}.zip" -r
 
     - name: Create nightly github release
       if: ${{ env.GITHUB_REF == 'refs/heads/master' }}

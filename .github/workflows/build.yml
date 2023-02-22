@@ -106,6 +106,7 @@ jobs:
     - name: Create nightly github release
       if: github.ref_name == 'master'
       run: |
+        gh release delete nightly --yes --cleanup-tag
         gh release create nightly --prerelease --title "Nightly" --notes "Generated release from GitHub Actions"
         echo "Ignore 'Validation Failed' results. Expected since only the first job that reaches this step can create the release."
         exit 0

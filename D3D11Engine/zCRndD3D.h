@@ -10,17 +10,17 @@ public:
 
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( GothicMemoryLocations::zCRndD3D::DrawLineZ, hooked_zCRndD3DDrawLineZ );
-        XHook( GothicMemoryLocations::zCRndD3D::DrawLine, hooked_zCRndD3DDrawLine );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawLineZ), hooked_zCRndD3DDrawLineZ );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawLine), hooked_zCRndD3DDrawLine );
 
-        XHook( HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawPoly, GothicMemoryLocations::zCRndD3D::DrawPoly, hooked_zCRndD3DDrawPoly );
-        XHook( HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawPolySimple, GothicMemoryLocations::zCRndD3D::DrawPolySimple, hooked_zCRndD3DDrawPolySimple );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawPoly), hooked_zCRndD3DDrawPoly );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_DrawPolySimple), hooked_zCRndD3DDrawPolySimple );
 
-        XHook( GothicMemoryLocations::zCRndD3D::CacheInSurface, hooked_zCSurfaceCache_D3DCacheInSurface );
-        XHook( GothicMemoryLocations::zCRndD3D::CacheOutSurface, hooked_zCSurfaceCache_D3DCacheOutSurface );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_CacheInSurface), hooked_zCSurfaceCache_D3DCacheInSurface );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_CacheOutSurface), hooked_zCSurfaceCache_D3DCacheOutSurface );
 
-        XHook( GothicMemoryLocations::zCRndD3D::RenderScreenFade, hooked_zCCameraRenderScreenFade );
-        XHook( GothicMemoryLocations::zCRndD3D::RenderCinemaScope, hooked_zCCameraRenderCinemaScope );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_RenderScreenFade), hooked_zCCameraRenderScreenFade );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCRnd_D3D_RenderCinemaScope), hooked_zCCameraRenderCinemaScope );
     }
 
     /** Disable caching surfaces to let engine create new surfaces for every textures */

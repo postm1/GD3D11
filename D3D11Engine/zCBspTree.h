@@ -51,18 +51,17 @@ public:
 
     /** Hooks the functions of this Class */
     static void Hook() {
-
-        XHook( GothicMemoryLocations::zCBspTree::Render, zCBspNode::hooked_zCBspNodeRender );
-
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspNodeRender), hooked_zCBspNodeRender );
 
 #ifdef BUILD_GOTHIC_1_08k
-        XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCollectPolysInBBox3D, GothicMemoryLocations::zCBspBase::CollectPolysInBBox3D, zCBspNode::hooked_zCBspBaseCollectPolysInBBox3D );
-        XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolys, GothicMemoryLocations::zCBspBase::CheckRayAgainstPolys, zCBspNode::hooked_zCBspBaseCheckRayAgainstPolys );
-        XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysCache, GothicMemoryLocations::zCBspBase::CheckRayAgainstPolysCache, zCBspNode::hooked_zCBspBaseCheckRayAgainstPolysCache );
-        XHook( HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysNearestHit, GothicMemoryLocations::zCBspBase::CheckRayAgainstPolysNearestHit, zCBspNode::hooked_zCBspBaseCheckRayAgainstPolysNearestHit );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspBaseCollectPolysInBBox3D), hooked_zCBspBaseCollectPolysInBBox3D );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolys), hooked_zCBspBaseCheckRayAgainstPolys );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysCache), hooked_zCBspBaseCheckRayAgainstPolysCache );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspBaseCheckRayAgainstPolysNearestHit), hooked_zCBspBaseCheckRayAgainstPolysNearestHit );
 #endif
     }
 
+#ifdef BUILD_GOTHIC_1_08k
     static int _fastcall hooked_zCBspBaseCheckRayAgainstPolysNearestHit( void* thisptr, const XMFLOAT3& start, const XMFLOAT3& end, XMFLOAT3& intersection ) {
         // Get our version of this node
         //Engine::GAPI->Get
@@ -183,6 +182,7 @@ public:
             return HookedFunctions::OriginalFunctions.original_zCBspBaseCollectPolysInBBox3D( thisptr, bbox, polyList, numFound );
         }
     }
+#endif
 
     static void __fastcall hooked_zCBspNodeRender( void* thisptr, void* unkwn ) {
         // Start world rendering here
@@ -213,8 +213,8 @@ class zCBspTree {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_zCBspTreeLoadBIN, GothicMemoryLocations::zCBspTree::LoadBIN, zCBspTree::hooked_LoadBIN );
-        //XHook( HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob, GothicMemoryLocations::zCBspTree::AddVob, zCBspTree::hooked_AddVob );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspTreeLoadBIN), hooked_LoadBIN );
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCBspTreeAddVob), hooked_AddVob );
     }
 
     /** Called when a vob gets added to a bsp-tree */

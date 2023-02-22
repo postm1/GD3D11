@@ -961,9 +961,9 @@ XRESULT D3D11GraphicsEngine::OnBeginFrame() {
     Engine::GAPI->EnterResourceCriticalSection();
 
     auto& stagingTextures = Engine::GAPI->GetStagingTextures();
-    for ( auto& it : stagingTextures ) {
-        GetContext()->CopySubresourceRegion( it.second, it.first.first, 0, 0, 0, it.first.second, 0, nullptr );
-        it.first.second->Release();
+    for ( auto& [res, texture] : stagingTextures ) {
+        GetContext()->CopySubresourceRegion( texture, res.first, 0, 0, 0, res.second, 0, nullptr );
+        res.second->Release();
     }
     stagingTextures.clear();
 
@@ -2612,9 +2612,9 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
     int lastAlphaFunc = 0;
 
     // Draw the list
-    for ( auto const& it : list ) {
+    for ( auto const& [meshKey, meshInfo] : list ) {
         int indicesNumMod = 1;
-        if ( zCTexture* texture = it.first.Material->GetAniTexture() ) {
+        if ( zCTexture* texture = meshKey.Material->GetAniTexture() ) {
             MyDirectDrawSurface7* surface = texture->GetSurface();
             ID3D11ShaderResourceView* srv[3];
 
@@ -2631,10 +2631,10 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
             // Bind both
             GetContext()->PSSetShaderResources( 0, 3, srv );
 
-            int alphaFunc = it.first.Material->GetAlphaFunc();
+            int alphaFunc = meshKey.Material->GetAlphaFunc();
 
             //Get the right shader for it
-            BindShaderForTexture( texture, false, alphaFunc, it.first.Info->MaterialType );
+            BindShaderForTexture( texture, false, alphaFunc, meshKey.Info->MaterialType );
 
             // Check for alphablending on world mesh
             if ( lastAlphaFunc != alphaFunc ) {
@@ -2653,7 +2653,7 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
                 lastAlphaFunc = alphaFunc;
             }
 
-            MaterialInfo* info = it.first.Info;
+            MaterialInfo* info = meshKey.Info;
             if ( !info->Constantbuffer ) info->UpdateConstantbuffer();
 
             info->Constantbuffer->BindToPixelShader( 2 );
@@ -2662,8 +2662,8 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
             texture->CacheIn( 0.6f );
 
             // Draw the section-part
-            DrawVertexBufferIndexedUINT( nullptr, nullptr, it.second->Indices.size(),
-                it.second->BaseIndexLocation );
+            DrawVertexBufferIndexedUINT( nullptr, nullptr, meshInfo->Indices.size(),
+                meshInfo->BaseIndexLocation );
 
         }
     }
@@ -2677,11 +2677,11 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
 
     // Draw again, but only to depthbuffer this time to make them work with
     // fogging
-    for ( auto const& it : list ) {
-        if ( it.first.Material->GetAniTexture() != nullptr ) {
+    for ( auto const& [meshKey, meshInfo] : list ) {
+        if ( meshKey.Material->GetAniTexture() != nullptr ) {
             // Draw the section-part
-            DrawVertexBufferIndexedUINT( nullptr, nullptr, it.second->Indices.size(),
-                it.second->BaseIndexLocation );
+            DrawVertexBufferIndexedUINT( nullptr, nullptr, meshInfo->Indices.size(),
+                meshInfo->BaseIndexLocation );
         }
     }
 
@@ -3221,9 +3221,9 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
     DrawVertexBufferIndexedUINT(
         Engine::GAPI->GetWrappedWorldMesh()->MeshVertexBuffer,
         Engine::GAPI->GetWrappedWorldMesh()->MeshIndexBuffer, 0, 0 );
-    for ( auto const& it : FrameWaterSurfaces ) {
+    for ( const auto& [texture, meshes] : FrameWaterSurfaces ) {
         // Draw surfaces
-        for ( auto const& mesh : it.second ) {
+        for ( const auto& mesh : meshes ) {
             DrawVertexBufferIndexedUINT( nullptr, nullptr,
                 mesh->Indices.size(), mesh->BaseIndexLocation );
         }
@@ -3265,15 +3265,14 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
 
     // Bind reflection cube
     GetContext()->PSSetShaderResources( 3, 1, ReflectionCube.GetAddressOf() );
-    for ( auto const& it : FrameWaterSurfaces ) {
+    for ( const auto& [texture, meshes] : FrameWaterSurfaces ) {
         // Bind diffuse
-        zCTexture* texture = it.first;
         texture->CacheIn( -1 );    // Force immediate cache in, because water
                                    // is important!
         texture->Bind( 0 );
 
         // Draw surfaces
-        for ( auto const& mesh : it.second ) {
+        for ( const auto& mesh : meshes ) {
             DrawVertexBufferIndexedUINT( nullptr, nullptr,
                 mesh->Indices.size(), mesh->BaseIndexLocation );
         }
@@ -6345,15 +6344,15 @@ namespace UI::zFont {
 
             auto topLeft = font->fontuv1[c];
             auto botRight = font->fontuv2[c];
-            auto widthPx = float( font->width[c] ) * scale;
+            auto widthPx = static_cast<float>( font->width[c] ) * scale;
 
             ExVertexStruct* vertex = &vertices[i * 6];
 
-            const float widthf = float( widthPx );
-            const float heightf = float( font->height ) * scale;
+            const float widthf = static_cast<float>( widthPx );
+            const float heightf = static_cast<float>( font->height ) * scale;
 
-            const float minx = float( xpos );
-            const float miny = float( ypos );
+            const float minx = static_cast<float>( xpos );
+            const float miny = static_cast<float>( ypos );
 
             // prepare for next glyph
             if ( c == '\n' ) { ypos += heightf; xpos = x; } else if ( c == ' ' ) { xpos += widthPx; continue; } else { xpos += widthPx + SpaceBetweenChars; }
@@ -6361,15 +6360,10 @@ namespace UI::zFont {
             const float maxx = (minx + widthf);
             const float maxy = (miny + heightf);
 
-            float halfTexel = 0.0f;
-
-            const float texelHalfW = halfTexel / widthf;
-            const float texelHalfH = halfTexel / heightf;
-
-            const float minu = topLeft.pos.x + texelHalfW;
-            const float maxu = botRight.pos.x - texelHalfW;
-            const float minv = topLeft.pos.y + texelHalfH;
-            const float maxv = texelHalfH + botRight.pos.y;
+            const float minu = topLeft.pos.x;
+            const float maxu = botRight.pos.x;
+            const float minv = topLeft.pos.y;
+            const float maxv = botRight.pos.y;
 
             for ( size_t j = 0; j < 6; j++ ) {
                 vertex[j].Normal = { 1, 0, 0 };
@@ -6419,9 +6413,18 @@ float  D3D11GraphicsEngine::UpdateCustomFontMultiplierFontRendering( float multi
 }
 
 void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, const zFont* font, zColor& fontColor ) {
-    if ( str.empty() ) return;
     if ( !font ) return;
     if ( !font->tex ) return;
+
+    //
+    // Glyphen anordnen und in den vertices Vector packen
+    // Ggf. Sonderzeichen am Ende entfernen.
+    // 
+    size_t maxLen = str.size();
+    while ( maxLen > 0 && str[maxLen - 1] == '/' ) {
+        --maxLen;
+    }
+    if ( !maxLen ) return;
 
     float UIScale = 1.0f;
     static int savedBarSize = -1;
@@ -6487,15 +6490,6 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
 
     static std::vector<ExVertexStruct> vertices;
     vertices.clear();
-
-    //
-    // Glyphen anordnen und in den vertices Vector packen
-    // Ggf. Sonderzeichen am Ende entfernen.
-    // 
-    size_t maxLen = str.size();
-    while ( str[maxLen - 1] == '/' ) {
-        maxLen--;
-    }
 
     UI::zFont::AppendGlyphs( vertices, str, maxLen, x, y, font, fontColor, UIScale, zCCamera::GetCamera() );
 

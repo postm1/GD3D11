@@ -135,7 +135,7 @@ class zCParticleFX {
 public:
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_zCParticleFXDestructor, GothicMemoryLocations::zCParticleFX::Destructor, zCParticleFX::Hooked_Destructor );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCParticleFXDestructor), Hooked_Destructor );
     }
 
     static void __fastcall Hooked_Destructor( zCParticleFX* thisptr, void* unknwn ) {

@@ -193,9 +193,10 @@ struct BaseVisualInfo {
     }
 
     virtual ~BaseVisualInfo() {
-        for ( std::map<zCMaterial*, std::vector<MeshInfo*>>::iterator it = Meshes.begin(); it != Meshes.end(); it++ ) {
-            for ( unsigned int i = 0; i < it->second.size(); i++ )
-                delete it->second[i];
+        for ( auto& [k, meshes] : Meshes ) {
+            for ( MeshInfo* mi : meshes ) {
+                delete mi;
+            }
         }
     }
 
@@ -291,9 +292,10 @@ struct SkeletalMeshVisualInfo : public BaseVisualInfo {
     }
 
     ~SkeletalMeshVisualInfo() {
-        for ( std::map<zCMaterial*, std::vector<SkeletalMeshInfo*>>::iterator it = SkeletalMeshes.begin(); it != SkeletalMeshes.end(); it++ ) {
-            for ( unsigned int i = 0; i < it->second.size(); i++ )
-                delete it->second[i];
+        for ( auto& [k, meshes] : SkeletalMeshes ) {
+            for ( SkeletalMeshInfo* smi : meshes ) {
+                delete smi;
+            }
         }
     }
 
@@ -307,8 +309,6 @@ struct SkeletalMeshVisualInfo : public BaseVisualInfo {
 
     /** Submeshes of this visual */
     std::map<zCMaterial*, std::vector<SkeletalMeshInfo*>> SkeletalMeshes;
-
-
 };
 
 struct BaseVobInfo {
@@ -416,9 +416,10 @@ struct SkeletalVobInfo : public BaseVobInfo {
     ~SkeletalVobInfo() {
         //delete VisualInfo;
 
-        for ( std::map<int, std::vector<MeshVisualInfo*>>::iterator it = NodeAttachments.begin(); it != NodeAttachments.end(); it++ ) {
-            for ( unsigned int i = 0; i < it->second.size(); i++ )
-                delete it->second[i];
+        for ( auto& [k, meshes] : NodeAttachments ) {
+            for ( MeshVisualInfo* mvi : meshes ) {
+                delete mvi;
+            }
         }
 
         delete VobConstantBuffer;
@@ -458,7 +459,6 @@ struct SectionInstanceCache {
 
     std::map<MeshVisualInfo*, std::vector<VS_ExConstantBuffer_PerInstance>> InstanceCacheData;
     std::map<MeshVisualInfo*, D3D11VertexBuffer*> InstanceCache;
-
 };
 
 class D3D11Texture;
@@ -472,32 +472,25 @@ struct WorldMeshSectionInfo {
     }
 
     ~WorldMeshSectionInfo() {
-        for ( std::map<MeshKey, WorldMeshInfo*>::iterator it = WorldMeshes.begin(); it != WorldMeshes.end(); it++ ) {
-            delete it->second;
+        for ( auto& [k, mesh] : WorldMeshes ) {
+            delete mesh;
         }
-        WorldMeshes.clear();
 
-        for ( std::map<MeshKey, MeshInfo*>::iterator it = SuppressedMeshes.begin(); it != SuppressedMeshes.end(); it++ ) {
-            delete it->second;
+        for ( auto& [k, mesh] : SuppressedMeshes ) {
+            delete mesh;
         }
-        SuppressedMeshes.clear();
 
-        for ( std::map<D3D11Texture*, std::vector<MeshInfo*>>::iterator it = WorldMeshesByCustomTexture.begin(); it != WorldMeshesByCustomTexture.end(); it++ ) {
-            delete it->first; // Meshes are stored in "WorldMeshes". Only delete the texture
+        for ( auto& [texture, meshes] : WorldMeshesByCustomTexture ) {
+            delete texture; // Meshes are stored in "WorldMeshes". Only delete the texture
         }
-        WorldMeshesByCustomTexture.clear();
 
-        for ( std::list<VobInfo*>::iterator it = Vobs.begin(); it != Vobs.end(); it++ ) {
-            delete (*it);
+        for ( VobInfo* vob : Vobs ) {
+            delete vob;
         }
-        Vobs.clear();
 
-        for ( auto it = SectionPolygons.begin(); it != SectionPolygons.end(); it++ ) {
-            delete (*it);
+        for ( zCPolygon* poly : SectionPolygons ) {
+            delete poly;
         }
-        SectionPolygons.clear();
-
-
 
         delete FullStaticMesh;
     }

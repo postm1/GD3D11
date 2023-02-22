@@ -6,16 +6,6 @@
 
 #define THISPTR_OFFSET(x) (reinterpret_cast<DWORD>(this) + (x))
 
-template<typename TOriginal, typename T>
-static void XHook( TOriginal& original, unsigned int adr, T& hookFn ) {
-    original = reinterpret_cast<TOriginal>(DetourFunction( reinterpret_cast<BYTE*>(adr), reinterpret_cast<BYTE*>(hookFn) ));
-}
-
-template<typename T>
-static void XHook( unsigned int adr, T& hookFn ) {
-    DetourFunction( reinterpret_cast<BYTE*>(adr), reinterpret_cast<BYTE*>(hookFn) );
-}
-
 template<typename T, size_t n >
 static void PatchAddr( unsigned int adr, const T( &v )[n] ) {
     DWORD dwProtect;

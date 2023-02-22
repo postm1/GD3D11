@@ -30,16 +30,9 @@ public:
 
     /** Hooks the functions of this Class */
     static void Hook() {
-        XHook( HookedFunctions::OriginalFunctions.original_oCGameEnterWorld, GothicMemoryLocations::oCGame::EnterWorld, oCGame::hooked_EnterWorld );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCGameEnterWorld), hooked_EnterWorld );
+    }
 
-#if BUILD_GOTHIC_2_6_fix
-        // 006C3140                             ; void __thiscall oCGame::UpdatePlayerStatus(oCGame *__hidden this)
-        //XHook(HookedFunctions::OriginalFunctions.original_oCGameUpdatePlayerStatus, 0x006C3140, oCGame::hooked_UpdatePlayerStatus);
-#endif
-    }
-    static void __fastcall hooked_UpdatePlayerStatus( void* thisptr, void* unknwn ) {
-        HookedFunctions::OriginalFunctions.original_oCGameUpdatePlayerStatus( thisptr );
-    }
     static void __fastcall hooked_EnterWorld( void* thisptr, void* unknwn, oCNPC* playerVob, int changePlayerPos, const zSTRING& startpoint ) {
         HookedFunctions::OriginalFunctions.original_oCGameEnterWorld( thisptr, playerVob, changePlayerPos, startpoint );
 

@@ -22,15 +22,9 @@ public:
 
     /** Hooks the functions of this Class */
     static void Hook() {
-#ifdef BUILD_GOTHIC_1_08k
-        // Only G1 needs this, because newly added NPCs only get enabled, but not re-added to the world like in G2
-        //XHook(HookedFunctions::OriginalFunctions.original_oCNPCEnable, GothicMemoryLocations::oCNPC::Enable, oCNPC::hooked_oCNPCEnable);
-#endif
-
-        XHook( HookedFunctions::OriginalFunctions.original_oCNPCEnable, GothicMemoryLocations::oCNPC::Enable, oCNPC::hooked_oCNPCEnable );
-        XHook( HookedFunctions::OriginalFunctions.original_oCNPCDisable, GothicMemoryLocations::oCNPC::Disable, oCNPC::hooked_oCNPCDisable );
-
-        XHook( HookedFunctions::OriginalFunctions.original_oCNPCInitModel, GothicMemoryLocations::oCNPC::InitModel, oCNPC::hooked_oCNPCInitModel );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCNPCEnable), hooked_oCNPCEnable );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCNPCDisable), hooked_oCNPCDisable );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_oCNPCInitModel), hooked_oCNPCInitModel );
     }
 
     static void __fastcall hooked_oCNPCInitModel( zCVob* thisptr, void* unknwn ) {

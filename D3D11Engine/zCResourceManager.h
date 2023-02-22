@@ -19,9 +19,10 @@ public:
 
     /** Hooks the functions of this Class */
     static void Hook() {
-        //XHook(HookedFunctions::OriginalFunctions.original_zCResourceManagerCacheOut, GothicMemoryLocations::zCResourceManager::CacheOut, zCResourceManager::hooked_CacheOut);
+        //DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCResourceManagerCacheOut), hooked_CacheOut );
     }
 
+    /*
     static void __fastcall hooked_CacheOut( void* thisptr, void* unknwn, class zCResource* res ) {
         hook_infunc
 
@@ -29,6 +30,7 @@ public:
 
         hook_outfunc
     }
+    */
 
     zTResourceCacheState CacheIn( zCTexture* res, float priority ) {
         return reinterpret_cast<zTResourceCacheState( __fastcall* )( zCResourceManager*, int, zCTexture*, float )>

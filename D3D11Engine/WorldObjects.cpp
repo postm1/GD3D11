@@ -205,8 +205,8 @@ void BaseVisualInfo::LoadMeshVisualInfo( const std::string& name ) {
 #endif
 
 SectionInstanceCache::~SectionInstanceCache() {
-    for ( std::map<MeshVisualInfo*, D3D11VertexBuffer*>::iterator it = InstanceCache.begin(); it != InstanceCache.end(); it++ ) {
-        delete it->second;
+    for ( auto& [mvi, vertexBuffer] : InstanceCache ) {
+        delete vertexBuffer;
     }
 }
 

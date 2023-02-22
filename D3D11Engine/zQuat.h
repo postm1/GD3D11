@@ -8,10 +8,10 @@ class zQuat
         /** Hooks the functions of this Class */
         static void Hook()
         {
-            XHook( 0x518EF0, zQuat::zQuatLerp );
-            XHook( 0x518D10, zQuat::zQuatSlerp );
-            XHook( 0x518560, zQuat::zQuatMat4ToQuat );
-            XHook( 0x518360, zQuat::zQuatQuatToMat4 );
+            PatchJMP( 0x00518EF0, reinterpret_cast<DWORD>(&zQuatLerp) );
+            PatchJMP( 0x00518D10, reinterpret_cast<DWORD>(&zQuatSlerp) );
+            PatchJMP( 0x00518560, reinterpret_cast<DWORD>(&zQuatMat4ToQuat) );
+            PatchJMP( 0x00518360, reinterpret_cast<DWORD>(&zQuatQuatToMat4) );
         }
 
 		static void __fastcall zQuatLerp(float4& output, int _EDX, float t, float4& q0, float4& q1)

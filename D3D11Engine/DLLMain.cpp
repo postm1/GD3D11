@@ -3,7 +3,7 @@
 #include "ddraw.h"
 #include "D3D7/MyDirectDraw.h"
 #include "Logger.h"
-#include "detours.h"
+#include "Detours/detours.h"
 #include "DbgHelp.h"
 #include "BaseAntTweakBar.h"
 #include "HookedFunctions.h"
@@ -32,7 +32,7 @@ typedef HRESULT( WINAPI* DirectDrawCreateEx_type )(GUID FAR*, LPVOID*, REFIID, I
 
 #if defined(BUILD_GOTHIC_2_6_fix)
 using WinMainFunc = decltype(&WinMain);
-WinMainFunc originalWinMain;
+WinMainFunc originalWinMain = reinterpret_cast<WinMainFunc>(GothicMemoryLocations::Functions::WinMain);
 #endif
 
 bool FeatureLevel10Compatibility = false;
@@ -217,21 +217,28 @@ int WINAPI hooked_WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR l
     // Remove automatic volume change of sounds regarding whether the camera is indoor or outdoor
     // TODO: Implement!
     if ( !GMPModeActive ) {
-        XHook( GothicMemoryLocations::zCActiveSnd::AutoCalcObstruction, HookedFunctionInfo::hooked_zCActiveSndAutoCalcObstruction );
+        DetourAttach( &reinterpret_cast<PVOID&>(HookedFunctions::OriginalFunctions.original_zCActiveSndAutoCalcObstruction), HookedFunctionInfo::hooked_zCActiveSndAutoCalcObstruction );
     }
     return originalWinMain( hInstance, hPrevInstance, lpCmdLine, nShowCmd );
 }
 #endif
 
 BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
+    if ( DetourIsHelperProcess() ) {
+        return TRUE;
+    }
+
     if ( reason == DLL_PROCESS_ATTACH ) {
+        DetourRestoreAfterWith();
+        DetourTransactionBegin();
+
         //DebugWrite_i("DDRAW Proxy DLL starting.\n", 0);
         hLThis = hInst;
 
         Engine::PassThrough = false;
 
 #if defined(BUILD_GOTHIC_2_6_fix)
-        XHook( originalWinMain, GothicMemoryLocations::Functions::WinMain, hooked_WinMain );
+        DetourAttach( &reinterpret_cast<PVOID&>(originalWinMain), hooked_WinMain );
 #endif
 
         //_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -258,6 +265,7 @@ BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
             EnableCrashingOnCrashes();
             //SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
         }
+        DetourTransactionCommit();
 
         char infoBuf[MAX_PATH];
         GetSystemDirectoryA( infoBuf, MAX_PATH );

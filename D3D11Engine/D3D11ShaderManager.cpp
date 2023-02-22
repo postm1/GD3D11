@@ -684,19 +684,18 @@ XRESULT D3D11ShaderManager::OnFrameStart() {
 
 /** Deletes all shaders */
 XRESULT D3D11ShaderManager::DeleteShaders() {
-    for ( auto vIter = VShaders.begin(); vIter != VShaders.end(); vIter++ ) {
-        vIter->second.reset();
+    for ( auto& [k, shader] : VShaders ) {
+        shader.reset();
     }
+    for ( auto& [k, shader] : PShaders ) {
+        shader.reset();
+    }
+    for ( auto& [k, shader] : HDShaders ) {
+        shader.reset();
+    }
+
     VShaders.clear();
-
-    for ( auto pIter = PShaders.begin(); pIter != PShaders.end(); pIter++ ) {
-        pIter->second.reset();
-    }
     PShaders.clear();
-
-    for ( auto hdIter = HDShaders.begin(); hdIter != HDShaders.end(); hdIter++ ) {
-        hdIter->second.reset();
-    }
     HDShaders.clear();
 
     return XR_SUCCESS;

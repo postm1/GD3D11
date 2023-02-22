@@ -40,8 +40,8 @@ D3D11PointLight::~D3D11PointLight() {
     DepthCubemap.reset();
     ViewMatricesCB.reset();
 
-    for ( auto it = WorldMeshCache.begin(); it != WorldMeshCache.end(); it++ ) {
-        SAFE_DELETE( it->second );
+    for ( auto& [k, mesh] : WorldMeshCache ) {
+        SAFE_DELETE( mesh );
     }
 }
 
@@ -275,6 +275,7 @@ void D3D11PointLight::OnVobRemovedFromWorld( BaseVobInfo* vob ) {
         // Clear cache, if so
         VobCache.clear();
         SkeletalVobCache.clear();
+        DrawnOnce = false;
     }
 
     //Engine::GAPI->LeaveResourceCriticalSection();

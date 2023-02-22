@@ -96,6 +96,13 @@ jobs:
         cd "${{env.RELEASE_DIR}}"
         7z a -tzip "..\${{env.RELEASE_DIR}}.zip" -r
 
+    - name: Calculate distribution zip hash
+      if: github.ref_name == 'master'
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        (Get-FileHash "${{env.RELEASE_DIR}}.zip" -Algorithm SHA256).hash | Out-File -FilePath "${{env.RELEASE_DIR}}.zip.sha256"
+        type "${{env.RELEASE_DIR}}.zip.sha256"
+
     - name: Create nightly github release
       if: github.ref_name == 'master'
       run: |

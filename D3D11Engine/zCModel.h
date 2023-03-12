@@ -333,6 +333,10 @@ public:
         return str;
     }
 
+    zCVob* GetHomeVob() {
+        return reinterpret_cast<zCVob*>(THISPTR_OFFSET( GothicMemoryLocations::zCModel::Offset_HomeVob ));
+    }
+
 private:
 
 };

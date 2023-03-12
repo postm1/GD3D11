@@ -610,7 +610,11 @@ void GothicAPI::ResetVobs() {
     for ( auto const& it : SkeletalMeshVisuals ) {
         delete it.second;
     }
+    for ( auto const& it : SkeletalMeshNpcs ) {
+        delete it.second;
+    }
     SkeletalMeshVisuals.clear();
+    SkeletalMeshNpcs.clear();
 
     // Delete static mesh vobs
     for ( auto const& it : VobMap ) {
@@ -1219,6 +1223,10 @@ void GothicAPI::OnMaterialDeleted( zCMaterial* mat ) {
         it.second->Meshes.erase( mat );
         it.second->SkeletalMeshes.erase( mat );
     }
+    for ( auto&& it : SkeletalMeshNpcs ) {
+        it.second->Meshes.erase( mat );
+        it.second->SkeletalMeshes.erase( mat );
+    }
 }
 
 /** Called when a material got created */
@@ -1361,10 +1369,27 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
                             vobInfo->VisualInfo = nullptr;
                         }
                     }
+
+                    delete SkeletalMeshVisuals[str];
+                    SkeletalMeshVisuals.erase( str );
                 }
 
-                delete SkeletalMeshVisuals[str];
-                SkeletalMeshVisuals.erase( str );
+                zCVob* homeVob = zmodel->GetHomeVob();
+                if ( homeVob && homeVob->GetVobType() == zVOB_TYPE_NSC ) {
+                    oCNPC* npc = static_cast<oCNPC*>(homeVob);
+                    auto it = SkeletalMeshNpcs.find( npc );
+                    if ( it != SkeletalMeshNpcs.end() ) {
+                        // Find vobs using this visual
+                        for ( SkeletalVobInfo* vobInfo : SkeletalMeshVobs ) {
+                            if ( vobInfo->VisualInfo == it->second ) {
+                                vobInfo->VisualInfo = nullptr;
+                            }
+                        }
+
+                        delete SkeletalMeshNpcs[npc];
+                        SkeletalMeshNpcs.erase( npc );
+                    }
+                }
             }
             break;
         }
@@ -1766,7 +1791,9 @@ void GothicAPI::OnAddVob( zCVob* vob, zCWorld* world ) {
             // Add vob to the skeletal list
             SkeletalVobInfo* vi = new SkeletalVobInfo;
             vi->Vob = vob;
-            vi->VisualInfo = SkeletalMeshVisuals[str];
+            vi->VisualInfo = vob->GetVobType() == zVOB_TYPE_NSC ?
+                LoadzCModelData( static_cast<oCNPC*>(vob) ) :
+                LoadzCModelData( static_cast<zCModel*>(vob->GetVisual()) );
 
             // Add to map
             VobsByVisual[vob->GetVisual()].push_back( vi );
@@ -1815,6 +1842,22 @@ SkeletalMeshVisualInfo* GothicAPI::LoadzCModelData( zCModel* model ) {
 
         SkeletalMeshVisuals[str] = mi;
     }
+    return mi;
+}
+
+SkeletalMeshVisualInfo* GothicAPI::LoadzCModelData( oCNPC* npc ) {
+    SkeletalMeshVisualInfo* mi = SkeletalMeshNpcs[npc];
+    if ( !mi ) {
+        mi = new SkeletalMeshVisualInfo;
+        SkeletalMeshNpcs[npc] = mi;
+    }
+
+    zCModel* model = static_cast<zCModel*>(npc->GetVisual());
+    mi->Visual = model;
+
+    // Update a visual information
+    mi->ClearMeshes();
+    WorldConverter::ExtractSkeletalMeshFromVob( model, mi );
     return mi;
 }
 

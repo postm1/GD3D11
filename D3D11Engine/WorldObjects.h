@@ -299,6 +299,19 @@ struct SkeletalMeshVisualInfo : public BaseVisualInfo {
         }
     }
 
+    void ClearMeshes() {
+        for ( auto& [k, meshes] : SkeletalMeshes )
+            for ( SkeletalMeshInfo* smi : meshes )
+                delete smi;
+
+        for ( auto& [k, meshes] : Meshes )
+            for ( MeshInfo* mi : meshes )
+                delete mi;
+
+        SkeletalMeshes.clear();
+        Meshes.clear();
+    }
+
 #if ENABLE_TESSELATION > 0
     /** Creates PNAEN-Info for all meshes if not already there */
     void CreatePNAENInfo( bool softNormals = false );

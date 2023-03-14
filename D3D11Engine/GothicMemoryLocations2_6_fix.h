@@ -364,6 +364,7 @@ struct GothicMemoryLocations {
     struct zCModel {
         static const unsigned int RenderNodeList = 0x00579560;
         static const unsigned int UpdateAttachedVobs = 0x00580900;
+        static const unsigned int Offset_HomeVob = 0x60;
         static const unsigned int Offset_ModelProtoList = 0x64;
         static const unsigned int Offset_NodeList = 0x70;
         static const unsigned int Offset_MeshSoftSkinList = 0x7C;

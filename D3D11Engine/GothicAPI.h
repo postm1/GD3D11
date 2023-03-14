@@ -659,6 +659,7 @@ public:
 
     /** Loads the data out of a zCModel and stores it in the cache */
     SkeletalMeshVisualInfo* LoadzCModelData( zCModel* model );
+    SkeletalMeshVisualInfo* LoadzCModelData( oCNPC* npc );
 
     /** Prints a message to the screen for the given amount of time */
     void PrintMessageTimed( const INT2& position, const std::string& strMessage, float time = 3000.0f, DWORD color = 0xFFFFFFFF );
@@ -752,6 +753,7 @@ private:
 
     /** Map for skeletal mesh visuals */
     std::unordered_map<std::string, SkeletalMeshVisualInfo*> SkeletalMeshVisuals;
+    std::unordered_map<oCNPC*, SkeletalMeshVisualInfo*> SkeletalMeshNpcs;
 
     /** Set of all vobs we registered by now */
     std::unordered_set<zCVob*> RegisteredVobs;

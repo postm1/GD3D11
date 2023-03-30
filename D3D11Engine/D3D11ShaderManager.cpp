@@ -649,18 +649,23 @@ XRESULT D3D11ShaderManager::CompileShader( const ShaderInfo& si ) {
 
 /** Loads/Compiles Shaderes from list */
 XRESULT D3D11ShaderManager::LoadShaders() {
-    size_t numThreads = std::thread::hardware_concurrency();
+    // Temporarily disable multi-core shader compilation
+
+    /*size_t numThreads = std::thread::hardware_concurrency();
     if ( numThreads > 1 ) {
         numThreads = numThreads - 1;
     }
     auto compilationTP = std::make_unique<ThreadPool>( numThreads );
     LogInfo() << "Compiling/Reloading shaders with " << compilationTP->getNumThreads() << " threads";
+    */
+    LogInfo() << "Compiling/Reloading shaders";
     for ( const ShaderInfo& si : Shaders ) {
-        compilationTP->enqueue( [this, si]() { CompileShader( si ); } );
+        CompileShader( si );
+        // compilationTP->enqueue( [this, si]() { CompileShader( si ); } );
     }
 
     // Join all threads (call Threadpool destructor)
-    compilationTP.reset();
+    // compilationTP.reset();
 
     return XR_SUCCESS;
 }

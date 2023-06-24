@@ -535,15 +535,15 @@ HRESULT MyDirectDrawSurface7::SetSurfaceDesc( LPDDSURFACEDESC2 lpDDSurfaceDesc, 
     int bpp = redBits + greenBits + blueBits + alphaBits;
 
     // Find out format
-    D3D11Texture::ETextureFormat format = D3D11Texture::ETextureFormat::TF_R8G8B8A8;
+    D3D11Texture::ETextureFormat format = D3D11Texture::ETextureFormat::TF_B8G8R8A8;
     switch ( bpp ) {
     case 16:
-        format = D3D11Texture::ETextureFormat::TF_R8G8B8A8;
+        format = D3D11Texture::ETextureFormat::TF_B8G8R8A8;
         break;
 
     case 24:
     case 32:
-        format = D3D11Texture::ETextureFormat::TF_R8G8B8A8;
+        format = D3D11Texture::ETextureFormat::TF_B8G8R8A8;
         break;
 
     case 0:

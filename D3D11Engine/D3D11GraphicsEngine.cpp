@@ -1899,8 +1899,9 @@ XRESULT  D3D11GraphicsEngine::DrawSkeletalMesh( SkeletalVobInfo* vi,
             if ( zCMaterial* mat = itm.first ) {
                 zCTexture* tex;
                 if ( ActivePS && (tex = mat->GetAniTexture()) != nullptr ) {
-                    if ( !BindTextureNRFX( tex, (RenderingStage != DES_GHOST) ) )
+                    if ( !BindTextureNRFX( tex, (RenderingStage != DES_GHOST) ) ) {
                         continue;
+                    }
                 }
             }
 

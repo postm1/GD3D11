@@ -104,6 +104,7 @@ XRESULT BaseAntTweakBar::Init() {
     TwAddVarRW( Bar_General, "Draw ParticleEffects", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects, nullptr );
     //TwAddVarRW(Bar_General, "Draw Sky", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawSky, nullptr);
     TwAddVarRW( Bar_General, "Draw Fog", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.DrawFog, nullptr );
+    TwAddVarRW( Bar_General, "Fog Range", TwDefineEnumFromString( "FogRangeEnum", "3, 4, 5, 6, 7, 8, 9, 10" ), &Engine::GAPI->GetRendererState().RendererSettings.FogRange, nullptr );
 #if ENABLE_TESSELATION > 0
     TwAddVarRW( Bar_General, "Tesselation", TW_TYPE_BOOLCPP, &Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation, nullptr );
 #endif

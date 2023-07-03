@@ -447,7 +447,7 @@ XRESULT D3D11GraphicsEngine::Init() {
     // Create dummy rendertarget for shadowcubes
     DummyShadowCubemapTexture = std::make_unique<RenderToTextureBuffer>(
         GetDevice(), POINTLIGHT_SHADOWMAP_SIZE, POINTLIGHT_SHADOWMAP_SIZE,
-        DXGI_FORMAT_R8G8B8A8_UNORM, nullptr, DXGI_FORMAT_UNKNOWN,
+        DXGI_FORMAT_B8G8R8A8_UNORM, nullptr, DXGI_FORMAT_UNKNOWN,
         DXGI_FORMAT_UNKNOWN, 1, 6 );
 
     SteamOverlay::Init();
@@ -870,7 +870,7 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
         GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_R16G16B16A16_FLOAT );
 
     GBuffer0_Diffuse = std::make_unique<RenderToTextureBuffer>(
-        GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_R8G8B8A8_UNORM );
+        GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_B8G8R8A8_UNORM );
 
     HDRBackBuffer = std::make_unique<RenderToTextureBuffer>( GetDevice().Get(), Resolution.x, Resolution.y,
         (Engine::GAPI->GetRendererState().RendererSettings.CompressBackBuffer ? DXGI_FORMAT_R11G11B10_FLOAT : DXGI_FORMAT_R16G16B16A16_FLOAT) );
@@ -1129,14 +1129,14 @@ XRESULT D3D11GraphicsEngine::FetchDisplayModeListDXGI() {
     }
 
     UINT numModes = 0;
-    hr = output->GetDisplayModeList1( DXGI_FORMAT_R8G8B8A8_UNORM, 0, &numModes, nullptr );
+    hr = output->GetDisplayModeList1( DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, nullptr );
     if ( FAILED( hr ) || numModes == 0 ) {
         CachedDisplayModes.emplace_back( Resolution.x, Resolution.y );
         return XR_FAILED;
     }
 
     std::unique_ptr<DXGI_MODE_DESC1[]> displayModes = std::make_unique<DXGI_MODE_DESC1[]>( numModes );
-    hr = output->GetDisplayModeList1( DXGI_FORMAT_R8G8B8A8_UNORM, 0, &numModes, displayModes.get() );
+    hr = output->GetDisplayModeList1( DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, displayModes.get() );
     if ( FAILED( hr ) ) {
         CachedDisplayModes.emplace_back( Resolution.x, Resolution.y );
         return XR_FAILED;
@@ -5497,7 +5497,7 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
 
     // Buffer for scaling down the image
     auto rt = std::make_unique<RenderToTextureBuffer>(
-        GetDevice().Get(), width, width, DXGI_FORMAT_R8G8B8A8_UNORM );
+        GetDevice().Get(), width, width, DXGI_FORMAT_B8G8R8A8_UNORM );
 
     // Downscale to 256x256
     PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), INT2( width, width ),
@@ -5508,7 +5508,7 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     texDesc.ArraySize = 1;
     texDesc.BindFlags = 0;
     texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     texDesc.Width = width;  // Gothic transforms the backbufferdata for
                             // savegamethumbs to 256x256-pictures anyways
     texDesc.Height = width;
@@ -6267,7 +6267,7 @@ void D3D11GraphicsEngine::SaveScreenshot() {
 
     // Buffer for scaling down the image
     auto rt = std::make_unique<RenderToTextureBuffer>(
-        GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_R8G8B8A8_UNORM );
+        GetDevice().Get(), Resolution.x, Resolution.y, DXGI_FORMAT_B8G8R8A8_UNORM );
 
     // Downscale to 256x256
     PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView() );
@@ -6276,7 +6276,7 @@ void D3D11GraphicsEngine::SaveScreenshot() {
     texDesc.ArraySize = 1;
     texDesc.BindFlags = 0;
     texDesc.CPUAccessFlags = 0;
-    texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     texDesc.Width = Resolution.x;   // must be same as backbuffer
     texDesc.Height = Resolution.y;  // must be same as backbuffer
     texDesc.MipLevels = 1;

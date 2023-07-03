@@ -260,23 +260,16 @@ int __fastcall BinkPlayerPlayFrame(DWORD BinkPlayer)
 					ddsd.ddpfPixelFormat.dwSize = sizeof(ddsd.ddpfPixelFormat);
 					ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB | DDPF_ALPHAPIXELS;
 					ddsd.ddpfPixelFormat.dwRGBBitCount = 32;
-					ddsd.ddpfPixelFormat.dwRBitMask = 0x000000FF;
+					ddsd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
 					ddsd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
-					ddsd.ddpfPixelFormat.dwBBitMask = 0x00FF0000;
+					ddsd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
 					ddsd.ddpfPixelFormat.dwRGBAlphaBitMask = 0xFF000000;
+                    video->useBGRA = true;
 					HRESULT hr = (*reinterpret_cast<LPDIRECTDRAW7*>(GothicMemoryLocations::zCRndD3D::DDRAW7))->CreateSurface(&ddsd, &video->texture, nullptr);
 					if(FAILED(hr))
 					{
-						video->useBGRA = true;
-						ddsd.ddpfPixelFormat.dwRBitMask = 0x00FF0000;
-						ddsd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
-						ddsd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
-						hr = (*reinterpret_cast<LPDIRECTDRAW7*>(GothicMemoryLocations::zCRndD3D::DDRAW7))->CreateSurface(&ddsd, &video->texture, nullptr);
-						if(FAILED(hr))
-						{
-							*reinterpret_cast<int*>(BinkPlayer + GothicMemoryLocations::zCBinkPlayer::Offset_IsPlaying) = 0;
-							return 0;
-						}
+                        *reinterpret_cast<int*>(BinkPlayer + GothicMemoryLocations::zCBinkPlayer::Offset_IsPlaying) = 0;
+                        return 0;
 					}
 
 					video->scaleTU = 1.0f / ddsd.dwWidth;

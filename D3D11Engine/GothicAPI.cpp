@@ -1373,22 +1373,22 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
                     delete SkeletalMeshVisuals[str];
                     SkeletalMeshVisuals.erase( str );
                 }
+            }
 
-                zCVob* homeVob = zmodel->GetHomeVob();
-                if ( homeVob && homeVob->GetVobType() == zVOB_TYPE_NSC ) {
-                    oCNPC* npc = static_cast<oCNPC*>(homeVob);
-                    auto it = SkeletalMeshNpcs.find( npc );
-                    if ( it != SkeletalMeshNpcs.end() ) {
-                        // Find vobs using this visual
-                        for ( SkeletalVobInfo* vobInfo : SkeletalMeshVobs ) {
-                            if ( vobInfo->VisualInfo == it->second ) {
-                                vobInfo->VisualInfo = nullptr;
-                            }
+            zCVob* homeVob = zmodel->GetHomeVob();
+            if ( homeVob && homeVob->GetVobType() == zVOB_TYPE_NSC ) {
+                oCNPC* npc = static_cast<oCNPC*>(homeVob);
+                auto it = SkeletalMeshNpcs.find( npc );
+                if ( it != SkeletalMeshNpcs.end() ) {
+                    // Find vobs using this visual
+                    for ( SkeletalVobInfo* vobInfo : SkeletalMeshVobs ) {
+                        if ( vobInfo->VisualInfo == it->second ) {
+                            vobInfo->VisualInfo = nullptr;
                         }
-
-                        delete SkeletalMeshNpcs[npc];
-                        SkeletalMeshNpcs.erase( npc );
                     }
+
+                    delete SkeletalMeshNpcs[npc];
+                    SkeletalMeshNpcs.erase( npc );
                 }
             }
             break;

@@ -147,7 +147,7 @@ UINT D3D11Texture::GetRowPitchBytes( int mip ) {
     if ( TextureFormat == DXGI_FORMAT_BC1_UNORM || TextureFormat == DXGI_FORMAT_BC2_UNORM ||
         TextureFormat == DXGI_FORMAT_BC3_UNORM ) {
         return Toolbox::GetDDSRowPitchSize( px, TextureFormat == DXGI_FORMAT_BC1_UNORM );
-    } else { // Use R8G8B8A8
+    } else { // Use B8G8R8A8
         return px * 4;
     }
 }
@@ -160,7 +160,7 @@ UINT D3D11Texture::GetSizeInBytes( int mip ) {
     if ( TextureFormat == DXGI_FORMAT_BC1_UNORM || TextureFormat == DXGI_FORMAT_BC2_UNORM ||
         TextureFormat == DXGI_FORMAT_BC3_UNORM ) {
         return Toolbox::GetDDSStorageRequirements( px, py, TextureFormat == DXGI_FORMAT_BC1_UNORM );
-    } else { // Use R8G8B8A8
+    } else { // Use B8G8R8A8
         return px * py * 4;
     }
 }

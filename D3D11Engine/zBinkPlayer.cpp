@@ -239,7 +239,7 @@ int __fastcall BinkPlayerPlayFrame(DWORD BinkPlayer)
 				DWORD vidHeight = *reinterpret_cast<DWORD*>(reinterpret_cast<DWORD>(video->vid) + 0x04);
 				if(!video->texture || video->width != vidWidth || video->height != vidHeight)
 				{
-					video->useBGRA = false;
+					video->useBGRA = true;
 					video->width = vidWidth;
 					video->height = vidHeight;
 					if(video->texture)
@@ -264,12 +264,11 @@ int __fastcall BinkPlayerPlayFrame(DWORD BinkPlayer)
 					ddsd.ddpfPixelFormat.dwGBitMask = 0x0000FF00;
 					ddsd.ddpfPixelFormat.dwBBitMask = 0x000000FF;
 					ddsd.ddpfPixelFormat.dwRGBAlphaBitMask = 0xFF000000;
-                    video->useBGRA = true;
 					HRESULT hr = (*reinterpret_cast<LPDIRECTDRAW7*>(GothicMemoryLocations::zCRndD3D::DDRAW7))->CreateSurface(&ddsd, &video->texture, nullptr);
 					if(FAILED(hr))
 					{
-                        *reinterpret_cast<int*>(BinkPlayer + GothicMemoryLocations::zCBinkPlayer::Offset_IsPlaying) = 0;
-                        return 0;
+						*reinterpret_cast<int*>(BinkPlayer + GothicMemoryLocations::zCBinkPlayer::Offset_IsPlaying) = 0;
+						return 0;
 					}
 
 					video->scaleTU = 1.0f / ddsd.dwWidth;

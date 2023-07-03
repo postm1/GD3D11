@@ -706,7 +706,7 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
             LogInfo() << "SwapChain: DXGI_FEATURE_PRESENT_ALLOW_TEARING = " << (m_flipWithTearing ? "Enabled" : "Disabled");
         }
 
-        LogInfo() << "Creating new swapchain! (Format: DXGI_FORMAT_R8G8B8A8_UNORM)";
+        LogInfo() << "Creating new swapchain! (Format: DXGI_FORMAT_B8G8R8A8_UNORM)";
 
         if ( m_swapchainflip ) {
             scd.BufferCount = 2;
@@ -761,7 +761,7 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
         // Need to init AntTweakBar now that we have a working swapchain
         XLE( Engine::AntTweakBar->Init() );
     } else {
-        LogInfo() << "Resizing swapchain  (Format: DXGI_FORMAT_R8G8B8A8_UNORM)";
+        LogInfo() << "Resizing swapchain  (Format: DXGI_FORMAT_B8G8R8A8_UNORM)";
         if ( dxgi_1_5 ) {
             //if (FAILED(SwapChain4->SetSourceSize(bbres.x, bbres.y))) { //crashes when scd.Scaling = DXGI_SCALING_STRETCH is not set;
             if ( FAILED( SwapChain4->ResizeBuffers( 0, bbres.x, bbres.y, DXGI_FORMAT_B8G8R8A8_UNORM, scflags ) ) ) {

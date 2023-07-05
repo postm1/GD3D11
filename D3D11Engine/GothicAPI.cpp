@@ -1373,22 +1373,22 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
                     delete SkeletalMeshVisuals[str];
                     SkeletalMeshVisuals.erase( str );
                 }
+            }
 
-                zCVob* homeVob = zmodel->GetHomeVob();
-                if ( homeVob && homeVob->GetVobType() == zVOB_TYPE_NSC ) {
-                    oCNPC* npc = static_cast<oCNPC*>(homeVob);
-                    auto it = SkeletalMeshNpcs.find( npc );
-                    if ( it != SkeletalMeshNpcs.end() ) {
-                        // Find vobs using this visual
-                        for ( SkeletalVobInfo* vobInfo : SkeletalMeshVobs ) {
-                            if ( vobInfo->VisualInfo == it->second ) {
-                                vobInfo->VisualInfo = nullptr;
-                            }
+            zCVob* homeVob = zmodel->GetHomeVob();
+            if ( homeVob && homeVob->GetVobType() == zVOB_TYPE_NSC ) {
+                oCNPC* npc = static_cast<oCNPC*>(homeVob);
+                auto it = SkeletalMeshNpcs.find( npc );
+                if ( it != SkeletalMeshNpcs.end() ) {
+                    // Find vobs using this visual
+                    for ( SkeletalVobInfo* vobInfo : SkeletalMeshVobs ) {
+                        if ( vobInfo->VisualInfo == it->second ) {
+                            vobInfo->VisualInfo = nullptr;
                         }
-
-                        delete SkeletalMeshNpcs[npc];
-                        SkeletalMeshNpcs.erase( npc );
                     }
+
+                    delete SkeletalMeshNpcs[npc];
+                    SkeletalMeshNpcs.erase( npc );
                 }
             }
             break;
@@ -3944,6 +3944,7 @@ XRESULT GothicAPI::SaveMenuSettings( const std::string& file ) {
     WritePrivateProfileStringA( "General", "ChangeToMode", std::to_string( s.ChangeWindowPreset ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "AtmosphericScattering", std::to_string( s.AtmosphericScattering ? TRUE : FALSE ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "EnableFog", std::to_string( s.DrawFog ? TRUE : FALSE ).c_str(), ini.c_str() );
+    WritePrivateProfileStringA( "General", "FogRange", std::to_string( s.FogRange ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "EnableHDR", std::to_string( s.EnableHDR ? TRUE : FALSE ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "HDRToneMap", std::to_string( s.HDRToneMap ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "General", "EnableDebugLog", std::to_string( s.EnableDebugLog ? TRUE : FALSE ).c_str(), ini.c_str() );
@@ -4037,6 +4038,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
 
         s.ChangeWindowPreset = GetPrivateProfileIntA( "General", "ChangeToMode", 0, ini.c_str() );
         s.DrawFog = GetPrivateProfileBoolA( "General", "EnableFog", true, ini );
+        s.FogRange = GetPrivateProfileIntA( "General", "FogRange", 0, ini.c_str() );
         s.AtmosphericScattering = GetPrivateProfileBoolA( "General", "AtmosphericScattering", true, ini );
         s.EnableHDR = GetPrivateProfileBoolA( "General", "EnableHDR", false, ini );
         s.HDRToneMap = GothicRendererSettings::E_HDRToneMap( GetPrivateProfileIntA( "General", "HDRToneMap", 4, ini.c_str() ) );

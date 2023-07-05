@@ -5475,9 +5475,9 @@ void D3D11GraphicsEngine::OnUIEvent( EUIEvent uiEvent ) {
 }
 
 /** Returns the data of the backbuffer */
-void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
-    constexpr int width = 256;
-    byte* d = new byte[width * width * 4];
+void D3D11GraphicsEngine::GetBackbufferData( byte** data, INT2& buffersize, int& pixelsize ) {
+    buffersize = Resolution;
+    byte* d = new byte[Resolution.x * Resolution.y * 4];
 
     // Copy HDR scene to backbuffer
     SetDefaultStates();
@@ -5495,13 +5495,9 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     ActivePS->GetConstantBuffer()[0]->BindToPixelShader( 0 );
 
     HRESULT hr;
-
-    // Buffer for scaling down the image
     auto rt = std::make_unique<RenderToTextureBuffer>(
-        GetDevice().Get(), width, width, DXGI_FORMAT_B8G8R8A8_UNORM );
-
-    // Downscale to 256x256
-    PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), INT2( width, width ),
+        GetDevice().Get(), buffersize.x, buffersize.y, DXGI_FORMAT_B8G8R8A8_UNORM );
+    PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), INT2( buffersize.x, buffersize.y ),
         true );
     GetContext()->Flush();
 
@@ -5510,9 +5506,8 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     texDesc.BindFlags = 0;
     texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
     texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    texDesc.Width = width;  // Gothic transforms the backbufferdata for
-                            // savegamethumbs to 256x256-pictures anyways
-    texDesc.Height = width;
+    texDesc.Width = buffersize.x;
+    texDesc.Height = buffersize.y;
     texDesc.MipLevels = 1;
     texDesc.MiscFlags = 0;
     texDesc.SampleDesc.Count = 1;
@@ -5533,13 +5528,15 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, int& pixelsize ) {
     if ( SUCCEEDED( GetContext()->Map( texture.Get(), 0, D3D11_MAP_READ, 0, &res ) ) ) {
         unsigned char* dstData = reinterpret_cast<unsigned char*>(res.pData);
         unsigned char* srcData = reinterpret_cast<unsigned char*>(d);
-        UINT length = width * 4;
+        UINT length = buffersize.x * 4;
         if ( length == res.RowPitch ) {
-            memcpy( srcData, dstData, length * width );
+            memcpy( srcData, dstData, length * buffersize.y );
         } else {
-            if ( length > res.RowPitch )
+            if ( length > res.RowPitch ) {
                 length = res.RowPitch;
-            for ( int row = 0; row < width; ++row ) {
+            }
+
+            for ( int row = 0; row < buffersize.y; ++row ) {
                 memcpy( srcData, dstData, length );
                 srcData += length;
                 dstData += res.RowPitch;

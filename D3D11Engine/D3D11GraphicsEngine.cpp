@@ -2679,7 +2679,7 @@ XRESULT D3D11GraphicsEngine::DrawMeshInfoListAlphablended(
     // Draw again, but only to depthbuffer this time to make them work with
     // fogging
     for ( auto const& [meshKey, meshInfo] : list ) {
-        if ( meshKey.Material->GetAniTexture() != nullptr ) {
+        if ( meshKey.Material->GetAniTexture() != nullptr && meshKey.Info->MaterialType != MaterialInfo::MT_Portal ) {
             // Draw the section-part
             DrawVertexBufferIndexedUINT( nullptr, nullptr, meshInfo->Indices.size(),
                 meshInfo->BaseIndexLocation );

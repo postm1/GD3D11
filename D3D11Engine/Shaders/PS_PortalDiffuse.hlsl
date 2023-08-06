@@ -36,14 +36,14 @@ DEFERRED_PS_OUTPUT PSMain(PS_INPUT Input) : SV_TARGET
 	float distFromCamera = distance(Input.vViewPosition, Input.vPosition);
 	
 	//start / end distances for fading
-	float startFade = 8000.0f;
-	float completeFade = 6000.0f;
+	float startFade = 6000.0f;
+	float completeFade = 5000.0f;
 
 	//how much to fade the object by
 	float percentageFade = (distFromCamera - completeFade) / (startFade - completeFade);
 		
 	//keep the fade in bounds
-	if (percentageFade < 0) { percentageFade = 0.0f; clip(-1); }
+	if (percentageFade < 0) {percentageFade = 0.0f;}
 	if (percentageFade > 1)	{percentageFade = 1.0f;}
 
 	//darken the portals depending on where the sun is in the sky

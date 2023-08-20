@@ -1034,7 +1034,7 @@ XRESULT D3D11GraphicsEngine::OnBeginFrame() {
 
     if ( Engine::GAPI->GetRendererState().RendererSettings.AllowNormalmaps ) {
         PS_DiffuseNormalmappedFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedFxMap" );
-        PS_DiffuseNormalmappedAlphatestFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphatestFxMap" );
+        PS_DiffuseNormalmappedAlphatestFxMap = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphaTestFxMap" );
         PS_DiffuseNormalmapped = ShaderManager->GetPShader( "PS_DiffuseNormalmapped" );
         PS_DiffuseNormalmappedAlphatest = ShaderManager->GetPShader( "PS_DiffuseNormalmappedAlphaTest" );
     } else {

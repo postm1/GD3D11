@@ -1887,9 +1887,6 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
         return;
 #endif
 
-    if ( model->GetDrawHandVisualsOnly() )
-        return; // Not supported yet
-
     float4 modelColor;
     if ( Engine::GAPI->GetRendererState().RendererSettings.EnableShadows ) {
         // Let shadows do the work
@@ -1935,7 +1932,7 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
         model->UpdateMeshLibTexAniState();
     }
 
-    if ( !static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo)->SkeletalMeshes.empty() ) {
+    if ( !static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo)->SkeletalMeshes.empty() && !model->GetDrawHandVisualsOnly() ) {
         Engine::GraphicsEngine->DrawSkeletalMesh( vi, transforms, modelColor, fatness );
     } else {
         if ( model->GetMeshSoftSkinList()->NumInArray > 0 ) {
@@ -1989,6 +1986,13 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
             }
             // Load the new one
             WorldConverter::ExtractNodeVisual( i, node, nodeAttachments );
+        }
+
+        if ( model->GetDrawHandVisualsOnly() ) {
+            std::string NodeName = node->ProtoNode->NodeName.ToChar();
+            if ( NodeName.find( "HAND" ) == std::string::npos ) {
+                continue;
+            }
         }
 
         if ( nodeAttachments.find( i ) != nodeAttachments.end() ) {

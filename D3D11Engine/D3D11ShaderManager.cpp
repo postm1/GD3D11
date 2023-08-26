@@ -560,7 +560,7 @@ XRESULT D3D11ShaderManager::CompileShader( const ShaderInfo& si ) {
                 }
             } else {
                 if ( Engine::GAPI->GetRendererState().RendererSettings.EnableDebugLog )
-                    LogInfo() << "Reloading shader: " << si.name;
+                    LogInfo() << "Loading shader: " << si.name;
 
                 XLE( vs->LoadShader( ("system\\GD3D11\\shaders\\" + si.fileName).c_str(), si.layout, si.shaderMakros ) );
                 for ( unsigned int j = 0; j < si.cBufferSizes.size(); j++ ) {
@@ -572,6 +572,9 @@ XRESULT D3D11ShaderManager::CompileShader( const ShaderInfo& si ) {
             // See if this is a reload
             D3D11PShader* ps = new D3D11PShader();
             if ( IsPShaderKnown( si.name ) ) {
+                if ( Engine::GAPI->GetRendererState().RendererSettings.EnableDebugLog )
+                    LogInfo() << "Reloading shader: " << si.name;
+
                 if ( XR_SUCCESS != ps->LoadShader( ("system\\GD3D11\\shaders\\" + si.fileName).c_str(), si.shaderMakros ) ) {
                     LogError() << "Failed to reload shader: " << si.fileName;
 
@@ -585,6 +588,9 @@ XRESULT D3D11ShaderManager::CompileShader( const ShaderInfo& si ) {
                     UpdatePShader( si.name, ps );
                 }
             } else {
+                if ( Engine::GAPI->GetRendererState().RendererSettings.EnableDebugLog )
+                    LogInfo() << "Loading shader: " << si.name;
+
                 XLE( ps->LoadShader( ("system\\GD3D11\\shaders\\" + si.fileName).c_str(), si.shaderMakros ) );
                 for ( unsigned int j = 0; j < si.cBufferSizes.size(); j++ ) {
                     ps->GetConstantBuffer().push_back( new D3D11ConstantBuffer( si.cBufferSizes[j], nullptr ) );
@@ -595,6 +601,9 @@ XRESULT D3D11ShaderManager::CompileShader( const ShaderInfo& si ) {
             // See if this is a reload
             D3D11GShader* gs = new D3D11GShader();
             if ( IsGShaderKnown( si.name ) ) {
+                if ( Engine::GAPI->GetRendererState().RendererSettings.EnableDebugLog )
+                    LogInfo() << "Reloading shader: " << si.name;
+
                 if ( XR_SUCCESS != gs->LoadShader( ("system\\GD3D11\\shaders\\" + si.fileName).c_str(), si.shaderMakros, si.layout != 0, si.layout ) ) {
                     LogError() << "Failed to reload shader: " << si.fileName;
 
@@ -607,6 +616,9 @@ XRESULT D3D11ShaderManager::CompileShader( const ShaderInfo& si ) {
                     UpdateGShader( si.name, gs );
                 }
             } else {
+                if ( Engine::GAPI->GetRendererState().RendererSettings.EnableDebugLog )
+                    LogInfo() << "Loading shader: " << si.name;
+
                 XLE( gs->LoadShader( ("system\\GD3D11\\shaders\\" + si.fileName).c_str(), si.shaderMakros, si.layout != 0, si.layout ) );
                 for ( unsigned int j = 0; j < si.cBufferSizes.size(); j++ ) {
                     gs->GetConstantBuffer().push_back( new D3D11ConstantBuffer( si.cBufferSizes[j], nullptr ) );

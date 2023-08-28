@@ -1932,8 +1932,10 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
         model->UpdateMeshLibTexAniState();
     }
 
-    if ( !static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo)->SkeletalMeshes.empty() && !model->GetDrawHandVisualsOnly() ) {
-        Engine::GraphicsEngine->DrawSkeletalMesh( vi, transforms, modelColor, fatness );
+    if ( !static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo)->SkeletalMeshes.empty() ) {
+        if ( !model->GetDrawHandVisualsOnly() ) {
+            Engine::GraphicsEngine->DrawSkeletalMesh( vi, transforms, modelColor, fatness );
+        }
     } else {
         if ( model->GetMeshSoftSkinList()->NumInArray > 0 ) {
             // Just in case somehow we end up without skeletal meshes and they are available

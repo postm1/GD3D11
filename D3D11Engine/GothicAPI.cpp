@@ -1933,7 +1933,11 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
     }
 
     if ( !static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo)->SkeletalMeshes.empty() ) {
+#ifdef BUILD_GOTHIC_2_6_fix
+        if ( !model->GetDrawHandVisualsOnly() || *reinterpret_cast<BYTE*>(0x57A694) == 0x90 ) {
+#else
         if ( !model->GetDrawHandVisualsOnly() ) {
+#endif
             Engine::GraphicsEngine->DrawSkeletalMesh( vi, transforms, modelColor, fatness );
         }
     } else {
@@ -1992,7 +1996,11 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
 
         if ( model->GetDrawHandVisualsOnly() ) {
             std::string NodeName = node->ProtoNode->NodeName.ToChar();
+#ifdef BUILD_GOTHIC_2_6_fix
+            if ( NodeName.find( "HAND" ) == std::string::npos && (*reinterpret_cast<BYTE*>(0x57A694) != 0x90 || NodeName.find( "ARM" ) == std::string::npos) ) {
+#else
             if ( NodeName.find( "HAND" ) == std::string::npos ) {
+#endif
                 continue;
             }
         }

@@ -2,8 +2,7 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2022, assimp team
-
+Copyright (c) 2006-2020, assimp team
 
 All rights reserved.
 
@@ -40,70 +39,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------------------------------------------
 */
 
-/** @file  NullLogger.hpp
- *  @brief Dummy logger
-*/
+/** @file Provides facilities to replace the default assert handler. */
 
-#pragma once
-#ifndef INCLUDED_AI_NULLLOGGER_H
-#define INCLUDED_AI_NULLLOGGER_H
+#ifndef INCLUDED_AI_ASSERTHANDLER_H
+#define INCLUDED_AI_ASSERTHANDLER_H
 
-#ifdef __GNUC__
-#pragma GCC system_header
-#endif
-
-#include "Logger.hpp"
+#include <assimp/ai_assert.h>
+#include <assimp/defs.h>
 
 namespace Assimp {
 
 // ---------------------------------------------------------------------------
-/** @brief CPP-API: Empty logging implementation.
+/**
+ *  @brief  Signature of functions which handle assert violations.
+ */
+using AiAssertHandler = void (*)(const char* failedExpression, const char* file, int line);
+
+// ---------------------------------------------------------------------------
+/**
+ *  @brief  Set the assert handler.
+ */
+ASSIMP_API void setAiAssertHandler(AiAssertHandler handler);
+
+// ---------------------------------------------------------------------------
+/** The assert handler which is set by default.
  *
- * Does nothing! Used by default if the application hasn't requested a
- * custom logger via #DefaultLogger::set() or #DefaultLogger::create(); */
-class ASSIMP_API NullLogger
-    : public Logger {
+ *  @brief  This issues a message to stderr and calls abort.
+ */
+AI_WONT_RETURN ASSIMP_API void defaultAiAssertHandler(const char* failedExpression, const char* file, int line) AI_WONT_RETURN_SUFFIX;
 
-public:
+// ---------------------------------------------------------------------------
+/**
+ *  @brief  Dispatches an assert violation to the assert handler.
+ */
+ASSIMP_API void aiAssertViolation(const char* failedExpression, const char* file, int line);
 
-    /** @brief  Logs a debug message */
-    void OnDebug(const char* message) {
-        (void)message; //this avoids compiler warnings
-    }
+} // end of namespace Assimp
 
-    /** @brief  Logs a verbose debug message */
-	void OnVerboseDebug(const char *message) {
-		(void)message; //this avoids compiler warnings
-	}
-
-    /** @brief  Logs an info message */
-    void OnInfo(const char* message) {
-        (void)message; //this avoids compiler warnings
-    }
-
-    /** @brief  Logs a warning message */
-    void OnWarn(const char* message) {
-        (void)message; //this avoids compiler warnings
-    }
-
-    /** @brief  Logs an error message */
-    void OnError(const char* message) {
-        (void)message; //this avoids compiler warnings
-    }
-
-    /** @brief  Detach a still attached stream from logger */
-    bool attachStream(LogStream *pStream, unsigned int severity) {
-        (void)pStream; (void)severity; //this avoids compiler warnings
-        return false;
-    }
-
-    /** @brief  Detach a still attached stream from logger */
-    bool detachStream(LogStream *pStream, unsigned int severity) {
-        (void)pStream; (void)severity; //this avoids compiler warnings
-        return false;
-    }
-
-private:
-};
-}
-#endif // !! AI_NULLLOGGER_H_INCLUDED
+#endif // INCLUDED_AI_ASSERTHANDLER_H

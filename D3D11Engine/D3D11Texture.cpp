@@ -144,7 +144,9 @@ UINT D3D11Texture::GetRowPitchBytes( int mip ) {
     int px = (TextureSize.x >> mip);
     //int py = (TextureSize.y >> mip);
 
-    if ( TextureFormat == DXGI_FORMAT_BC1_UNORM || TextureFormat == DXGI_FORMAT_BC2_UNORM ||
+    if ( TextureFormat == DXGI_FORMAT_R8_UNORM ) {
+        return px;
+    } else if ( TextureFormat == DXGI_FORMAT_BC1_UNORM || TextureFormat == DXGI_FORMAT_BC2_UNORM ||
         TextureFormat == DXGI_FORMAT_BC3_UNORM ) {
         return Toolbox::GetDDSRowPitchSize( px, TextureFormat == DXGI_FORMAT_BC1_UNORM );
     } else { // Use B8G8R8A8
@@ -157,7 +159,9 @@ UINT D3D11Texture::GetSizeInBytes( int mip ) {
     int px = (TextureSize.x >> mip);
     int py = (TextureSize.y >> mip);
 
-    if ( TextureFormat == DXGI_FORMAT_BC1_UNORM || TextureFormat == DXGI_FORMAT_BC2_UNORM ||
+    if ( TextureFormat == DXGI_FORMAT_R8_UNORM ) {
+        return px * py;
+    } else if ( TextureFormat == DXGI_FORMAT_BC1_UNORM || TextureFormat == DXGI_FORMAT_BC2_UNORM ||
         TextureFormat == DXGI_FORMAT_BC3_UNORM ) {
         return Toolbox::GetDDSStorageRequirements( px, py, TextureFormat == DXGI_FORMAT_BC1_UNORM );
     } else { // Use B8G8R8A8

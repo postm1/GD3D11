@@ -320,6 +320,9 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.push_back( ShaderInfo( "PS_FixedFunctionPipe", "PS_FixedFunctionPipe.hlsl", "p" ) );
     Shaders.back().cBufferSizes.push_back( sizeof( GothicGraphicsState ) );
 
+    Shaders.push_back( ShaderInfo( "PS_Video", "PS_Video.hlsl", "p" ) );
+    Shaders.back().cBufferSizes.push_back( sizeof( GothicGraphicsState ) );
+
     Shaders.push_back( ShaderInfo( "PS_DS_PointLight", "PS_DS_PointLight.hlsl", "p" ) );
     Shaders.back().cBufferSizes.push_back( sizeof( DS_PointLightConstantBuffer ) );
 

@@ -6443,6 +6443,15 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     UIScale *= unionCurrentCustomFontMultiplier;
 
     //
+    // Set alpha blending
+    //
+    DWORD zrenderer = *reinterpret_cast<DWORD*>(GothicMemoryLocations::GlobalObjects::zRenderer);
+    reinterpret_cast<void( __thiscall* )(DWORD, int, int)>(GothicMemoryLocations::zCRndD3D::XD3D_SetRenderState)(zrenderer, 27, 1);
+    reinterpret_cast<void( __thiscall* )(DWORD, int, int)>(GothicMemoryLocations::zCRndD3D::XD3D_SetRenderState)(zrenderer, 15, 0);
+    reinterpret_cast<void( __thiscall* )(DWORD, int, int)>(GothicMemoryLocations::zCRndD3D::XD3D_SetRenderState)(zrenderer, 19, 5);
+    reinterpret_cast<void( __thiscall* )(DWORD, int, int)>(GothicMemoryLocations::zCRndD3D::XD3D_SetRenderState)(zrenderer, 20, 6);
+
+    //
     // Backup old renderstates, BlendState can be ignored here.
     //
     auto oldDepthState = Engine::GAPI->GetRendererState().DepthState.Clone();
@@ -6491,18 +6500,8 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
 
     UI::zFont::AppendGlyphs( vertices, str, maxLen, x, y, font, fontColor, UIScale, zCCamera::GetCamera() );
 
-    //if (str[0] == '(') {
-    //	int o = 1;
-    //}
-
     // Bind the texture.
     tx->Bind( 0 );
-
-    if ( !Engine::GAPI->GetRendererState().BlendState.BlendEnabled ) {
-        Engine::GAPI->GetRendererState().BlendState.SetAlphaBlending();
-        Engine::GAPI->GetRendererState().BlendState.SetDirty();
-        UpdateRenderStates();
-    }
 
     //
     // Populate TempVertexBuffer

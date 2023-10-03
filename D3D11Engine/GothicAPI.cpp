@@ -1216,17 +1216,29 @@ void GothicAPI::GetVisibleDecalList( std::vector<zCVob*>& decals ) {
 
 /** Called when a material got removed */
 void GothicAPI::OnMaterialDeleted( zCMaterial* mat ) {
+#define UnloadMaterial(cont, m) \
+do { \
+    auto mit = cont.find(m); \
+    if ( mit != cont.end() ) { \
+        for ( auto& mi : mit->second ) { \
+            delete mi; \
+        } \
+        cont.erase(mit); \
+    } \
+} while (0)
+
     LoadedMaterials.erase( mat );
     if ( !mat )
         return;
     for ( auto&& it : SkeletalMeshVisuals ) {
-        it.second->Meshes.erase( mat );
-        it.second->SkeletalMeshes.erase( mat );
+        UnloadMaterial( it.second->Meshes, mat );
+        UnloadMaterial( it.second->SkeletalMeshes, mat );
     }
     for ( auto&& it : SkeletalMeshNpcs ) {
-        it.second->Meshes.erase( mat );
-        it.second->SkeletalMeshes.erase( mat );
+        UnloadMaterial( it.second->Meshes, mat );
+        UnloadMaterial( it.second->SkeletalMeshes, mat );
     }
+#undef UnloadMaterial
 }
 
 /** Called when a material got created */
@@ -1767,26 +1779,6 @@ void GothicAPI::OnAddVob( zCVob* vob, zCWorld* world ) {
                 Inventory->OnAddVob( vi, world );
                 break;
             }
-
-            std::string str = static_cast<zCModel*>(vob->GetVisual())->GetVisualName();
-            if ( str.empty() ) { // Happens when the model has no skeletal-mesh
-                zSTRING mds = static_cast<zCModel*>(vob->GetVisual())->GetModelName();
-                str = mds.ToChar();
-                mds.Delete();
-            }
-
-            // TODO: HAMMEL_BODY seems to have fucked up bones, but only this model! Replace with usual sheep before I fix this
-            if ( str == "HAMMEL_BODY" ) {
-                str = "SHEEP_BODY";
-                if ( !SkeletalMeshVisuals[str] ) {
-                    RegisteredVobs.erase( vob );
-                    SkeletalMeshVisuals.erase( str );
-                    return; // Just don't load it here!
-                }
-            }
-
-            // Load the model or get it from cache if already done
-            SkeletalMeshVisualInfo* mi = LoadzCModelData( static_cast<zCModel*>(vob->GetVisual()) );
 
             // Add vob to the skeletal list
             SkeletalVobInfo* vi = new SkeletalVobInfo;

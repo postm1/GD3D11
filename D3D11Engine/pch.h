@@ -33,7 +33,7 @@ using namespace DirectX;
 #define ENABLE_TESSELATION 0
 
 #ifndef VERSION_NUMBER
-#define VERSION_NUMBER "17.8-dev13"
+#define VERSION_NUMBER "17.8-dev14"
 #endif
 
 __declspec(selectany) const char* VERSION_NUMBER_STR = VERSION_NUMBER;

@@ -269,6 +269,14 @@ int __fastcall BinkPlayerPlayFrame(DWORD BinkPlayer)
                     video->textureU->Init(INT2(vidWidth / 2, vidHeight / 2), D3D11Texture::ETextureFormat::TF_R8, 1, nullptr, "Video Texture U");
                     video->textureV->Init(INT2(vidWidth / 2, vidHeight / 2), D3D11Texture::ETextureFormat::TF_R8, 1, nullptr, "Video Texture V");
                     video->textureData = new unsigned char[(vidWidth * vidHeight) + ((vidWidth / 2) * (vidHeight / 2)) * 2];
+
+                    // Init textureData as black pixel yuv data
+                    unsigned char* dataY = video->textureData;
+                    memset( dataY, 16, vidWidth * vidHeight );
+                    unsigned char* dataV = dataY + (vidWidth * vidHeight);
+                    memset( dataV, 128, (vidWidth / 2) * (vidHeight / 2) );
+                    unsigned char* dataU = dataV + ((vidWidth / 2) * (vidHeight / 2));
+                    memset( dataU, 128, (vidWidth / 2) * (vidHeight / 2) );
                 }
                 reinterpret_cast<void( __stdcall* )(void*, void*, int, DWORD, DWORD, DWORD, DWORD)>(BinkCopyToBuffer)
                     (video->vid, video->textureData, vidWidth, vidHeight, 0, 0, 0x70000000L | 15);

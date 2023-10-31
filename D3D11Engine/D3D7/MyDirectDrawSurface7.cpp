@@ -333,7 +333,6 @@ HRESULT MyDirectDrawSurface7::Lock( LPRECT lpDestRect, LPDDSURFACEDESC2 lpDDSurf
         lpDDSurfaceDesc->ddpfPixelFormat.dwBBitMask = 0x000000FF;
         lpDDSurfaceDesc->ddpfPixelFormat.dwRGBAlphaBitMask = 0x00000000;
 
-        // Gothic transforms this into a 256x256 texture anyways
         lpDDSurfaceDesc->lPitch = buffersize.x * pixelSize;
         lpDDSurfaceDesc->dwWidth = buffersize.x;
         lpDDSurfaceDesc->dwHeight = buffersize.y;

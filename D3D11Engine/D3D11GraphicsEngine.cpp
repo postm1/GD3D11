@@ -2759,16 +2759,18 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
                     key.Texture = aniTex;
                 }
 
+                if ( worldMesh.first.Info->MaterialType == MaterialInfo::MT_Portal ) {
+                    FrameTransparencyMeshesPortal.push_back( worldMesh );
+                    continue;
+                } else if ( worldMesh.first.Info->MaterialType == MaterialInfo::MT_WaterfallFoam ) {
+                    FrameTransparencyMeshesWaterfall.push_back( worldMesh );
+                    continue;
+                }
+
                 // Check for alphablending
                 if ( worldMesh.first.Material->GetAlphaFunc() > zMAT_ALPHA_FUNC_NONE &&
                     worldMesh.first.Material->GetAlphaFunc() != zMAT_ALPHA_FUNC_TEST ) {
-                    if ( worldMesh.first.Info->MaterialType == MaterialInfo::MT_Portal ) {
-                        FrameTransparencyMeshesPortal.push_back( worldMesh );
-                    } else if ( worldMesh.first.Info->MaterialType == MaterialInfo::MT_WaterfallFoam ) {
-                        FrameTransparencyMeshesWaterfall.push_back( worldMesh );
-                    } else {
-                        FrameTransparencyMeshes.push_back( worldMesh );
-                    }
+                    FrameTransparencyMeshes.push_back( worldMesh );
                 } else {
                     // Create a new pair using the animated texture
                     meshList.emplace_back( key, worldMesh.second );

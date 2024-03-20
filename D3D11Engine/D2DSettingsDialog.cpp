@@ -370,7 +370,9 @@ XRESULT D2DSettingsDialog::InitControls() {
 
 	SV_Slider* visualFXDDSlider = new SV_Slider( MainView, MainPanel );
 	visualFXDDSlider->SetPositionAndSize( D2D1::Point2F( 10, 22 ), D2D1::SizeF( 150, 15 ) );
-	visualFXDDSlider->AlignUnder( visualFXDDLabel, 10 );
+
+    visualFXDDSlider->AlignUnder( visualFXDDLabel, 5 );
+
 	visualFXDDSlider->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.VisualFXDrawRadius );
 	visualFXDDSlider->SetIsIntegralSlider( true );
 	visualFXDDSlider->SetDisplayMultiplier( 0.001f );

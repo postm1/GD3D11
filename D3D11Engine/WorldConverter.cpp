@@ -354,6 +354,10 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
 
         // Flag portals so that we can apply a different PS shader later
         if ( poly->GetPolyFlags()->PortalPoly ) {
+            continue;
+        }
+        /*
+        if ( poly->GetPolyFlags()->PortalPoly ) {
             zCMaterial* polymat = poly->GetMaterial();
             if ( zCTexture* tex = polymat->GetTextureSingle() ) {
                 std::string textureName = tex->GetNameWithoutExt();
@@ -367,6 +371,7 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
                 continue;
             }
         }
+        */
 
         // Calculate midpoint of this triange to get the section
         XMFLOAT3 avgPos;

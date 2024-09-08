@@ -334,7 +334,7 @@ public:
     }
 
     zCVob* GetHomeVob() {
-        return reinterpret_cast<zCVob*>(THISPTR_OFFSET( GothicMemoryLocations::zCModel::Offset_HomeVob ));
+        return *reinterpret_cast<zCVob**>(THISPTR_OFFSET( GothicMemoryLocations::zCModel::Offset_HomeVob ));
     }
 
 private:

@@ -1929,27 +1929,32 @@ float3* GothicAPI::GetLowestLODPoly_SkeletalMesh( zCModel* model, const int poly
                         VERTEX_INDEX _polyId = mesh->Indices[polyIndex + i];
                         ExSkelVertexStruct& _polyVert = mesh->Vertices[_polyId];
 
+                        alignas(32) float floats_0[8];
+                        alignas(32) float floats_1[8];
+                        alignas(16) unsigned short half2float_0[8] = { _polyVert.Position[0][0], _polyVert.Position[0][1], _polyVert.Position[0][2], _polyVert.weights[0],
+                                                                        _polyVert.Position[1][0], _polyVert.Position[1][1], _polyVert.Position[1][2], _polyVert.weights[1] };
+                        alignas(16) unsigned short half2float_1[8] = { _polyVert.Position[2][0], _polyVert.Position[2][1], _polyVert.Position[2][2], _polyVert.weights[2],
+                                                                        _polyVert.Position[3][0], _polyVert.Position[3][1], _polyVert.Position[3][2], _polyVert.weights[3] };
+                        UnquantizeHalfFloat_X8( half2float_0, floats_0 );
+                        UnquantizeHalfFloat_X8( half2float_1, floats_1 );
+
                         XMVECTOR position = XMVectorZero();
-                        position += XMVectorReplicate( unquantizeHalfFloat( _polyVert.weights[0] ) ) * XMVector3Transform(
-                            XMVectorSet( unquantizeHalfFloat( _polyVert.Position[0][0] ),
-                                unquantizeHalfFloat( _polyVert.Position[0][1] ),
-                                unquantizeHalfFloat( _polyVert.Position[0][2] ), 1.f ), XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[0]] ) ) );
+                        position += XMVectorReplicate( floats_0[3] ) * XMVector3Transform(
+                            XMVectorSet( floats_0[0], floats_0[1], floats_0[2], 1.f ),
+                            XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[0]] ) ) );
 
-                        position += XMVectorReplicate( unquantizeHalfFloat( _polyVert.weights[1] ) ) * XMVector3Transform(
-                            XMVectorSet( unquantizeHalfFloat( _polyVert.Position[1][0] ),
-                                unquantizeHalfFloat( _polyVert.Position[1][1] ),
-                                unquantizeHalfFloat( _polyVert.Position[1][2] ), 1.f ), XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[1]] ) ) );
+                        position += XMVectorReplicate( floats_0[7] ) * XMVector3Transform(
+                            XMVectorSet( floats_0[4], floats_0[5], floats_0[6], 1.f ),
+                            XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[1]] ) ) );
 
-                        position += XMVectorReplicate( unquantizeHalfFloat( _polyVert.weights[2] ) ) * XMVector3Transform(
-                            XMVectorSet( unquantizeHalfFloat( _polyVert.Position[2][0] ),
-                                unquantizeHalfFloat( _polyVert.Position[2][1] ),
-                                unquantizeHalfFloat( _polyVert.Position[2][2] ), 1.f ), XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[2]] ) ) );
+                        position += XMVectorReplicate( floats_1[3] ) * XMVector3Transform(
+                            XMVectorSet( floats_1[0], floats_1[1], floats_1[2], 1.f ),
+                            XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[2]] ) ) );
 
-                        position += XMVectorReplicate( unquantizeHalfFloat( _polyVert.weights[3] ) ) * XMVector3Transform(
-                            XMVectorSet( unquantizeHalfFloat( _polyVert.Position[3][0] ),
-                                unquantizeHalfFloat( _polyVert.Position[3][1] ),
-                                unquantizeHalfFloat( _polyVert.Position[3][2] ), 1.f ), XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[3]] ) ) );
-                        
+                        position += XMVectorReplicate( floats_1[7] ) * XMVector3Transform(
+                            XMVectorSet( floats_1[4], floats_1[5], floats_1[6], 1.f ),
+                            XMMatrixTranspose( XMLoadFloat4x4( &transforms[_polyVert.boneIndices[3]] ) ) );
+
                         position += XMVectorReplicate( fatness ) * XMLoadFloat3( reinterpret_cast<const XMFLOAT3*>(&_polyVert.BindPoseNormal) ) ;
 
                         // world matrix is applied later when particle calculate world position

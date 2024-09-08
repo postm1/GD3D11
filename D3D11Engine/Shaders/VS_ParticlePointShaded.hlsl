@@ -23,7 +23,7 @@ struct VS_INPUT
 {
 	float3 vPosition	: POSITION;
 	float4 vDiffuse		: DIFFUSE;
-    float3 vSize        : SIZE;
+    float2 vSize        : SIZE;
     unsigned int type   : TYPE;
     float3 vVelocity    : VELOCITY;
 };
@@ -69,7 +69,7 @@ VS_OUTPUT VSMain( VS_INPUT Input )
 	
 	Output.vPosition = Input.vPosition;
 	Output.vDiffuse  = Input.vDiffuse; //float4(Input.vDiffuse.gba, pow(Input.vDiffuse.r, 2.2f));
-    Output.vSize = Input.vSize.xy;
+    Output.vSize = Input.vSize;
     Output.vVelocity = Input.vVelocity;
     Output.type = Input.type;
 	return Output;

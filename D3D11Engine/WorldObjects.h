@@ -36,6 +36,14 @@ struct ParticleInstanceInfo {
     float3 velocity;
 };
 
+struct RainParticleInstanceInfo {
+    float3 position;
+    float4 color;
+    float2 scale;
+    int drawMode; // 0 = billboard, 1 = y-locked billboard, 2 = y-plane, 3 = velo aligned
+    float3 velocity;
+};
+
 struct MeshKey {
     zCTexture* Texture;
     zCMaterial* Material;

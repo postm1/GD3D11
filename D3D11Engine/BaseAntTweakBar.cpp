@@ -182,6 +182,7 @@ XRESULT BaseAntTweakBar::Init() {
     TwDefine( " General/IndoorVobDrawRadius  help='Draw distance for the static indoor vobs' " );
 
     TwAddVarRW( Bar_General, "OutdoorSmallVobRadius", TW_TYPE_FLOAT, &Engine::GAPI->GetRendererState().RendererSettings.OutdoorSmallVobDrawRadius, nullptr );
+    TwAddVarRW( Bar_General, "SkeletalMeshDrawRadius", TW_TYPE_FLOAT, &Engine::GAPI->GetRendererState().RendererSettings.SkeletalMeshDrawRadius, nullptr );
 
     TwAddVarRW( Bar_General, "VisualFXDrawRadius", TW_TYPE_FLOAT, &Engine::GAPI->GetRendererState().RendererSettings.VisualFXDrawRadius, nullptr );
 

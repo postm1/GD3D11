@@ -1,4 +1,4 @@
-#include "D2DSettingsDialog.h"
+ï»¿#include "D2DSettingsDialog.h"
 
 #include "BaseGraphicsEngine.h"
 #include "D2DView.h"
@@ -72,7 +72,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 	resolutionLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
 	resolutionLabel->AlignUnder( Header, 5 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: resolutionLabel->SetCaption( L"Rozdzielczoœæ [*]:" ); break;
+    case LANGUAGE_POLISH: resolutionLabel->SetCaption( L"RozdzielczoÅ›Ä‡ [*]:" ); break;
     default: resolutionLabel->SetCaption( L"Resolution [*]:" ); break;
     }
 	resolutionLabel->SetPosition( D2D1::Point2F( 5, resolutionLabel->GetPosition().y ) );
@@ -295,7 +295,7 @@ XRESULT D2DSettingsDialog::InitControls() {
     textureQualityLabel->AlignUnder( Header, 5 );
     textureQualityLabel->SetPosition( D2D1::Point2F( 180, textureQualityLabel->GetPosition().y ) );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: textureQualityLabel->SetCaption( L"Jakoœæ Textur [*]:" ); break;
+    case LANGUAGE_POLISH: textureQualityLabel->SetCaption( L"JakoÅ›Ä‡ Textur [*]:" ); break;
     default: textureQualityLabel->SetCaption( L"Texture Quality [*]:" ); break;
     }
 
@@ -322,7 +322,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 	outdoorVobsDDLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 12 ) );
 	outdoorVobsDDLabel->AlignUnder( textureQualitySlider, 10 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: outdoorVobsDDLabel->SetCaption( L"Zasiêg Rysowania Obiektów:" ); break;
+    case LANGUAGE_POLISH: outdoorVobsDDLabel->SetCaption( L"ZasiÄ™g Rysowania ObiektÃ³w:" ); break;
     default: outdoorVobsDDLabel->SetCaption( L"Object draw distance:" ); break;
     }
 
@@ -343,7 +343,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 	outdoorVobsSmallDDLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 170, 12 ) );
 	outdoorVobsSmallDDLabel->AlignUnder( outdoorVobsDDSlider, 8 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: outdoorVobsSmallDDLabel->SetCaption( L"Zasiêg Rys. Ma³ych Obiektów:" ); break;
+    case LANGUAGE_POLISH: outdoorVobsSmallDDLabel->SetCaption( L"ZasiÄ™g Rys. MaÅ‚ych ObiektÃ³w:" ); break;
     default: outdoorVobsSmallDDLabel->SetCaption( L"Small object draw distance:" ); break;
     }
 
@@ -360,11 +360,32 @@ XRESULT D2DSettingsDialog::InitControls() {
 	}
 	outdoorVobsSmallDDSlider->SetValue( Engine::GAPI->GetRendererState().RendererSettings.OutdoorSmallVobDrawRadius );
 
+    SV_Label* skeletalMeshDDLabel = new SV_Label( MainView, MainPanel );
+    skeletalMeshDDLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 170, 12 ) );
+    skeletalMeshDDLabel->AlignUnder( outdoorVobsSmallDDSlider, 8 );
+    switch ( userLanguage ) {
+    case LANGUAGE_POLISH: skeletalMeshDDLabel->SetCaption( L"ZasiÄ™g Rysowania Postaci:" ); break;
+    default: skeletalMeshDDLabel->SetCaption( L"NPC draw distance:" ); break;
+    }
+
+    SV_Slider* skeletalMeshDDSlider = new SV_Slider( MainView, MainPanel );
+    skeletalMeshDDSlider->SetPositionAndSize( D2D1::Point2F( 10, 22 ), D2D1::SizeF( 150, 15 ) );
+    skeletalMeshDDSlider->AlignUnder( skeletalMeshDDLabel, 5 );
+    skeletalMeshDDSlider->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.SkeletalMeshDrawRadius );
+    skeletalMeshDDSlider->SetIsIntegralSlider( true );
+    skeletalMeshDDSlider->SetDisplayMultiplier( 0.001f );
+    if ( GMPModeActive ) {
+        skeletalMeshDDSlider->SetMinMax( 20000.0f, 99999.0f );
+    } else {
+        skeletalMeshDDSlider->SetMinMax( 0.0f, 99999.0f );
+    }
+    skeletalMeshDDSlider->SetValue( Engine::GAPI->GetRendererState().RendererSettings.SkeletalMeshDrawRadius );
+
 	SV_Label* visualFXDDLabel = new SV_Label( MainView, MainPanel );
 	visualFXDDLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
-	visualFXDDLabel->AlignUnder( outdoorVobsSmallDDSlider, 8 );
+	visualFXDDLabel->AlignUnder( skeletalMeshDDSlider, 8 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: visualFXDDLabel->SetCaption( L"Zasiêg Rysowania Efektów:" ); break;
+    case LANGUAGE_POLISH: visualFXDDLabel->SetCaption( L"ZasiÄ™g Rysowania EfektÃ³w:" ); break;
     default: visualFXDDLabel->SetCaption( L"VisualFX draw distance:" ); break;
     }
 
@@ -381,7 +402,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 	worldDDLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
 	worldDDLabel->AlignUnder( visualFXDDSlider, 8 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: worldDDLabel->SetCaption( L"Zasiêg Rysowania Œwiata:" ); break;
+    case LANGUAGE_POLISH: worldDDLabel->SetCaption( L"ZasiÄ™g Rysowania Åšwiata:" ); break;
     default: worldDDLabel->SetCaption( L"World draw distance:" ); break;
     }
 
@@ -397,7 +418,7 @@ XRESULT D2DSettingsDialog::InitControls() {
     shadowmapSizeLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
     shadowmapSizeLabel->AlignUnder( worldDDSlider, 10 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: shadowmapSizeLabel->SetCaption( L"Jakoœæ Cieni:" ); break;
+    case LANGUAGE_POLISH: shadowmapSizeLabel->SetCaption( L"JakoÅ›Ä‡ Cieni:" ); break;
     default: shadowmapSizeLabel->SetCaption( L"Shadow Quality:" ); break;
     }
 
@@ -440,20 +461,13 @@ XRESULT D2DSettingsDialog::InitControls() {
 	dynShadowSlider->SetDisplayValues( { "Disabled", "Static", "Update dynamic", "Full" } );
 	dynShadowSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.EnablePointlightShadows) );
 
-    SV_Checkbox* drawSectionIntersectionsCheckbox = new SV_Checkbox( MainView, MainPanel );
-    drawSectionIntersectionsCheckbox->SetSize( D2D1::SizeF( 160, 35 ) );
-    drawSectionIntersectionsCheckbox->SetCaption( L"Draw World Section Intersections" );
-    drawSectionIntersectionsCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.DrawSectionIntersections );
-    drawSectionIntersectionsCheckbox->AlignUnder( dynShadowSlider, 17 );
-    drawSectionIntersectionsCheckbox->SetChecked( Engine::GAPI->GetRendererState().RendererSettings.DrawSectionIntersections );
-
 	// Third column
 	// FOV
 	SV_Checkbox* fovOverrideCheckbox = new SV_Checkbox( MainView, MainPanel );
 	fovOverrideCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
 	fovOverrideCheckbox->AlignUnder( Header, 5 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: fovOverrideCheckbox->SetCaption( L"Zast¹p Pole Widzenia" ); break;
+    case LANGUAGE_POLISH: fovOverrideCheckbox->SetCaption( L"ZastÄ…p Pole Widzenia" ); break;
     default: fovOverrideCheckbox->SetCaption( L"Enable FOV Override" ); break;
     }
 	fovOverrideCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.ForceFOV );
@@ -508,7 +522,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 	brightnessLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
 	brightnessLabel->AlignUnder( vertFOVSlider, 16 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: brightnessLabel->SetCaption( L"Jasnoœæ:" ); break;
+    case LANGUAGE_POLISH: brightnessLabel->SetCaption( L"JasnoÅ›Ä‡:" ); break;
     default: brightnessLabel->SetCaption( L"Brightness:" ); break;
     }
 
@@ -538,7 +552,7 @@ XRESULT D2DSettingsDialog::InitControls() {
     rainCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
     rainCheckbox->AlignUnder( contrastSlider, 65 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: rainCheckbox->SetCaption( L"W³¹cz Deszcz" ); break;
+    case LANGUAGE_POLISH: rainCheckbox->SetCaption( L"WÅ‚Ä…cz Deszcz" ); break;
     default: rainCheckbox->SetCaption( L"Enable Rain" ); break;
     }
     rainCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.EnableRain );
@@ -549,7 +563,7 @@ XRESULT D2DSettingsDialog::InitControls() {
     rainEffectsCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
     rainEffectsCheckbox->AlignUnder( rainCheckbox, 5 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: rainEffectsCheckbox->SetCaption( L"W³¹cz Efekty Deszczu" ); break;
+    case LANGUAGE_POLISH: rainEffectsCheckbox->SetCaption( L"WÅ‚Ä…cz Efekty Deszczu" ); break;
     default: rainEffectsCheckbox->SetCaption( L"Enable Rain Effects" ); break;
     }
     rainEffectsCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.EnableRainEffects );
@@ -559,7 +573,7 @@ XRESULT D2DSettingsDialog::InitControls() {
     lightCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
     lightCheckbox->AlignUnder( rainEffectsCheckbox, 15 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: lightCheckbox->SetCaption( L"Ogranicz Natê¿enie Œwiat³a" ); break;
+    case LANGUAGE_POLISH: lightCheckbox->SetCaption( L"Ogranicz NatÄ™Å¼enie ÅšwiatÅ‚a" ); break;
     default: lightCheckbox->SetCaption( L"Limit Light Intensity" ); break;
     }
     lightCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.LimitLightIntesity );
@@ -569,7 +583,7 @@ XRESULT D2DSettingsDialog::InitControls() {
     SV_Label* modeChangingLabel = new SV_Label( MainView, MainPanel );
     modeChangingLabel->SetPositionAndSize( D2D1::Point2F( 5, GetSize().height - 5 - 30 ), D2D1::SizeF( 320, 12 ) );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: modeChangingLabel->SetCaption( L"[**] -> Musisz zrestartowaæ grê ¿eby zmiany zadzia³a³y" ); break;
+    case LANGUAGE_POLISH: modeChangingLabel->SetCaption( L"[**] -> Musisz zrestartowaÄ‡ grÄ™ Å¼eby zmiany zadziaÅ‚aÅ‚y" ); break;
     default: modeChangingLabel->SetCaption( L"[**] -> You must restart game for the changes to take effect" ); break;
     }
 

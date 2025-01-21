@@ -80,7 +80,7 @@ D3D11GraphicsEngine::D3D11GraphicsEngine() {
     m_flipWithTearing = false;
     m_HDR = false;
     m_lowlatency = false;
-    m_isWindowActive = true;
+    m_isWindowActive = false;
 
     // Match the resolution with the current desktop resolution
     Resolution =
@@ -470,13 +470,14 @@ XRESULT D3D11GraphicsEngine::SetWindow( HWND hWnd ) {
             DWORD dwCurID = GetWindowThreadProcessId( hCurWnd, NULL );
             m_isWindowActive = true;
 
+            ShowWindow( hWnd, SW_RESTORE );
             AttachThreadInput( dwCurID, dwMyID, TRUE );
             SetWindowPos( hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE );
-            SetWindowPos( hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE );
+            SetWindowPos( hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE );
             SetForegroundWindow( hWnd );
+            AttachThreadInput( dwCurID, dwMyID, FALSE );
             SetFocus( hWnd );
             SetActiveWindow( hWnd );
-            AttachThreadInput( dwCurID, dwMyID, FALSE );
         }
 
         const INT2 res = Resolution;
@@ -890,12 +891,6 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
 
 /** Called when the game wants to render a new frame */
 XRESULT D3D11GraphicsEngine::OnBeginFrame() {
-    if ( !m_isWindowActive && GetForegroundWindow() == OutputWindow ) {
-        // Just in case to check if somehow we didn't get informed the window got activated
-        m_isWindowActive = true;
-        UpdateClipCursor( OutputWindow );
-    }
-
     Engine::GAPI->GetRendererState().RendererInfo.Timing.StartTotal();
     if ( !m_isWindowActive && Engine::GAPI->GetRendererState().RendererSettings.EnableInactiveFpsLock ) {
         m_FrameLimiter->SetLimit( 20 );
@@ -5248,6 +5243,18 @@ void D3D11GraphicsEngine::DrawVobSingle( VobInfo* vob, zCCamera& camera ) {
     GetContext()->PSSetSamplers( 0, 1, ClampSamplerState.GetAddressOf() );
 }
 
+/** Update focus window state */
+void D3D11GraphicsEngine::UpdateFocus( HWND hWnd, bool focus_state )
+{
+    bool has_focus = (GetForegroundWindow() == hWnd);
+    if ( m_isWindowActive == has_focus || has_focus != focus_state ) {
+        return;
+    }
+
+    m_isWindowActive = has_focus;
+    UpdateClipCursor( hWnd );
+}
+
 /** Update clipping cursor onto window */
 void D3D11GraphicsEngine::UpdateClipCursor( HWND hWnd )
 {
@@ -5276,23 +5283,11 @@ void D3D11GraphicsEngine::UpdateClipCursor( HWND hWnd )
 LRESULT D3D11GraphicsEngine::OnWindowMessage( HWND hWnd, UINT msg, WPARAM wParam,
     LPARAM lParam ) {
     switch ( msg ) {
-        case WM_ACTIVATE:
-        {
-            // Don't mark the window as active if it's activated before being shown
-            if ( !IsWindowVisible( hWnd ) ) {
-                break;
-            }
-
-            BOOL minimized = HIWORD( wParam );
-            if ( !minimized && LOWORD( wParam ) != WA_INACTIVE ) {
-                m_isWindowActive = true;
-            } else {
-                m_isWindowActive = false;
-            }
-
-            UpdateClipCursor( hWnd );
-        }
-        break;
+        case WM_NCACTIVATE: UpdateFocus( hWnd, !!wParam ); break;
+        case WM_ACTIVATE: UpdateFocus( hWnd, !!LOWORD( wParam ) ); break;
+        case WM_SETFOCUS: UpdateFocus( hWnd, true ); break;
+        case WM_KILLFOCUS:
+        case WM_ENTERIDLE: UpdateFocus( hWnd, false ); break;
         case WM_WINDOWPOSCHANGED: UpdateClipCursor( hWnd ); break;
     }
     if ( UIView ) {

@@ -2183,7 +2183,7 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
                 // Go through all materials registered here
                 for ( auto const& itm : mvi->Meshes ) {
                     zCTexture* texture;
-                    if ( itm.first && (texture = itm.first->GetAniTexture()) != nullptr ) { // TODO: Crash here!
+                    if ( itm.first && (texture = itm.first->GetAniTexture()) != nullptr ) {
                         if ( !g->BindTextureNRFX( texture, (g->GetRenderingStage() == DES_MAIN) ) )
                             continue;
                     }

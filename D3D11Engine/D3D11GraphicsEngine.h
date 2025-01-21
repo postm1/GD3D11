@@ -292,6 +292,9 @@ public:
     /** Returns the current rendering stage */
     D3D11ENGINE_RENDER_STAGE GetRenderingStage();
 
+    /** Update focus window state */
+    void UpdateFocus( HWND hWnd, bool focus_state );
+
     /** Update clipping cursor onto window */
     void UpdateClipCursor( HWND hWnd );
 

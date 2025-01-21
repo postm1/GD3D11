@@ -184,7 +184,9 @@ struct GothicMemoryLocations {
 
         static const unsigned int Offset_Flags = 0xE4;
         static const unsigned int Offset_VobTree = 0x24;
+        static const unsigned int Offset_VobAlpha = 0xBC;
         static const unsigned int MASK_ShowVisual = 0x1;
+        static const unsigned int MASK_VisualAlpha = 0x4;
         static const unsigned int Offset_CameraAlignment = 0xF0;
         static const unsigned int SHIFTLR_CameraAlignment = 0x1E;
 

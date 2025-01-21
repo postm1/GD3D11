@@ -288,6 +288,17 @@ public:
         return (flags & GothicMemoryLocations::zCVob::MASK_ShowVisual);
     }
 
+    /** Returns whether vob is transparent */
+    bool GetVisualAlpha() {
+        unsigned int flags = *reinterpret_cast<unsigned int*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_Flags ));
+        return (flags & GothicMemoryLocations::zCVob::MASK_VisualAlpha);
+    }
+
+    /** Vob transparency */
+    float GetVobTransparency() {
+        return *reinterpret_cast<float*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_VobAlpha ));
+    }
+
     /** Vob type */
     EVobType GetVobType() {
         return *reinterpret_cast<EVobType*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_Type ));

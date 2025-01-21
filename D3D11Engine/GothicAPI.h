@@ -169,7 +169,21 @@ class GOcean;
 class zCMorphMesh;
 class zCDecal;
 
+struct TransparencyVobInfo {
+    TransparencyVobInfo( float distance, float alpha, SkeletalVobInfo* skeletalVob, VobInfo* normalVob ) :
+        distance( distance ), alpha( alpha ), skeletalVob( skeletalVob ), normalVob( normalVob ) {}
+
+    float distance;
+    float alpha;
+    SkeletalVobInfo* skeletalVob;
+    VobInfo* normalVob;
+};
+
 class GothicAPI {
+    friend void CVVH_AddNotDrawnVobToList( std::vector<VobInfo*>& target, std::vector<VobInfo*>& source, float dist );
+    friend void CVVH_AddNotDrawnVobToList( std::vector<VobLightInfo*>& target, std::vector<VobLightInfo*>& source, float dist );
+    friend void CVVH_AddNotDrawnVobToList( std::vector<SkeletalVobInfo*>& target, std::vector<SkeletalVobInfo*>& source, float dist );
+
 public:
     GothicAPI();
     ~GothicAPI();
@@ -262,7 +276,7 @@ public:
 
     /** Draws a skeletal mesh-vob */
     void DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool updateState = true );
-    void DrawSkeletalGhosts();
+    void DrawTransparencyVobs();
     void DrawSkeletalVN();
 
     /** Draws the inventory */
@@ -729,7 +743,7 @@ private:
     /** List of vobs with skeletal meshes (Having a zCModel-Visual) */
     std::list<SkeletalVobInfo*> SkeletalMeshVobs;
     std::list<SkeletalVobInfo*> AnimatedSkeletalVobs;
-    std::vector<std::pair<float, SkeletalVobInfo*>> GhostSkeletalVobs;
+    std::vector<TransparencyVobInfo> TransparencyVobs;
     std::vector<SkeletalVobInfo*> VNSkeletalVobs;
 
     /** List of Vobs having a zCParticleFX-Visual */

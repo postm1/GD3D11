@@ -48,7 +48,7 @@
 const DWORD SCENE_WETNESS_DURATION_MS = 30 * 1000;
 
 // Draw ghost from back to front of our camera
-auto CompareGhostDistance = []( std::pair<float, SkeletalVobInfo*>& a, std::pair<float, SkeletalVobInfo*>& b ) -> bool { return a.first < b.first; };
+auto CompareGhostDistance = []( TransparencyVobInfo& a, TransparencyVobInfo& b ) -> bool { return a.distance < b.distance; };
 
 /** Writes this info to a file */
 void MaterialInfo::WriteToFile( const std::string& name ) {
@@ -1018,12 +1018,10 @@ void GothicAPI::DrawWorldMeshNaive() {
             model->SetDistanceToCamera( dist );
 
             // Schedule for drawing in later stage if this vob is ghost
-            if ( oCNPC* npc = vobInfo->Vob->As<oCNPC>() ) {
-                if ( npc->HasFlag( NPC_FLAG_GHOST ) ) {
-                    GhostSkeletalVobs.emplace_back( dist, vobInfo );
-                    std::push_heap( GhostSkeletalVobs.begin(), GhostSkeletalVobs.end(), CompareGhostDistance );
-                    continue;
-                }
+            if ( vobInfo->Vob->GetVisualAlpha() ) {
+                TransparencyVobs.emplace_back( dist, vobInfo->Vob->GetVobTransparency(), vobInfo, nullptr );
+                std::push_heap( TransparencyVobs.begin(), TransparencyVobs.end(), CompareGhostDistance );
+                continue;
             }
 
             DrawSkeletalMeshVob( vobInfo, dist );
@@ -1995,11 +1993,8 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
         return; // Gothic fortunately sets this to 0 when it throws the model out of the cache
 
     model->SetIsVisible( true );
-
-#ifndef BUILD_GOTHIC_1_08k // does not work in G1
     if ( !vi->Vob->GetShowVisual() )
         return;
-#endif
 
     float4 modelColor;
     if ( Engine::GAPI->GetRendererState().RendererSettings.EnableShadows ) {
@@ -2200,43 +2195,68 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
     RendererState.RendererInfo.FrameDrawnVobs++;
 }
 
-void GothicAPI::DrawSkeletalGhosts() {
+void GothicAPI::DrawTransparencyVobs() {
     D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
-    if ( !GhostSkeletalVobs.empty() ) {
+    if ( !TransparencyVobs.empty() ) {
         // Setup alpha blending
         RendererState.RasterizerState.SetDefault();
         RendererState.RasterizerState.SetDirty();
         RendererState.BlendState.SetAlphaBlending();
         RendererState.BlendState.SetDirty();
         RendererState.DepthState.SetDefault();
+        RendererState.DepthState.DepthWriteEnabled = false;
         RendererState.DepthState.SetDirty();
     }
-    while ( !GhostSkeletalVobs.empty() ) {
-        auto const& GhostInfo = GhostSkeletalVobs.front();
 
-        // We need to do Z-prepass first
-        g->UnbindActivePS();
-        g->GetContext()->PSSetShader( nullptr, nullptr, 0 );
-        DrawSkeletalMeshVob( GhostInfo.second, GhostInfo.first );
-        RendererState.RendererInfo.FrameDrawnVobs--; // Don't calculate prepass as drawn vob
+    while ( !TransparencyVobs.empty() ) {
+        auto const& TransVobInfo = TransparencyVobs.front();
 
-        // Now actually draw mesh using ghost pixel shader
-        g->SetActivePixelShader( "PS_Ghost" );
-        g->BindActivePixelShader();
+        if ( TransVobInfo.skeletalVob ) {
+            // Now actually draw mesh using transparency pixel shader
+            g->SetActivePixelShader( "PS_Transparency" );
+            g->BindActivePixelShader();
 
-        // Update ghost alpha information
-        GhostAlphaConstantBuffer gacb;
-        #ifdef BUILD_GOTHIC_2_6_fix
-        gacb.GA_Alpha = *reinterpret_cast<float*>(0xAB26A4); // Cached GhostAlpha value
-        #else
-        gacb.GA_Alpha = 0.3f;
-        #endif
-        g->GetActivePS()->GetConstantBuffer()[0]->UpdateBuffer( &gacb );
-        g->GetActivePS()->GetConstantBuffer()[0]->BindToPixelShader( 0 );
-        DrawSkeletalMeshVob( GhostInfo.second, GhostInfo.first, false );
+            // Update transparency alpha information
+            GhostAlphaConstantBuffer gacb;
+            gacb.GA_ViewportSize = float2( Engine::GraphicsEngine->GetResolution().x, Engine::GraphicsEngine->GetResolution().y );
+            gacb.GA_Alpha = TransVobInfo.alpha;
+            g->GetActivePS()->GetConstantBuffer()[0]->UpdateBuffer( &gacb );
+            g->GetActivePS()->GetConstantBuffer()[0]->BindToPixelShader( 0 );
+            DrawSkeletalMeshVob( TransVobInfo.skeletalVob, TransVobInfo.distance, false );
+        } else if ( TransVobInfo.normalVob ) {
+            g->SetActiveVertexShader( "VS_Ex" );
+            g->SetupVS_ExMeshDrawCall();
+            TransVobInfo.normalVob->VobConstantBuffer->BindToVertexShader( 1 );
 
-        std::pop_heap( GhostSkeletalVobs.begin(), GhostSkeletalVobs.end(), CompareGhostDistance );
-        GhostSkeletalVobs.pop_back();
+            // Now actually draw mesh using transparency pixel shader
+            g->SetActivePixelShader( "PS_Transparency" );
+            g->BindActivePixelShader();
+
+            // Update transparency alpha information
+            GhostAlphaConstantBuffer gacb;
+            gacb.GA_ViewportSize = float2( Engine::GraphicsEngine->GetResolution().x, Engine::GraphicsEngine->GetResolution().y );
+            gacb.GA_Alpha = TransVobInfo.alpha;
+            g->GetActivePS()->GetConstantBuffer()[0]->UpdateBuffer( &gacb );
+            g->GetActivePS()->GetConstantBuffer()[0]->BindToPixelShader( 0 );
+
+            for ( auto const& materialMesh : TransVobInfo.normalVob->VisualInfo->Meshes ) {
+                if ( materialMesh.first && materialMesh.first->GetTexture() ) {
+                    if ( materialMesh.first->GetTexture()->CacheIn( 0.6f ) == zRES_CACHED_IN ) {
+                        materialMesh.first->GetTexture()->Bind( 0 );
+                    }
+                }
+
+                for ( auto const& meshInfo : materialMesh.second ) {
+                    g->DrawVertexBufferIndexed(
+                        meshInfo->MeshVertexBuffer,
+                        meshInfo->MeshIndexBuffer,
+                        meshInfo->Indices.size() );
+                }
+            }
+        }
+
+        std::pop_heap( TransparencyVobs.begin(), TransparencyVobs.end(), CompareGhostDistance );
+        TransparencyVobs.pop_back();
     }
 }
 
@@ -3130,6 +3150,12 @@ void GothicAPI::CollectVisibleVobs( std::vector<VobInfo*>& vobs, std::vector<Vob
                     continue;
                 }
 
+                if ( it->Vob->GetVisualAlpha() ) {
+                    TransparencyVobs.emplace_back( dist, it->Vob->GetVobTransparency(), nullptr, it );
+                    std::push_heap( TransparencyVobs.begin(), TransparencyVobs.end(), CompareGhostDistance );
+                    continue;
+                }
+
                 VobInstanceInfo vii;
                 vii.world = it->WorldMatrix;
                 vii.color = it->GroundColor;
@@ -3307,6 +3333,12 @@ static void CVVH_AddNotDrawnVobToList( std::vector<VobInfo*>& target, std::vecto
             float vd;
             XMStoreFloat( &vd, XMVector3Length( Engine::GAPI->GetCameraPositionXM() - XMLoadFloat3( &it->LastRenderPosition ) ) );
             if ( vd < dist && it->Vob->GetShowVisual() ) {
+                if ( it->Vob->GetVisualAlpha() ) {
+                    Engine::GAPI->TransparencyVobs.emplace_back( vd, it->Vob->GetVobTransparency(), nullptr, it );
+                    std::push_heap( Engine::GAPI->TransparencyVobs.begin(), Engine::GAPI->TransparencyVobs.end(), CompareGhostDistance );
+                    continue;
+                }
+
                 VobInstanceInfo vii;
                 vii.world = it->WorldMatrix;
                 vii.color = it->GroundColor;

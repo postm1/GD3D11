@@ -202,7 +202,7 @@ XRESULT D3D11ShaderManager::Init() {
 
     Shaders.push_back( ShaderInfo( "PS_Rain", "PS_Rain.hlsl", "p" ) );
 
-    Shaders.push_back( ShaderInfo( "PS_Ghost", "PS_Ghost.hlsl", "p" ) );
+    Shaders.push_back( ShaderInfo( "PS_Transparency", "PS_Transparency.hlsl", "p" ) );
     Shaders.back().cBufferSizes.push_back( sizeof( GhostAlphaConstantBuffer ) );
 
     Shaders.push_back( ShaderInfo( "PS_World", "PS_World.hlsl", "p" ) );
@@ -265,10 +265,10 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.back().cBufferSizes.push_back( sizeof( AtmosphereConstantBuffer ) );
 
     Shaders.push_back( ShaderInfo( "PS_PFX_Alpha_Blend", "PS_PFX_Alpha_Blend.hlsl", "p" ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( GhostAlphaConstantBuffer ) );
+    Shaders.back().cBufferSizes.push_back( sizeof( ScreenFadeConstantBuffer ) );
 
     Shaders.push_back( ShaderInfo( "PS_PFX_CinemaScope", "PS_PFX_CinemaScope.hlsl", "p" ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( GhostAlphaConstantBuffer ) );
+    Shaders.back().cBufferSizes.push_back( sizeof( ScreenFadeConstantBuffer ) );
     
     Shaders.push_back( ShaderInfo( "PS_PFX_Blend", "PS_PFX_Blend.hlsl", "p" ) );
     Shaders.push_back( ShaderInfo( "PS_PFX_DistanceBlur", "PS_PFX_DistanceBlur.hlsl", "p" ) );

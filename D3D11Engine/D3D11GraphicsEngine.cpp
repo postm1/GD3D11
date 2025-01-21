@@ -1498,7 +1498,7 @@ XRESULT D3D11GraphicsEngine::DrawScreenFade( void* c ) {
         SetActiveVertexShader( "VS_CinemaScope" );
         ActiveVS->Apply();
 
-        GhostAlphaConstantBuffer colorBuffer;
+        ScreenFadeConstantBuffer colorBuffer;
         colorBuffer.GA_Alpha = cinemaScopeColor.bgra.alpha / 255.f;
         colorBuffer.GA_Pad.x = cinemaScopeColor.bgra.r / 255.f;
         colorBuffer.GA_Pad.y = cinemaScopeColor.bgra.g / 255.f;
@@ -1568,7 +1568,7 @@ XRESULT D3D11GraphicsEngine::DrawScreenFade( void* c ) {
         SetActiveVertexShader( "VS_PFX" );
         ActiveVS->Apply();
 
-        GhostAlphaConstantBuffer colorBuffer;
+        ScreenFadeConstantBuffer colorBuffer;
         colorBuffer.GA_Alpha = screenFadeColor.bgra.alpha / 255.f;
         colorBuffer.GA_Pad.x = screenFadeColor.bgra.r / 255.f;
         colorBuffer.GA_Pad.y = screenFadeColor.bgra.g / 255.f;
@@ -2277,7 +2277,7 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     // Draw ghosts
     D3D11ENGINE_RENDER_STAGE oldStage = RenderingStage;
     SetRenderingStage( DES_GHOST );
-    Engine::GAPI->DrawSkeletalGhosts();
+    Engine::GAPI->DrawTransparencyVobs();
     SetRenderingStage( oldStage );
     Engine::GAPI->DrawSkeletalVN();
 
@@ -2303,6 +2303,10 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
         DrawDecalList( decals, false );
         DrawMQuadMarks();
     }
+
+    // Unbind temporary backbuffer copy
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
+    GetContext()->PSSetShaderResources( 5, 1, srv.GetAddressOf() );
 
     // TODO: TODO: GodRays need the GBuffer1 from the scene, but Particles need to
     // clear it!
@@ -3281,10 +3285,6 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
     // Draw Ocean
     if ( !FeatureLevel10Compatibility && Engine::GAPI->GetOcean() ) Engine::GAPI->GetOcean()->Draw();
 
-    // Unbind temporary backbuffer copy
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
-    GetContext()->PSSetShaderResources( 5, 1, srv.GetAddressOf() );
-
     GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(),
         DepthStencilBuffer->GetDepthStencilView().Get() );
 }
@@ -3579,10 +3579,8 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround(
                 }
 
                 // Ghosts shouldn't have shadows
-                if ( oCNPC* npc = skeletalMeshVob->Vob->As<oCNPC>() ) {
-                    if ( npc->HasFlag( NPC_FLAG_GHOST ) ) {
-                        continue;
-                    }
+                if ( skeletalMeshVob->Vob->GetVisualAlpha() && skeletalMeshVob->Vob->GetVobTransparency() < 0.7f ) {
+                    continue;
                 }
 
                 // Check vob range
@@ -3853,10 +3851,8 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
             if ( !skeletalMeshVob->VisualInfo ) continue;
 
             // Ghosts shouldn't have shadows
-            if ( oCNPC* npc = skeletalMeshVob->Vob->As<oCNPC>() ) {
-                if ( npc->HasFlag( NPC_FLAG_GHOST ) ) {
-                    continue;
-                }
+            if ( skeletalMeshVob->Vob->GetVisualAlpha() && skeletalMeshVob->Vob->GetVobTransparency() < 0.7f ) {
+                continue;
             }
 
             float dist; XMStoreFloat( &dist, XMVector3Length( skeletalMeshVob->Vob->GetPositionWorldXM() - position ) );
@@ -5659,12 +5655,9 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
         }
 
         int alignment = decals[i]->GetAlignment();
-
         XMMATRIX world = decals[i]->GetWorldMatrixXM();
-
         XMMATRIX offset =
             XMMatrixTranslation( d->GetDecalSettings()->DecalOffset.x, -d->GetDecalSettings()->DecalOffset.y, 0 );
-
         XMMATRIX scale =
             XMMatrixTranspose( XMMatrixScaling( d->GetDecalSettings()->DecalSize.x * 2,
                 -d->GetDecalSettings()->DecalSize.y * 2, 1 ) );
@@ -5688,7 +5681,6 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
         }
 
         XMMATRIX mat = view * world * offset * scale;
-
         Engine::GAPI->SetWorldTransformXM( mat );
         SetupVS_ExPerInstanceConstantBuffer();
 

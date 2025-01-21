@@ -3,8 +3,9 @@
 //--------------------------------------------------------------------------------------
 cbuffer GhostAlphaInfo : register( b0 )
 {
+	float2 GA_ViewportSize;
 	float GA_Alpha;
-	float3 GA_Pad;
+	float GA_Pad;
 };
 
 //--------------------------------------------------------------------------------------
@@ -12,6 +13,7 @@ cbuffer GhostAlphaInfo : register( b0 )
 //--------------------------------------------------------------------------------------
 SamplerState SS_Linear : register( s0 );
 Texture2D	TX_Texture0 : register( t0 );
+Texture2D	TX_Scene : register( t5 );
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -31,10 +33,11 @@ struct PS_INPUT
 //--------------------------------------------------------------------------------------
 float4 PSMain( PS_INPUT Input ) : SV_TARGET
 {
-	float4 color = TX_Texture0.Sample(SS_Linear, Input.vTexcoord);
-	clip(color.a - 0.6f);
+    float2 screenUV = Input.vPosition.xy / GA_ViewportSize;
+	float3 screenColor = TX_Scene.Sample(SS_Linear, screenUV).rgb;
+	float screenLuma = 0.2126 * screenColor.r + 0.7125 * screenColor.g + 0.0722 * screenColor.b;
 
-	color *= float4(1.0f, 1.0f, 1.0f, GA_Alpha);
+	float4 color = TX_Texture0.Sample(SS_Linear, Input.vTexcoord);
+	color *= float4(screenLuma, screenLuma, screenLuma, GA_Alpha);
 	return color;
 }
-

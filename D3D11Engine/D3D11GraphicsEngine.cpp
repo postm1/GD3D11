@@ -1056,7 +1056,9 @@ XRESULT D3D11GraphicsEngine::OnEndFrame() {
     Present();
 
     Engine::GAPI->GetRendererState().RendererInfo.Timing.StopTotal();
-    m_FrameLimiter->Wait();
+    if ( !Engine::GAPI->GetRendererState().RendererSettings.BinkVideoRunning ) {
+        m_FrameLimiter->Wait();
+    }
     return XR_SUCCESS;
 }
 

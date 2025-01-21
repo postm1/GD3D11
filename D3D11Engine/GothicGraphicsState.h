@@ -681,6 +681,7 @@ struct GothicRendererSettings {
         CompressBackBuffer = false;
         AnimateStaticVobs = true;
         RunInSpacerNet = false;
+        BinkVideoRunning = false;
     }
 
     void SetupOldWorldSpecificValues() {
@@ -836,6 +837,7 @@ struct GothicRendererSettings {
     bool CompressBackBuffer;
     bool AnimateStaticVobs;
     bool RunInSpacerNet;
+    bool BinkVideoRunning;
 };
 
 struct GothicRendererTiming {

@@ -8,6 +8,7 @@
 #include "zCMaterial.h"
 #include "zCMesh.h"
 #include "zCTimer.h"
+#include "zCTexture.h"
 #include "zCSkyController_Outdoor.h"
 #include "zCWorld.h"
 #include "corecrt_io.h"
@@ -194,6 +195,30 @@ void GSky::SetCustomCloudAndNightTexture( int idx, bool isNightTexture, bool isO
     }
 }
 
+/** Sets the custom sky texture */
+void GSky::SetCustomSkyTexture_ZenGin( bool isNightTexture, zCTexture* texture, bool isOldWorld ) {
+    if ( !texture ) {
+        if ( isNightTexture ) {
+            D3D11Texture* nightTex;
+            XLE( Engine::GraphicsEngine->CreateTexture( &nightTex ) );
+            NightTexture.reset( nightTex );
+            XLE( NightTexture->Init( "system\\GD3D11\\Textures\\starsh.dds" ) );
+            NightTexture_Zen = nullptr;
+        } else {
+            SetSkyTexture( isOldWorld ? ESkyTexture::ST_OldWorld : ESkyTexture::ST_NewWorld );
+            CloudTexture_Zen = nullptr;
+        }
+    } else {
+        (isNightTexture ? NightTexture_Zen : CloudTexture_Zen) = texture;
+        if ( !isNightTexture ) {
+            Atmosphere.WaveLengths = isOldWorld ? float3( 0.54f, 0.56f, 0.60f ) : float3( 0.63f, 0.57f, 0.50f );
+        }
+    }
+}
+
+void GSky::SetCustomSkyWavelengths( float X, float Y, float Z ) {
+    Atmosphere.WaveLengths = float3( X, Y, Z );
+}
 
 /** Returns the sky-texture for the passed daytime (0..1) */
 void GSky::GetTextureOfDaytime( float time, D3D11Texture** t1, D3D11Texture** t2, float* factor ) {
@@ -297,11 +322,25 @@ float4 GSky::GetSkylightColor() {
 
 /** Returns the cloud texture */
 D3D11Texture* GSky::GetCloudTexture() {
+    if ( CloudTexture_Zen ) {
+        if ( CloudTexture_Zen->CacheIn( -1 ) == zRES_CACHED_IN ) {
+            if ( MyDirectDrawSurface7* dds7 = CloudTexture_Zen->GetSurface() ) {
+                return dds7->GetEngineTexture();
+            }
+        }
+    }
     return CloudTexture.get();
 }
 
 /** Returns the cloud texture */
 D3D11Texture* GSky::GetNightTexture() {
+    if ( NightTexture_Zen ) {
+        if ( NightTexture_Zen->CacheIn( -1 ) == zRES_CACHED_IN ) {
+            if ( MyDirectDrawSurface7* dds7 = NightTexture_Zen->GetSurface() ) {
+                return dds7->GetEngineTexture();
+            }
+        }
+    }
     return NightTexture.get();
 }
 

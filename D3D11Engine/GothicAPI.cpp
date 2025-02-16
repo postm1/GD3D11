@@ -2438,8 +2438,8 @@ void GothicAPI::DrawParticleFX( zCVob* source, zCParticleFX* fx, ParticleFrameDa
             if ( fx->GetEmitter()->GetVisAlignment() == 2 ) {
                 if ( zCVob* connectedVob = fx->GetConnectedVob() ) {
                     XMFLOAT4X4* worldMatrix = connectedVob->GetWorldMatrixPtr();
-                    ii.scale = float3( worldMatrix->m[0][0] * p->Size.x, worldMatrix->m[1][0] * p->Size.x, worldMatrix->m[1][0] * p->Size.x );
-                    ii.velocity = float3( worldMatrix->m[0][2] * p->Size.y, worldMatrix->m[1][2] * p->Size.y, worldMatrix->m[1][2] * p->Size.y );
+                    ii.scale = float3( worldMatrix->m[0][0] * p->Size.x, worldMatrix->m[1][0] * p->Size.x, worldMatrix->m[2][0] * p->Size.x );
+                    ii.velocity = float3( worldMatrix->m[0][2] * p->Size.y, worldMatrix->m[1][2] * p->Size.y, worldMatrix->m[2][2] * p->Size.y );
                 }
             }
 

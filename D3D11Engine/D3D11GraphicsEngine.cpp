@@ -126,8 +126,10 @@ void PrintD3DFeatureLevel( D3D_FEATURE_LEVEL lvl ) {
 
 /** Called when the game created it's window */
 XRESULT D3D11GraphicsEngine::Init() {
-    HRESULT hr;
+    // Loading nvapi should tell nvidia drivers to use discrete gpu
+    LoadLibraryA( "NVAPI.DLL" );
 
+    HRESULT hr;
     LogInfo() << "Initializing Device...";
 
     // Create DXGI factory

@@ -66,10 +66,6 @@ void MaterialInfo::WriteToFile( const std::string& name ) {
 
     // Then the data
     fwrite( &buffer, sizeof( MaterialInfo::Buffer ), 1, f );
-#if ENABLE_TESSELATION > 0
-    fwrite( &TextureTesselationSettings.buffer, sizeof( VisualTesselationSettings::Buffer ), 1, f );
-#endif
-
     fclose( f );
 }
 
@@ -80,11 +76,7 @@ void MaterialInfo::LoadFromFile( const std::string& name ) {
     if ( !f )
         return;
 
-#if ENABLE_TESSELATION > 0
-    char ReadBuffer[sizeof( int ) + sizeof( MaterialInfo::Buffer ) + sizeof( VisualTesselationSettings::Buffer )];
-#else
     char ReadBuffer[sizeof( int ) + sizeof( MaterialInfo::Buffer )];
-#endif
     fread( ReadBuffer, 1, sizeof( ReadBuffer ), f );
 
     // Write the version first
@@ -101,20 +93,11 @@ void MaterialInfo::LoadFromFile( const std::string& name ) {
         }
     }
 
-#if ENABLE_TESSELATION > 0
-    if ( version >= 4 ) {
-        memcpy( &TextureTesselationSettings.buffer, ReadBuffer + sizeof( int ) + sizeof( MaterialInfo::Buffer ), sizeof( VisualTesselationSettings::Buffer ) );
-    }
-#endif
-
     fclose( f );
 
     buffer.Color = float4( 1, 1, 1, 1 );
 
     UpdateConstantbuffer();
-#if ENABLE_TESSELATION > 0
-    TextureTesselationSettings.UpdateConstantbuffer();
-#endif
 }
 
 /** creates/updates the constantbuffer */
@@ -658,16 +641,6 @@ void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) 
     }
 #endif
     LogInfo() << "Done extracting world!";
-
-#if ENABLE_TESSELATION > 0
-    // Apply tesselation
-    for ( auto const& it : LoadedMaterials ) {
-        MaterialInfo* info = GetMaterialInfoFrom( it->GetTexture() );
-        if ( info ) {
-            ApplyTesselationSettingsForAllMeshPartsUsing( info, info->TextureTesselationSettings.buffer.VT_TesselationFactor > 1.0f ? 2 : 1 );
-        }
-    }
-#endif
 }
 
 /** Called when the game is about to load a new level */
@@ -3844,11 +3817,6 @@ void GothicAPI::LoadCustomZENResources() {
 
     // Load vegetation
     LoadVegetation( zen + ".veg" );
-
-#if ENABLE_TESSELATION > 0
-    // Load world mesh information
-    LoadSectionInfos();
-#endif
 }
 
 /** Saves resources created for this .ZEN */
@@ -3880,11 +3848,6 @@ void GothicAPI::SaveCustomZENResources() {
 
     // Save vegetation
     SaveVegetation( zen + ".veg" );
-
-#if ENABLE_TESSELATION > 0
-    // Save world mesh information
-    SaveSectionInfos();
-#endif
 }
 
 /** Applys the suppressed textures */
@@ -4166,11 +4129,6 @@ XRESULT GothicAPI::SaveMenuSettings( const std::string& file ) {
     WritePrivateProfileStringA( "HBAO", "SsaoBlurRadius", std::to_string( s.HbaoSettings.SsaoBlurRadius ).c_str(), ini.c_str() );
     WritePrivateProfileStringA( "HBAO", "SsaoStepCount", std::to_string( s.HbaoSettings.SsaoStepCount ).c_str(), ini.c_str() );
 
-#if ENABLE_TESSELATION > 0
-    WritePrivateProfileStringA( "Tesselation", "EnableTesselation", std::to_string( s.EnableTesselation ? TRUE : FALSE ).c_str(), ini.c_str() );
-    WritePrivateProfileStringA( "Tesselation", "AllowWorldMeshTesselation", std::to_string( s.AllowWorldMeshTesselation ? TRUE : FALSE ).c_str(), ini.c_str() );
-#endif
-
     WritePrivateProfileStringA( "FontRendering", "Enable", std::to_string( s.EnableCustomFontRendering ? TRUE : FALSE ).c_str(), ini.c_str() );
 
     return XR_SUCCESS;
@@ -4261,11 +4219,6 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
 
         s.EnableSMAA = GetPrivateProfileBoolA( "SMAA", "Enabled", false, ini );
         s.SharpenFactor = GetPrivateProfileFloatA( "SMAA", "SharpenFactor", 0.30f, ini );
-
-    #if ENABLE_TESSELATION > 0
-        s.AllowWorldMeshTesselation = GetPrivateProfileBoolA( "Tesselation", "AllowWorldMeshTesselation", false, ini );
-        s.EnableTesselation = GetPrivateProfileBoolA( "Tesselation", "EnableTesselation", false, ini );
-    #endif
 
         HBAOSettings defaultHBAOSettings;
         s.HbaoSettings.Enabled = GetPrivateProfileBoolA( "HBAO", "Enabled", defaultHBAOSettings.Enabled, ini );
@@ -4535,30 +4488,6 @@ bool GothicAPI::IsUnderWater() {
     return false;
 }
 
-#if ENABLE_TESSELATION > 0
-/** Saves all sections information */
-void GothicAPI::SaveSectionInfos() {
-    for ( auto&& itx : Engine::GAPI->GetWorldSections() ) {
-        for ( auto&& ity : itx.second ) {
-            // Save this section to file
-            ity.second.SaveMeshInfos( LoadedWorldInfo->WorldName, INT2( itx.first, ity.first ) );
-        }
-    }
-}
-
-/** Loads all sections information */
-void GothicAPI::LoadSectionInfos() {
-    for ( std::map<int, std::map<int, WorldMeshSectionInfo>>::iterator itx = Engine::GAPI->GetWorldSections().begin(); itx != Engine::GAPI->GetWorldSections().end(); itx++ ) {
-        for ( std::map<int, WorldMeshSectionInfo>::iterator ity = itx->second.begin(); ity != itx->second.end(); ity++ ) {
-            WorldMeshSectionInfo& section = ity->second;
-
-            // Load this section from file
-            section.LoadMeshInfos( LoadedWorldInfo->WorldName, INT2( itx->first, ity->first ) );
-        }
-    }
-}
-#endif
-
 /** Returns if the given vob is registered in the world */
 SkeletalVobInfo* GothicAPI::GetSkeletalVobByVob( zCVob* vob ) {
     auto sit = SkeletalVobMap.find( vob );
@@ -4807,25 +4736,6 @@ void GothicAPI::PrintModInfo() {
     PrintMessageTimed( INT2( 5, 5 ), "GD3D11 - Version " + version );
     PrintMessageTimed( INT2( 5, 180 ), "Device: " + gpu );
 }
-
-#if ENABLE_TESSELATION > 0
-/** Applies tesselation-settings for all mesh-parts using the given info */
-void GothicAPI::ApplyTesselationSettingsForAllMeshPartsUsing( MaterialInfo* info, int amount ) {
-    for ( std::map<int, std::map<int, WorldMeshSectionInfo>>::iterator itx = Engine::GAPI->GetWorldSections().begin(); itx != Engine::GAPI->GetWorldSections().end(); itx++ ) {
-        for ( std::map<int, WorldMeshSectionInfo>::iterator ity = itx->second.begin(); ity != itx->second.end(); ity++ ) {
-            WorldMeshSectionInfo& section = ity->second;
-
-
-            for ( auto it = section.WorldMeshes.begin(); it != section.WorldMeshes.end(); ++it ) {
-                if ( it->first.Info == info && it->second->IndicesPNAEN.empty() && info->TextureTesselationSettings.buffer.VT_TesselationFactor > 0.5f ) {
-                    // Tesselate this mesh
-                    WorldConverter::TesselateMesh( it->second, amount );
-                }
-            }
-        }
-    }
-}
-#endif
 
 /** Returns the current weight of the rain-fx. The bigger value of ours and gothics is returned. */
 float GothicAPI::GetRainFXWeight() {

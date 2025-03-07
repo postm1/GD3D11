@@ -1880,9 +1880,6 @@ XRESULT  D3D11GraphicsEngine::DrawSkeletalMesh( SkeletalVobInfo* vi,
         }
     }
 
-#if ENABLE_TESSELATION > 0
-    const bool tesselationEnabled = Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation;
-#endif
     if ( RenderingStage == DES_MAIN ) {
         if ( ActiveHDS ) {
             GetContext()->DSSetShader( nullptr, nullptr, 0 );
@@ -1902,21 +1899,9 @@ XRESULT  D3D11GraphicsEngine::DrawSkeletalMesh( SkeletalVobInfo* vi,
                 }
             }
 
-            D3D11VertexBuffer* vb;
-            D3D11VertexBuffer* ib;
-            unsigned int numIndices;
-#if ENABLE_TESSELATION > 0
-            if ( tesselationEnabled && !mesh->IndicesPNAEN.empty() ) {
-                vb = mesh->MeshVertexBuffer;
-                ib = mesh->MeshIndexBufferPNAEN;
-                numIndices = mesh->IndicesPNAEN.size();
-            } else
-#endif
-            {
-                vb = mesh->MeshVertexBuffer;
-                ib = mesh->MeshIndexBuffer;
-                numIndices = mesh->Indices.size();
-            }
+            D3D11VertexBuffer* vb = mesh->MeshVertexBuffer;
+            D3D11VertexBuffer* ib = mesh->MeshIndexBuffer;
+            unsigned int numIndices = mesh->Indices.size();
 
             UINT offset = 0;
             UINT uStride = sizeof( ExSkelVertexStruct );
@@ -2178,10 +2163,6 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
         // Disable here what we can't draw in feature level 10 compatibility
         Engine::GAPI->GetRendererState().RendererSettings.HbaoSettings.Enabled = false;
         Engine::GAPI->GetRendererState().RendererSettings.EnableSMAA = false;
-#if ENABLE_TESSELATION > 0
-        Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation = false;
-        Engine::GAPI->GetRendererState().RendererSettings.AllowWorldMeshTesselation = false;
-#endif
     }
 
 #if BUILD_SPACER_NET
@@ -2795,23 +2776,12 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
             if ( mesh.first.Info->MaterialType == MaterialInfo::MT_Water )
                 continue;  // Don't pre-render water
 
-#if ENABLE_TESSELATION > 0
-            if ( mesh.second->TesselationSettings.buffer.VT_TesselationFactor > 0.0f )
-                continue;  // Don't pre-render tesselated surfaces
-#endif
-
             DrawVertexBufferIndexedUINT( nullptr, nullptr, mesh.second->Indices.size(), mesh.second->BaseIndexLocation );
         }
     }
 
     SetActivePixelShader( "PS_Diffuse" );
     ActivePS->Apply();
-
-#if ENABLE_TESSELATION > 0
-    bool tesselationEnabled =
-        Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation &&
-        Engine::GAPI->GetRendererState().RendererSettings.AllowWorldMeshTesselation;
-#endif
 
     // Now draw the actual pixels
     zCTexture* bound = nullptr;
@@ -2867,68 +2837,12 @@ XRESULT D3D11GraphicsEngine::DrawWorldMesh( bool noTextures ) {
                 boundInfo = info;
             }
             bound = mesh.first.Texture;
-
-#if ENABLE_TESSELATION > 0
-            // Bind normalmap to HDS
-            if ( !mesh.second->IndicesPNAEN.empty() ) {
-                GetContext()->DSSetShaderResources( 0, 1, boundNormalmap.GetAddressOf() );
-                GetContext()->HSSetShaderResources( 0, 1, boundNormalmap.GetAddressOf() );
-            }
-#endif
         }
-
-#if ENABLE_TESSELATION > 0
-        // Check for tesselated mesh
-        if ( tesselationEnabled && !ActiveHDS &&
-            boundInfo->TextureTesselationSettings.buffer.VT_TesselationFactor >
-            0.0f ) {
-            // Set normal/displacement map
-            GetContext()->DSSetShaderResources( 0, 1, boundNormalmap.GetAddressOf() );
-            GetContext()->HSSetShaderResources( 0, 1, boundNormalmap.GetAddressOf() );
-            Setup_PNAEN( PNAEN_Default );
-        }
-
-        // Bind infos for this mesh
-        if ( boundInfo &&
-            boundInfo->TextureTesselationSettings.buffer.VT_TesselationFactor >
-            0.0f &&
-            !mesh.second->IndicesPNAEN.empty() &&
-            mesh.first.Material->GetAlphaFunc() <= zMAT_ALPHA_FUNC_NONE &&
-            !bound->HasAlphaChannel() )  // Only allow tesselation for materials
-                                        // without alphablending
-        {
-            boundInfo->TextureTesselationSettings.Constantbuffer->BindToDomainShader(
-                1 );
-            boundInfo->TextureTesselationSettings.Constantbuffer->BindToHullShader( 1 );
-        } else if ( ActiveHDS )  // Unbind tesselation-shaders if the mesh doesn't
-                            // support it
-        {
-            GetContext()->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-            GetContext()->DSSetShader( nullptr, nullptr, 0 );
-            GetContext()->HSSetShader( nullptr, nullptr, 0 );
-            ActiveHDS = nullptr;
-            SetActiveVertexShader( "VS_Ex" );
-            ActiveVS->Apply();
-
-            // Bind wrapped mesh again
-            DrawVertexBufferIndexedUINT( meshInfo->MeshVertexBuffer, meshInfo->MeshIndexBuffer, 0, 0 );
-        }
-#endif
 
         if ( Engine::GAPI->GetRendererState().RendererSettings.DrawWorldMesh > 2 ) {
-#if ENABLE_TESSELATION > 0
-            if ( ActiveHDS ) {
-                // Draw from mesh info
-                DrawVertexBufferIndexed( mesh.second->MeshVertexBuffer,
-                    mesh.second->MeshIndexBufferPNAEN,
-                    mesh.second->IndicesPNAEN.size() );
-            } else
-#endif
-            {
-                DrawVertexBufferIndexed( mesh.second->MeshVertexBuffer,
-                    mesh.second->MeshIndexBuffer,
-                    mesh.second->Indices.size() );
-            }
+            DrawVertexBufferIndexed( mesh.second->MeshVertexBuffer,
+                mesh.second->MeshIndexBuffer,
+                mesh.second->Indices.size() );
         }
 
         std::pop_heap( meshList.begin(), meshList.end(), CompareMesh );
@@ -3919,11 +3833,6 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
 
-#if ENABLE_TESSELATION > 0
-    bool tesselationEnabled =
-        Engine::GAPI->GetRendererState().RendererSettings.EnableTesselation;
-#endif
-
     static std::vector<VobInfo*> vobs;
     static std::vector<VobLightInfo*> lights;
     static std::vector<SkeletalVobInfo*> mobs;
@@ -4093,12 +4002,6 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                             // Bind both
                             GetContext()->PSSetShaderResources( 0, 3, srv );
 
-#if ENABLE_TESSELATION > 0
-                            // Set normal/displacement map
-                            GetContext()->DSSetShaderResources( 0, 1, &srv[1] );
-                            GetContext()->HSSetShaderResources( 0, 1, &srv[1] );
-#endif
-
                             // Force alphatest on vobs for now
                             BindShaderForTexture( tx, true, 0 );
 
@@ -4108,38 +4011,11 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         }
                     }
 
-#if ENABLE_TESSELATION > 0
-                    if ( tesselationEnabled && !mi->IndicesPNAEN.empty() &&
-                        RenderingStage == DES_MAIN &&
-                        staticMeshVisual.second->TesselationInfo.buffer.VT_TesselationFactor > 0.0f ) {
-                        Setup_PNAEN( PNAEN_Instanced );
-                        staticMeshVisual.second->TesselationInfo.Constantbuffer->BindToDomainShader( 1 );
-                        staticMeshVisual.second->TesselationInfo.Constantbuffer->BindToHullShader( 1 );
-                    } else if ( ActiveHDS ) {
-                        GetContext()->IASetPrimitiveTopology(
-                            D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-                        GetContext()->DSSetShader( nullptr, nullptr, 0 );
-                        GetContext()->HSSetShader( nullptr, nullptr, 0 );
-                        ActiveHDS = nullptr;
-                        SetActiveVertexShader( "VS_ExInstancedObj" );
-                        ActiveVS->Apply();
-                    }
-
-                    if ( ActiveHDS ) {
-                        // Draw batch tesselated
-                        DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBufferPNAEN,
-                            mi->IndicesPNAEN.size(), DynamicInstancingBuffer.get(),
-                            sizeof( VobInstanceInfo ), staticMeshVisual.second->Instances.size(),
-                            sizeof( ExVertexStruct ), staticMeshVisual.second->StartInstanceNum );
-                    } else
-#endif
-                    {
-                        // Draw batch
-                        DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBuffer,
-                            mi->Indices.size(), DynamicInstancingBuffer.get(),
-                            sizeof( VobInstanceInfo ), staticMeshVisual.second->Instances.size(),
-                            sizeof( ExVertexStruct ), staticMeshVisual.second->StartInstanceNum );
-                    }
+                    // Draw batch
+                    DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBuffer,
+                        mi->Indices.size(), DynamicInstancingBuffer.get(),
+                        sizeof( VobInstanceInfo ), staticMeshVisual.second->Instances.size(),
+                        sizeof( ExVertexStruct ), staticMeshVisual.second->StartInstanceNum );
                 }
             }
 
@@ -5888,49 +5764,6 @@ void D3D11GraphicsEngine::EnsureTempVertexBufferSize( std::unique_ptr<D3D11Verte
         SetDebugName( buffer->GetVertexBuffer().Get(), "TempVertexBuffer->VertexBuffer" );
     }
 }
-
-#if ENABLE_TESSELATION > 0
-/** Sets up everything for a PNAEN-Mesh */
-void D3D11GraphicsEngine::Setup_PNAEN( EPNAENRenderMode mode ) {
-    auto pnaen = ShaderManager->GetHDShader( "PNAEN_Tesselation" );
-
-    if ( mode == PNAEN_Instanced )
-        SetActiveVertexShader( "VS_PNAEN_Instanced" );
-    else if ( mode == PNAEN_Default )
-        SetActiveVertexShader( "VS_PNAEN" );
-    else if ( mode == PNAEN_Skeletal )
-        SetActiveVertexShader( "VS_PNAEN_Skeletal" );
-
-    ActiveVS->Apply();
-
-    ActiveHDS = pnaen;
-    pnaen->Apply();
-
-    PNAENConstantBuffer cb = {};
-    cb.f4Eye = Engine::GAPI->GetCameraPosition();
-    cb.adaptive = INT4( 1, 0, 0, 0 );
-    cb.clipping = INT4( Engine::GAPI->GetRendererState().RendererSettings.TesselationFrustumCulling
-        ? 1
-        : 0,
-        0, 0, 0 );
-
-    float f =
-        Engine::GAPI->GetRendererState().RendererSettings.TesselationFactor;
-    cb.f4TessFactors = float4(
-        f, f, Engine::GAPI->GetRendererState().RendererSettings.TesselationRange,
-        Engine::GAPI->GetRendererState().RendererSettings.TesselationFactor );
-    cb.f4ViewportScale.x = static_cast<float>(GetResolution().x / 2);
-    cb.f4ViewportScale.y = static_cast<float>(GetResolution().y / 2);
-    cb.f4x4Projection = Engine::GAPI->GetProjectionMatrix();
-
-    pnaen->GetConstantBuffer()[0]->UpdateBuffer( &cb );
-    pnaen->GetConstantBuffer()[0]->BindToDomainShader( 0 );
-    pnaen->GetConstantBuffer()[0]->BindToHullShader( 0 );
-
-    GetContext()->IASetPrimitiveTopology(
-        D3D11_PRIMITIVE_TOPOLOGY_18_CONTROL_POINT_PATCHLIST );
-}
-#endif
 
 /** Draws particle meshes */
 void D3D11GraphicsEngine::DrawFrameParticleMeshes( std::unordered_map<zCVob*, MeshVisualInfo*>& progMeshes ) {

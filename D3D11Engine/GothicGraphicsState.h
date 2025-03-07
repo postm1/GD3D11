@@ -616,11 +616,6 @@ struct GothicRendererSettings {
         SortRenderQueue = true;
         DrawThreaded = true;
 
-#if ENABLE_TESSELATION > 0
-        EnableTesselation = false;
-        AllowWorldMeshTesselation = false;
-        TesselationFrustumCulling = true;
-#endif
         EnablePointlightShadows = PLS_UPDATE_DYNAMIC;
         MinLightShadowUpdateRange = 300.0f;
         PartialDynamicShadowUpdates = true;
@@ -723,11 +718,6 @@ struct GothicRendererSettings {
     E_HDRToneMap HDRToneMap;
     bool EnableVSync;
     bool EnableSMAA;
-#if ENABLE_TESSELATION > 0
-    bool EnableTesselation;
-    bool AllowWorldMeshTesselation;
-    bool TesselationFrustumCulling;
-#endif
     bool FastShadows;
     bool ReplaceSunDirection;
     bool AtmosphericScattering;

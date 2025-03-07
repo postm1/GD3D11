@@ -864,21 +864,9 @@ void D2DEditorView::UpdateSelectionPanel() {
 			mi = nullptr;
 
 		// Get settings from MI, if possible
-#if ENABLE_TESSELATION > 0
-		if ( mi ) {
-			SelectedTexDisplacementSlider->GetSlider()->SetValue( mi->TextureTesselationSettings.buffer.VT_DisplacementStrength );
-			SelectedMeshRoundnessSlider->GetSlider()->SetValue( mi->TextureTesselationSettings.buffer.VT_Roundness );
-			SelectedMeshTessAmountSlider->GetSlider()->SetValue( mi->TextureTesselationSettings.buffer.VT_TesselationFactor );
-		} else {
-			SelectedTexDisplacementSlider->GetSlider()->SetValue( info->TesselationSettings.buffer.VT_DisplacementStrength );
-			SelectedMeshRoundnessSlider->GetSlider()->SetValue( info->TesselationSettings.buffer.VT_Roundness );
-			SelectedMeshTessAmountSlider->GetSlider()->SetValue( info->TesselationSettings.buffer.VT_TesselationFactor );
-		}
-#else
         SelectedTexDisplacementSlider->GetSlider()->SetValue( 0.f );
         SelectedMeshRoundnessSlider->GetSlider()->SetValue( 0.f );
         SelectedMeshTessAmountSlider->GetSlider()->SetValue( 0.f );
-#endif
 	}
 }
 
@@ -1088,11 +1076,6 @@ bool D2DEditorView::OnWindowMessage( HWND hWnd, unsigned int msg, WPARAM wParam,
 					MaterialInfo* info = Engine::GAPI->GetMaterialInfoFrom( Selection.SelectedMaterial->GetTexture() );
 
 					if ( info ) {
-#if ENABLE_TESSELATION > 0
-						// Set the offline-tesselation factor
-						info->TextureTesselationSettings.buffer.VT_TesselationFactor = 2;
-#endif
-
 						// Overwrite shader
 						info->TesselationShaderPair = "PNAEN_Tesselation";
 					}
@@ -1341,35 +1324,8 @@ void D2DEditorView::TextureSettingsSliderChanged( SV_Slider* sender, void* userd
 		} else if ( sender == v->SelectedTexSpecPowerSlider->GetSlider() ) {
 			info->buffer.SpecularPower = sender->GetValue();
 		} else if ( sender == v->SelectedTexDisplacementSlider->GetSlider() && v->Selection.SelectedMesh ) {
-#if ENABLE_TESSELATION > 0
-			WorldMeshInfo* mesh = (WorldMeshInfo*)v->Selection.SelectedMesh; // TODO: Make this nicer
-			mesh->TesselationSettings.buffer.VT_DisplacementStrength = sender->GetValue();
-			mesh->TesselationSettings.UpdateConstantbuffer();
-
-			info->TextureTesselationSettings.buffer.VT_DisplacementStrength = sender->GetValue();
-#endif
 		} else if ( sender == v->SelectedMeshTessAmountSlider->GetSlider() && v->Selection.SelectedMesh ) {
-#if ENABLE_TESSELATION > 0
-			WorldMeshInfo* mesh = (WorldMeshInfo*)v->Selection.SelectedMesh; // TODO: Make this nicer
-
-			if ( !mesh->MeshIndexBufferPNAEN ) {
-				// Apply tesselation for all meshes using this material, don't tesselate yet
-				Engine::GAPI->ApplyTesselationSettingsForAllMeshPartsUsing( info, sender->GetValue() > 1.0f ? 2 : 1 );
-			}
-
-			mesh->TesselationSettings.buffer.VT_TesselationFactor = sender->GetValue();
-			mesh->TesselationSettings.UpdateConstantbuffer();
-
-			info->TextureTesselationSettings.buffer.VT_TesselationFactor = sender->GetValue();
-#endif
 		} else if ( sender == v->SelectedMeshRoundnessSlider->GetSlider() && v->Selection.SelectedMesh ) {
-#if ENABLE_TESSELATION > 0
-			WorldMeshInfo* mesh = (WorldMeshInfo*)v->Selection.SelectedMesh; // TODO: Make this nicer
-			mesh->TesselationSettings.buffer.VT_Roundness = sender->GetValue();
-			mesh->TesselationSettings.UpdateConstantbuffer();
-
-			info->TextureTesselationSettings.buffer.VT_Roundness = sender->GetValue();
-#endif
 		}
 
 		/*else if (sender == v->SelectedTexSpecModulationSlider->GetSlider())
@@ -1379,9 +1335,6 @@ void D2DEditorView::TextureSettingsSliderChanged( SV_Slider* sender, void* userd
 
 		// Update and save the info
 		info->UpdateConstantbuffer();
-#if ENABLE_TESSELATION > 0
-		info->TextureTesselationSettings.UpdateConstantbuffer();
-#endif
 		info->WriteToFile( v->Selection.SelectedMaterial->GetTexture()->GetNameWithoutExt() );
 	}
 }
@@ -1399,61 +1352,6 @@ void D2DEditorView::SmoothMesh( WorldMeshInfo* mesh, bool tesselate ) {
 	/*mesh->Vertices.clear();
 	mesh->Indices.clear();
 	MeshModifier::DropTexcoords(vxOld, ixOld, mesh->Vertices, mesh->Indices);*/
-
-#if ENABLE_TESSELATION > 0
-	// Tesselate if the outcome would still be in 16-bit range
-	if ( tesselate && mesh->Vertices.size() + (mesh->Indices.size() / 3) < 0x0000FFFF ) {
-		std::vector<ExVertexStruct> meshTess;
-		for ( unsigned int i = 0; i < mesh->Indices.size(); i += 3 ) {
-			ExVertexStruct vx[3];
-			vx[0] = mesh->Vertices[mesh->Indices[i]];
-			vx[1] = mesh->Vertices[mesh->Indices[i + 1]];
-			vx[2] = mesh->Vertices[mesh->Indices[i + 2]];
-
-			std::vector<ExVertexStruct> triTess;
-			WorldConverter::TesselateTriangle( vx, triTess, 1 );
-
-			// Append
-			for ( unsigned int v = 0; v < triTess.size(); v++ ) {
-				meshTess.push_back( triTess[v] );
-			}
-		}
-
-		mesh->Vertices.clear();
-		mesh->Indices.clear();
-
-		// Index
-		WorldConverter::IndexVertices( &meshTess[0], meshTess.size(), mesh->Vertices, mesh->Indices );
-	}
-
-	// Create new normals
-	//WorldConverter::GenerateVertexNormals(mesh->Vertices, mesh->Indices);
-
-	MeshModifier::ComputePNAEN18Indices( mesh->Vertices, mesh->Indices, mesh->IndicesPNAEN, true, true );
-	if ( mesh->Vertices.size() >= 0xFFFF ) {
-		// Too large
-		return;
-	}
-
-	// Cleanup
-	SAFE_DELETE(mesh->MeshVertexBuffer);
-	SAFE_DELETE(mesh->MeshIndexBuffer);
-	SAFE_DELETE(mesh->MeshIndexBufferPNAEN);
-
-	// Recreate the buffers
-	Engine::GraphicsEngine->CreateVertexBuffer( &mesh->MeshVertexBuffer );
-	Engine::GraphicsEngine->CreateVertexBuffer( &mesh->MeshIndexBufferPNAEN );
-	Engine::GraphicsEngine->CreateVertexBuffer( &mesh->MeshIndexBuffer );
-
-	// Init and fill them
-	mesh->MeshVertexBuffer->Init( &mesh->Vertices[0], mesh->Vertices.size() * sizeof( ExVertexStruct ), D3D11VertexBuffer::B_VERTEXBUFFER, D3D11VertexBuffer::U_IMMUTABLE );
-	mesh->MeshIndexBufferPNAEN->Init( &mesh->IndicesPNAEN[0], mesh->IndicesPNAEN.size() * sizeof( VERTEX_INDEX ), D3D11VertexBuffer::B_INDEXBUFFER, D3D11VertexBuffer::U_IMMUTABLE );
-	mesh->MeshIndexBuffer->Init( &mesh->Indices[0], mesh->Indices.size() * sizeof( VERTEX_INDEX ), D3D11VertexBuffer::B_INDEXBUFFER, D3D11VertexBuffer::U_IMMUTABLE );
-
-	mesh->TesselationSettings.buffer.VT_TesselationFactor = 2.0f;
-	mesh->TesselationSettings.buffer.VT_DisplacementStrength = 0.5f;
-	mesh->TesselationSettings.UpdateConstantbuffer();
-#endif
 
 	// Mark dirty
 	mesh->SaveInfo = true;

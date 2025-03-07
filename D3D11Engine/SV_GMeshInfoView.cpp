@@ -175,40 +175,18 @@ void SV_GMeshInfoView::DrawMeshes() {
 	g->SetupVS_ExConstantBuffer();
 	g->SetupVS_ExPerInstanceConstantBuffer();
 
-#if ENABLE_TESSELATION > 0
-	VisualTesselationSettings* ts = nullptr;
-	if ( VisualInfo )
-		ts = &VisualInfo->TesselationInfo;
-#endif
-
 	// Draw each texture
 	for ( auto it = Meshes.cbegin(); it != Meshes.cend(); ++it ) {
-#if ENABLE_TESSELATION > 0
-		// Set up tesselation if wanted
-		if ( ts && !it->second->IndicesPNAEN.empty() && ts->buffer.VT_TesselationFactor > 0.0f ) {
-			g->Setup_PNAEN( D3D11GraphicsEngine::PNAEN_Default );
-			ts->Constantbuffer->BindToDomainShader( 1 );
-			ts->Constantbuffer->BindToHullShader( 1 );
+		g->GetContext()->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+		g->GetContext()->DSSetShader( nullptr, nullptr, 0 );
+		g->GetContext()->HSSetShader( nullptr, nullptr, 0 );
+		g->SetActiveHDShader( "" );
+		g->SetActiveVertexShader( "VS_Ex" );
 
-			if ( it->first->CacheIn( -1 ) == zRES_CACHED_IN ) {
-				// Draw
-				it->first->Bind( 0 );
-				g->DrawVertexBufferIndexed( it->second->MeshVertexBuffer, it->second->MeshIndexBufferPNAEN, it->second->IndicesPNAEN.size() );
-			}
-		} else if ( VisualInfo )
-#endif
-        {
-			g->GetContext()->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-			g->GetContext()->DSSetShader( nullptr, nullptr, 0 );
-			g->GetContext()->HSSetShader( nullptr, nullptr, 0 );
-			g->SetActiveHDShader( "" );
-			g->SetActiveVertexShader( "VS_Ex" );
-
-			if ( it->first && it->first->CacheIn( -1 ) == zRES_CACHED_IN ) {
-				// Draw
-				it->first->Bind( 0 );
-				g->DrawVertexBufferIndexed( it->second->MeshVertexBuffer, it->second->MeshIndexBuffer, it->second->Indices.size() );
-			}
+		if ( it->first && it->first->CacheIn( -1 ) == zRES_CACHED_IN ) {
+			// Draw
+			it->first->Bind( 0 );
+			g->DrawVertexBufferIndexed( it->second->MeshVertexBuffer, it->second->MeshIndexBuffer, it->second->Indices.size() );
 		}
 	}
 }

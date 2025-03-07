@@ -136,17 +136,6 @@ public:
     void UpdateColorSpace_SwapChain3();
     void UpdateColorSpace_SwapChain4();
 
-#if ENABLE_TESSELATION > 0
-    enum EPNAENRenderMode {
-        PNAEN_Default,
-        PNAEN_Instanced,
-        PNAEN_Skeletal,
-    };
-
-    /** Sets up everything for a PNAEN-Mesh */
-    void Setup_PNAEN( EPNAENRenderMode mode = PNAEN_Default );
-#endif
-
     /** Sets up texture with normalmap and fxmap for rendering */
     bool BindTextureNRFX( zCTexture* tex, bool bindShader );
 

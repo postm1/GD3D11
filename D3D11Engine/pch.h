@@ -30,8 +30,6 @@ using namespace DirectX;
 #define stdext std
 #endif
 
-#define ENABLE_TESSELATION 0
-
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "17.8-dev17"
 #endif

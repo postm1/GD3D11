@@ -5732,7 +5732,7 @@ void D3D11GraphicsEngine::DrawUnderwaterEffects() {
 /** Returns the settings window availability */
 bool D3D11GraphicsEngine::HasSettingsWindow()
 {
-    return (UIView && !UIView->GetSettingsDialog()->IsHidden());
+    return (UIView && UIView->GetSettingsDialog() && !UIView->GetSettingsDialog()->IsHidden());
 }
 
 /** Creates the main UI-View */

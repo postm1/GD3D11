@@ -7,8 +7,6 @@
 #include "Engine.h"
 #include "GothicAPI.h"
 
-#pragma comment(lib, "d2d1.lib")
-#pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dwrite.lib")
 
 const D2D1::ColorF GUI_Color1 = D2D1::ColorF( 0.4f, 0.4f, 0.4f, 1.0f );
@@ -41,7 +39,6 @@ D2DView::D2DView() {
     EditorView = nullptr;
 }
 
-
 D2DView::~D2DView() {
     delete MainSubView;
 
@@ -60,56 +57,41 @@ D2DView::~D2DView() {
 }
 
 /** Inits this d2d-view */
-XRESULT D2DView::Init( HWND hwnd ) {
-    // Create factory
-    D2D1_FACTORY_OPTIONS options;
-    options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
-
-#ifndef PUBLIC_RELEASE
-    options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-#endif
-
-    D2D1CreateFactory( D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &Factory );
-
-    if ( !Factory ) {
-        LogError() << "Failed to create ID2D1Factory!";
-        return XR_FAILED;
-    }
-
-    D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-        D2D1_RENDER_TARGET_TYPE_DEFAULT,
-        D2D1::PixelFormat( DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED ) );
-
-    RECT windowSize;
-    GetClientRect( hwnd, &windowSize );
-
-    if ( FAILED( Factory->CreateHwndRenderTarget( D2D1::RenderTargetProperties( D2D1_RENDER_TARGET_TYPE_DEFAULT,
-        D2D1::PixelFormat( DXGI_FORMAT_UNKNOWN,
-            D2D1_ALPHA_MODE_PREMULTIPLIED ) ),
-        D2D1::HwndRenderTargetProperties( hwnd, D2D1::SizeU( windowSize.right - windowSize.left, windowSize.bottom - windowSize.top ),
-            D2D1_PRESENT_OPTIONS_IMMEDIATELY ),
-        reinterpret_cast<ID2D1HwndRenderTarget**>(&RenderTarget) ) ) ) {
-        SAFE_RELEASE( Factory );
-
-        LogError() << "Failed to create D2D-Device!";
-
-        return XR_FAILED;
-    }
-
-    InitResources();
-}
-
-/** Inits this d2d-view */
 XRESULT D2DView::Init( const INT2& initialResolution, ID3D11Texture2D* rendertarget ) {
+    static const GUID IID_IDXGIVkInteropSurface = { 0x5546CF8C, 0x77E7, 0x4341, { 0xB0, 0x5D, 0x8D, 0x4D, 0x50, 0x00, 0xE7, 0x7D } };
+
+    typedef HRESULT( WINAPI* PFN_D2D1CreateFactory )(D2D1_FACTORY_TYPE factory_type, REFIID riid, const D2D1_FACTORY_OPTIONS* factory_options, void** factory);
+    PFN_D2D1CreateFactory D2D1CreateFactoryFunc;
+    HMODULE D2D1Library = NULL;
+
+    // Load d2d1 dll that works with dxvk if necessary
+    IUnknown* dxgiVKInterop = nullptr;
+    HRESULT result = rendertarget->QueryInterface( IID_IDXGIVkInteropSurface, reinterpret_cast<void**>( &dxgiVKInterop ) );
+    if ( SUCCEEDED( result ) ) {
+        D2D1Library = LoadLibraryA( "system\\GD3D11\\Bin\\D2D1.dll" );
+        if ( !D2D1Library ) { // Just in-case
+            D2D1Library = LoadLibraryA( "GD3D11\\Bin\\D2D1.dll" );
+        }
+        dxgiVKInterop->Release();
+    }
+
     // Create factory
     D2D1_FACTORY_OPTIONS options;
     options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
-
 #ifndef PUBLIC_RELEASE
     options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 #endif
 
-    D2D1CreateFactory( D2D1_FACTORY_TYPE_SINGLE_THREADED, options, &Factory );
+    if ( !D2D1Library ) {
+        D2D1Library = LoadLibraryExA( "D2D1.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 );
+    }
+
+    if ( D2D1Library ) {
+        D2D1CreateFactoryFunc = reinterpret_cast<PFN_D2D1CreateFactory>(GetProcAddress( D2D1Library, "D2D1CreateFactory" ));
+        if ( D2D1CreateFactoryFunc ) {
+            D2D1CreateFactoryFunc( D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory), &options, reinterpret_cast<void**>( &Factory ) );
+        }
+    }
 
     if ( !Factory ) {
         LogError() << "Failed to create ID2D1Factory!";
@@ -126,7 +108,7 @@ XRESULT D2DView::Init( const INT2& initialResolution, ID3D11Texture2D* rendertar
         // Copy downloadlink of the platform update to clipboard
         clipput( "https://www.microsoft.com/en-us/download/details.aspx?id=36805" );
 
-        LogWarnBox() << "Failed to share D3D11-Surface with D2D. If you are running on Windows 7, you may just need to install"
+        LogWarnBox() << "Failed to share D3D11-Surface with D2D. If you are running on Windows 7, you may just need to install "
             "the latest platform-update, which enables you to use DXGI 1.2.\n"
             "You can get it here: https://www.microsoft.com/en-us/download/details.aspx?id=36805 \n"
             "This will not crash the Renderer, but you will have to continue without editor-features.\n"

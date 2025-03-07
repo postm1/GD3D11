@@ -22,9 +22,6 @@ public:
     /** Inits this d2d-view */
     XRESULT Init( const INT2& initialResolution, ID3D11Texture2D* rendertarget );
 
-    /** Inits this D2D-View in a window */
-    XRESULT Init( HWND hwnd );
-
     /** Releases all resources needed to resize this view */
     XRESULT PrepareResize();
 

@@ -908,6 +908,11 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
 /** Called when the game wants to render a new frame */
 XRESULT D3D11GraphicsEngine::OnBeginFrame() {
     Engine::GAPI->GetRendererState().RendererInfo.Timing.StartTotal();
+
+#if BUILD_SPACER_NET
+    Engine::GAPI->GetRendererState().RendererSettings.EnableInactiveFpsLock = false;
+#endif //  BUILD_SPACERNET
+
     if ( !m_isWindowActive && Engine::GAPI->GetRendererState().RendererSettings.EnableInactiveFpsLock ) {
         m_FrameLimiter->SetLimit( 20 );
         m_FrameLimiter->Start();

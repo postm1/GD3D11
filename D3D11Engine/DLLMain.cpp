@@ -73,7 +73,7 @@ void QuantizeHalfFloats_X4_SSE2( float* input, unsigned short* output )
 
     // We need to stay in int16_t range due to signed saturation
     __m128i halfs = _mm_sub_epi32( _mm_or_si128( s, h ), _mm_set1_epi32( 32768 ) );
-    _mm_store_sd( reinterpret_cast<double*>(output), _mm_castsi128_pd( _mm_add_epi16( _mm_packs_epi32( halfs, halfs ), _mm_set1_epi16( 32768 ) ) ) );
+    _mm_store_sd( reinterpret_cast<double*>(output), _mm_castsi128_pd( _mm_add_epi16( _mm_packs_epi32( halfs, halfs ), _mm_set1_epi16( 32768u ) ) ) );
 }
 
 void QuantizeHalfFloats_X4_SSE41( float* input, unsigned short* output )
@@ -99,12 +99,12 @@ void QuantizeHalfFloats_X4_SSE41( float* input, unsigned short* output )
 #ifdef _XM_AVX_INTRINSICS_
 unsigned short QuantizeHalfFloat_F16C( float input )
 {
-    return static_cast<unsigned short>(_mm_cvtsi128_si32( _mm_cvtps_ph( _mm_set_ss( input ), _MM_FROUND_CUR_DIRECTION | _MM_FROUND_NO_EXC ) ));
+    return static_cast<unsigned short>(_mm_cvtsi128_si32( _mm_cvtps_ph( _mm_set_ss( input ), _MM_FROUND_CUR_DIRECTION ) ));
 }
 
 void QuantizeHalfFloats_X4_F16C( float* input, unsigned short* output )
 {
-    _mm_store_sd( reinterpret_cast<double*>(output), _mm_castsi128_pd( _mm_cvtps_ph( _mm_load_ps( input ), _MM_FROUND_CUR_DIRECTION | _MM_FROUND_NO_EXC ) ) );
+    _mm_store_sd( reinterpret_cast<double*>(output), _mm_castsi128_pd( _mm_cvtps_ph( _mm_load_ps( input ), _MM_FROUND_CUR_DIRECTION ) ) );
 }
 #endif
 
@@ -124,7 +124,7 @@ float UnquantizeHalfFloat_Scalar( unsigned short input )
 void UnquantizeHalfFloat_X4_SSE2( unsigned short* input, float* output )
 {
     const __m128i mask_zero = _mm_setzero_si128();
-    const __m128i mask_s = _mm_set1_epi16( 0x8000 );
+    const __m128i mask_s = _mm_set1_epi16( 0x8000u );
     const __m128i mask_m = _mm_set1_epi16( 0x03FF );
     const __m128i mask_e = _mm_set1_epi16( 0x7C00 );
     const __m128i bias_e = _mm_set1_epi32( 0x0001C000 );
@@ -151,7 +151,7 @@ void UnquantizeHalfFloat_X4_SSE2( unsigned short* input, float* output )
 void UnquantizeHalfFloat_X8_SSE2( unsigned short* input, float* output )
 {
     const __m128i mask_zero = _mm_setzero_si128();
-    const __m128i mask_s = _mm_set1_epi16( 0x8000 );
+    const __m128i mask_s = _mm_set1_epi16( 0x8000u );
     const __m128i mask_m = _mm_set1_epi16( 0x03FF );
     const __m128i mask_e = _mm_set1_epi16( 0x7C00 );
     const __m128i bias_e = _mm_set1_epi32( 0x0001C000 );

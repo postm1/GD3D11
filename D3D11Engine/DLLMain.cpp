@@ -20,12 +20,6 @@
 #pragma comment(lib, "Imagehlp.lib") // Used in VersionCheck.cpp to get Gothic.exe Checksum.
 #pragma comment(lib, "shlwapi.lib")
 
-// Signal NVIDIA/AMD drivers that we want the high-performance card on laptops
-extern "C" {
-    _declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-    _declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 0x00000001;
-}
-
 ZQuantizeHalfFloat QuantizeHalfFloat;
 ZQuantizeHalfFloat_X4 QuantizeHalfFloat_X4;
 ZUnquantizeHalfFloat UnquantizeHalfFloat;

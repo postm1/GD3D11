@@ -33,6 +33,7 @@ ZUnquantizeHalfFloat_X4 UnquantizeHalfFloat_X4;
 ZUnquantizeHalfFloat_X4 UnquantizeHalfFloat_X8;
 
 static HINSTANCE hLThis = 0;
+static bool comInitialized = false;
 
 typedef void (WINAPI* DirectDrawSimple)();
 typedef HRESULT( WINAPI* DirectDrawCreateEx_type )(GUID FAR*, LPVOID*, REFIID, IUnknown FAR*);
@@ -215,7 +216,7 @@ void SignalHandler( int signal ) {
 }
 
 struct ddraw_dll {
-    HMODULE dll;
+    HMODULE dll = NULL;
     FARPROC	AcquireDDThreadLock;
     FARPROC	CheckFullscreen;
     FARPROC	CompleteCreateSysmemSurface;
@@ -465,7 +466,13 @@ BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
             Log::Clear();
             LogInfo() << "Starting DDRAW Proxy DLL.";
 
-            if ( CoInitializeEx( NULL, COINIT::COINIT_APARTMENTTHREADED ) == S_OK ) {
+            HRESULT hr = CoInitializeEx( NULL, COINIT_APARTMENTTHREADED );
+            if ( hr == RPC_E_CHANGED_MODE ) {
+                hr = CoInitializeEx( NULL, COINIT_MULTITHREADED );
+            }
+
+            if ( hr == S_FALSE || hr == S_OK ) {
+                comInitialized = true;
                 LogInfo() << "COM initialized";
             }
 
@@ -519,8 +526,13 @@ BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
     } else if ( reason == DLL_PROCESS_DETACH ) {
         Engine::OnShutDown();
 
-        CoUninitialize();
-        FreeLibrary( ddraw.dll );
+        if ( comInitialized ) {
+            comInitialized = false;
+            CoUninitialize();
+        }
+        if ( ddraw.dll ) {
+            FreeLibrary( ddraw.dll );
+        }
 
         LogInfo() << "DDRAW Proxy DLL signing off.\n";
     }

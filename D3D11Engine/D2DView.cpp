@@ -83,7 +83,11 @@ XRESULT D2DView::Init( const INT2& initialResolution, ID3D11Texture2D* rendertar
 #endif
 
     if ( !D2D1Library ) {
-        D2D1Library = LoadLibraryExA( "D2D1.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 );
+        char dllBuf[MAX_PATH];
+        GetSystemDirectoryA( dllBuf, MAX_PATH );
+        strcat_s( dllBuf, MAX_PATH, "\\D2D1.dll" );
+
+        D2D1Library = LoadLibraryA( dllBuf );
     }
 
     if ( D2D1Library ) {

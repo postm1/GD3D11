@@ -486,13 +486,13 @@ BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
         }
         DetourTransactionCommit();
 
-        char infoBuf[MAX_PATH];
-        GetSystemDirectoryA( infoBuf, MAX_PATH );
+        char dllBuf[MAX_PATH];
+        GetSystemDirectoryA( dllBuf, MAX_PATH );
         // We then append \ddraw.dll, which makes the string:
         // C:\windows\system32\ddraw.dll
-        strcat_s( infoBuf, MAX_PATH, "\\ddraw.dll" );
+        strcat_s( dllBuf, MAX_PATH, "\\ddraw.dll" );
 
-        ddraw.dll = LoadLibraryA( infoBuf );
+        ddraw.dll = LoadLibraryA( dllBuf );
         if ( !ddraw.dll ) return FALSE;
 
         ddraw.AcquireDDThreadLock = GetProcAddress( ddraw.dll, "AcquireDDThreadLock" );

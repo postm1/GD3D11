@@ -110,12 +110,12 @@ namespace Toolbox {
     }
 
     static std::size_t hash_value( float value ) {
-        stdext::hash<float> hasher;
+        std::hash<float> hasher;
         return hasher( value );
     }
 
     static std::size_t hash_value( DWORD value ) {
-        stdext::hash<DWORD> hasher;
+        std::hash<DWORD> hasher;
         return hasher( value );
     }
 

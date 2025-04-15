@@ -24,12 +24,6 @@
 
 using namespace DirectX;
 
-#if _MSC_VER < 1900
-;
-#else
-#define stdext std
-#endif
-
 #ifndef VERSION_NUMBER
 #define VERSION_NUMBER "17.8-dev20"
 #endif

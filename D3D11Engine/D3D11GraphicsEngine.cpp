@@ -5592,7 +5592,7 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
 
 /** Draws quadmarks in a simple way */
 void D3D11GraphicsEngine::DrawQuadMarks() {
-    const stdext::unordered_map<zCQuadMark*, QuadMarkInfo>& quadMarks =
+    const std::unordered_map<zCQuadMark*, QuadMarkInfo>& quadMarks =
         Engine::GAPI->GetQuadMarks();
     if ( quadMarks.empty() ) return;
 

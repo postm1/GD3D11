@@ -4496,7 +4496,7 @@ QuadMarkInfo* GothicAPI::GetQuadMarkInfo( zCQuadMark* mark ) {
 
 
 /** Returns all quad marks */
-const stdext::unordered_map<zCQuadMark*, QuadMarkInfo>& GothicAPI::GetQuadMarks() {
+const std::unordered_map<zCQuadMark*, QuadMarkInfo>& GothicAPI::GetQuadMarks() {
     return QuadMarks;
 }
 

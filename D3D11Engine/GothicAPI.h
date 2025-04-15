@@ -522,6 +522,7 @@ public:
 
     /** Returns the material info associated with the given material */
     MaterialInfo* GetMaterialInfoFrom( zCTexture* tex );
+    MaterialInfo* GetMaterialInfoFrom( zCTexture* tex, const std::string& textureName );
 
     /** Adds a surface */
     void AddSurface( const std::string& name, MyDirectDrawSurface7* surface );

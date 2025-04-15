@@ -3756,6 +3756,16 @@ MaterialInfo* GothicAPI::GetMaterialInfoFrom( zCTexture* tex ) {
     return &MaterialInfos[tex];
 }
 
+MaterialInfo* GothicAPI::GetMaterialInfoFrom( zCTexture* tex, const std::string& textureName ) {
+    auto it = MaterialInfos.find( tex );
+    if ( it == MaterialInfos.end() && tex ) {
+        // Make a new one and try to load it
+        MaterialInfos[tex].LoadFromFile( textureName );
+    }
+
+    return &MaterialInfos[tex];
+}
+
 /** Adds a surface */
 void GothicAPI::AddSurface( const std::string& name, MyDirectDrawSurface7* surface ) {
     SurfacesByName[name] = surface;

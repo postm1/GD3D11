@@ -31,6 +31,7 @@ enum EVisualCamAlignType {
 class zCBspLeaf;
 class zCVisual;
 class zCWorld;
+class oCGame;
 
 class zCVob {
 public:
@@ -98,7 +99,7 @@ public:
         // So while we are saving game, there is no reason to update anything in dx11
         // It gives +25% average speed in big locations like NEWWORLD (Khorinis)
 
-        if ( oCGame::GetGame() && oCGame::GetGame()->save_screen ) {
+        if ( Engine::GAPI && Engine::GAPI->IsSavingGameNow() ) {
 
             HookedFunctions::OriginalFunctions.original_zCVobSetVisual( thisptr, visual );
             return;

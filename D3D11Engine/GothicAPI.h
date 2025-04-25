@@ -678,6 +678,9 @@ public:
     /** Get sky timescale variable */
     float GetSkyTimeScale();
 
+    /** Checks if a game is being saved now */
+    bool IsSavingGameNow();
+
 private:
     /** Collects polygons in the given AABB */
     void CollectPolygonsInAABBRec( BspInfo* base, const zTBBox3D& bbox, std::vector<zCPolygon*>& list );

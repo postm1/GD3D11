@@ -4853,3 +4853,8 @@ void GothicAPI::ResetRenderStates() {
 float GothicAPI::GetSkyTimeScale() {
     return SkyRenderer->GetAtmoshpereSettings().SkyTimeScale;
 }
+
+
+bool GothicAPI::IsSavingGameNow() {
+    return oCGame::GetGame() && oCGame::GetGame()->save_screen;
+}

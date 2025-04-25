@@ -2884,10 +2884,20 @@ FXMVECTOR GothicAPI::GetFogColor() {
 
 /** Returns true, if the game was paused */
 bool GothicAPI::IsGamePaused() {
-    if ( !oCGame::GetGame() )
+    oCGame* game = oCGame::GetGame();
+    if ( !game )
         return true;
 
-    return oCGame::GetGame()->GetSingleStep();
+    return game->GetSingleStep();
+}
+
+/** Checks if a game is being saved now */
+bool GothicAPI::IsSavingGameNow() {
+    oCGame* game = oCGame::GetGame();
+    if ( !game )
+        return true;
+
+    return game->save_screen;
 }
 
 /** Returns true if the game is overwriting the fog color with a fog-zone */
@@ -4852,9 +4862,4 @@ void GothicAPI::ResetRenderStates() {
 /** Get sky timescale variable */
 float GothicAPI::GetSkyTimeScale() {
     return SkyRenderer->GetAtmoshpereSettings().SkyTimeScale;
-}
-
-
-bool GothicAPI::IsSavingGameNow() {
-    return oCGame::GetGame() && oCGame::GetGame()->save_screen;
 }

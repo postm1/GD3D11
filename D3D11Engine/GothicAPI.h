@@ -426,6 +426,9 @@ public:
     /** Returns true, if the game was paused */
     bool IsGamePaused();
 
+    /** Checks if a game is being saved now */
+    bool IsSavingGameNow();
+
     /** Returns total time */
     float GetTotalTime();
 
@@ -677,9 +680,6 @@ public:
 
     /** Get sky timescale variable */
     float GetSkyTimeScale();
-
-    /** Checks if a game is being saved now */
-    bool IsSavingGameNow();
 
 private:
     /** Collects polygons in the given AABB */

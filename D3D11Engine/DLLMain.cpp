@@ -259,7 +259,7 @@ extern "C" HRESULT WINAPI HookedDirectDrawCreateEx( GUID FAR * lpGuid, LPVOID * 
 
     hook_outfunc
 
-        return S_OK;
+    return S_OK;
 }
 
 extern "C" void WINAPI HookedAcquireDDThreadLock() {

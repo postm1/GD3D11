@@ -92,6 +92,18 @@ public:
 
     /** Called when this vob is about to change the visual */
     static void __fastcall Hooked_SetVisual( zCVob* thisptr, void* unknwn, zCVisual* visual ) {
+
+        // If we are saving game, don't call SetVisual for Dx11
+        // Reason: every oCNpc and oCItem object sets visual NULL, saves data and then restores visual
+        // So while we are saving game, there is no reason to update anything in dx11
+        // It gives +25% average speed in big locations like NEWWORLD (Khorinis)
+
+        if ( oCGame::GetGame() && oCGame::GetGame()->save_screen ) {
+
+            HookedFunctions::OriginalFunctions.original_zCVobSetVisual( thisptr, visual );
+            return;
+        }
+
         hook_infunc
 
             HookedFunctions::OriginalFunctions.original_zCVobSetVisual( thisptr, visual );

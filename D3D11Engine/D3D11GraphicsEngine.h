@@ -296,6 +296,9 @@ public:
     /** Draws the given mesh infos as water */
     void DrawWaterSurfaces();
 
+    /** Called when a ZEN is loaded */
+    void OnWorldInit();
+
     /** Handles an UI-Event */
     void OnUIEvent( EUIEvent uiEvent );
 

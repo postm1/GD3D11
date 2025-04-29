@@ -5,6 +5,7 @@
 #include "GothicAPI.h"
 #include "Engine.h"
 #include "BaseGraphicsEngine.h"
+#include "D3D11GraphicsEngine.h"
 #include "zCPolygon.h"
 #include "WorldConverter.h"
 #include "HookedFunctions.h"
@@ -686,6 +687,15 @@ void GothicAPI::OnWorldLoaded() {
         PrintModInfo();
         s_firstLoad = false;
     }
+
+    D3D11GraphicsEngine* engine = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
+       
+    if ( engine ) {
+        engine->OnWorldInit();
+    }
+    
+
+   
 
     LoadedWorldInfo->BspTree = oCGame::GetGame()->_zCSession_world->GetBspTree();
 
@@ -1946,8 +1956,7 @@ float3* GothicAPI::GetLowestLODPoly_SkeletalMesh( zCModel* model, const int poly
     return returnPositions;
 }
 
-// TODO: REMOVE THIS!
-#include "D3D11GraphicsEngine.h"
+
 
 /** Called to update the compress backbuffer state */
 void GothicAPI::UpdateCompressBackBuffer() {

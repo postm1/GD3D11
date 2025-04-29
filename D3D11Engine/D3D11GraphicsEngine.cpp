@@ -3176,8 +3176,12 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
     Engine::GAPI->GetRendererState().DepthState.SetDirty();
     UpdateRenderStates();
 
+
+    // Get current water PS for a specific location
+    SetActivePixelShader( ShaderManager->GetWaterPixelShader() );
+
     // Bind pixel water shader
-    SetActivePixelShader( "PS_Water" );
+   
     if ( ActivePS ) {
         ActivePS->Apply();
     }
@@ -6365,3 +6369,11 @@ void D3D11GraphicsEngine::DrawString( const std::string& str, float x, float y, 
     graphicState.FF_Stages[0].ColorArg1 = copyColorArg1;
     graphicState.FF_Stages[0].ColorArg2 = copyColorArg2;
 }
+
+/** Called when a ZEN is loaded */
+void D3D11GraphicsEngine::OnWorldInit() {
+
+    // Updating shader vars 
+    GetShaderManager().OnWorldInit();
+}
+

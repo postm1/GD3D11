@@ -19,6 +19,8 @@
 #pragma ruledisable 0x0802405f
 #endif
 
+std::vector<std::string> FindWaterShaderFiles();
+
 const int NUM_MAX_BONES = 96;
 
 D3D11ShaderManager::D3D11ShaderManager() {
@@ -75,6 +77,9 @@ HRESULT D3D11ShaderManager::CompileShaderFromFile( const CHAR* szFileName, LPCST
 
 /** Creates list with ShaderInfos */
 XRESULT D3D11ShaderManager::Init() {
+
+    WaterPSShaderWasChecked = false;
+
     Shaders = std::vector<ShaderInfo>();
     VShaders = std::unordered_map<std::string, std::shared_ptr<D3D11VShader>>();
     PShaders = std::unordered_map<std::string, std::shared_ptr<D3D11PShader>>();
@@ -206,6 +211,21 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.back().cBufferSizes.push_back( sizeof( GothicGraphicsState ) );
     Shaders.back().cBufferSizes.push_back( sizeof( AtmosphereConstantBuffer ) );
     Shaders.back().cBufferSizes.push_back( sizeof( RefractionInfoConstantBuffer ) );
+
+
+    std::vector<std::string> customWaterShadersList = FindWaterShaderFiles();
+
+    // loading custom water shaders for a specific location
+    for ( auto& shaderEntry : customWaterShadersList ) {
+
+        LogInfo() << "Loading custom shader for water: " << shaderEntry;
+
+        Shaders.push_back( ShaderInfo( shaderEntry, shaderEntry + ".hlsl", "p" ) );
+        Shaders.back().cBufferSizes.push_back( sizeof( GothicGraphicsState ) );
+        Shaders.back().cBufferSizes.push_back( sizeof( AtmosphereConstantBuffer ) );
+        Shaders.back().cBufferSizes.push_back( sizeof( RefractionInfoConstantBuffer ) );
+    }
+    
 
     Shaders.push_back( ShaderInfo( "PS_ParticleDistortion", "PS_ParticleDistortion.hlsl", "p" ) );
     Shaders.back().cBufferSizes.push_back( sizeof( RefractionInfoConstantBuffer ) );
@@ -722,6 +742,35 @@ void D3D11ShaderManager::UpdateShaderInfo( ShaderInfo& shader ) {
     CompileShader( shader );
 }
 
+/** return pixel shader for water in a specific location */
+std::string D3D11ShaderManager::GetWaterPixelShader() {
+
+    // already checked? Just return Shader Name
+    if ( WaterPSShaderWasChecked ) {
+
+        return CurrentWaterPSShaderName;
+
+    } else {
+        WaterPSShaderWasChecked = true;
+
+        auto waterShaderName = "PS_Water_" + Engine::GAPI->GetLoadedWorldInfo()->WorldName;
+
+        bool found = false;
+
+        // check if there is custom shader loaded
+        this->GetShaderInfo( waterShaderName, found );
+
+        CurrentWaterPSShaderName = found ? waterShaderName : "PS_Water";
+
+        return CurrentWaterPSShaderName;
+    }
+}
+
+void D3D11ShaderManager::OnWorldInit() {
+    CurrentWaterPSShaderName = "";
+    WaterPSShaderWasChecked = false;
+}
+
 /** Return a specific shader */
 std::shared_ptr<D3D11VShader> D3D11ShaderManager::GetVShader( const std::string& shader ) {
     return VShaders[shader];
@@ -734,4 +783,28 @@ std::shared_ptr<D3D11HDShader> D3D11ShaderManager::GetHDShader( const std::strin
 }
 std::shared_ptr<D3D11GShader> D3D11ShaderManager::GetGShader( const std::string& shader ) {
     return GShaders[shader];
+}
+
+// looking for "PS_Water_" files, for TEST.ZEN it will be PS_Water_TEST
+std::vector<std::string> FindWaterShaderFiles()
+{
+    std::vector<std::string> result;
+    WIN32_FIND_DATA findData;
+    HANDLE hFind = FindFirstFile( "system\\GD3D11\\Shaders\\PS_Water_*", &findData );
+
+    if ( hFind != INVALID_HANDLE_VALUE ) {
+        do {
+            if ( !(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) {
+                std::string filename = findData.cFileName;
+                size_t dotPos = filename.find_last_of( L'.' );
+                if ( dotPos != std::string::npos ) {
+                    filename = filename.substr( 0, dotPos );
+                }
+                result.push_back( filename );
+            }
+        } while ( FindNextFile( hFind, &findData ) != 0 );
+        FindClose( hFind );
+    }
+
+    return result;
 }

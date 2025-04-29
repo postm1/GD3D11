@@ -63,12 +63,20 @@ public:
     ShaderInfo GetShaderInfo( const std::string& shader, bool& ok );
     void UpdateShaderInfo( ShaderInfo& shader );
 
+    /** Returns current water shader for a specific location */
+    std::string GetWaterPixelShader();
+
+    /** Calls when world is init */
+    void OnWorldInit();
+
     /** Return a specific shader */
     std::shared_ptr<D3D11VShader> GetVShader( const std::string& shader );
     std::shared_ptr<D3D11PShader> GetPShader( const std::string& shader );
     std::shared_ptr<D3D11HDShader> GetHDShader( const std::string& shader );
     std::shared_ptr<D3D11GShader> GetGShader( const std::string& shader );
 private:
+
+   
     XRESULT CompileShader( const ShaderInfo& si );
 
     void UpdateVShader( const std::string& name, D3D11VShader* shader ) { std::unique_lock<std::mutex> lock( _VShaderMutex ); VShaders[name].reset( shader ); }
@@ -94,5 +102,12 @@ private:
     std::mutex _GShaderMutex;
 
     /** Whether we need to reload the shaders next frame or not */
+
     bool ReloadShadersNextFrame;
+
+    /** Checks if water PS shader was checked 1 time in a specific location */
+    bool WaterPSShaderWasChecked;
+
+    /** Current Water PS name*/
+    std::string CurrentWaterPSShaderName;
 };

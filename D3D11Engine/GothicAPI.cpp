@@ -2893,10 +2893,29 @@ FXMVECTOR GothicAPI::GetFogColor() {
 
 /** Returns true, if the game was paused */
 bool GothicAPI::IsGamePaused() {
-    if ( !oCGame::GetGame() )
+    oCGame* game = oCGame::GetGame();
+    if ( !game )
         return true;
 
-    return oCGame::GetGame()->GetSingleStep();
+    return game->GetSingleStep();
+}
+
+/** Checks if a game is being saved now */
+bool GothicAPI::IsSavingGameNow() {
+    oCGame* game = oCGame::GetGame();
+    if ( !game )
+        return false;
+
+    return (game->save_screen || (game->load_screen && game->inLevelChange));
+}
+
+/** Checks if a game is being saved or loaded now */
+bool GothicAPI::IsInSavingLoadingState() {
+    oCGame* game = oCGame::GetGame();
+    if ( !game )
+        return false;
+
+    return (game->save_screen || game->load_screen);
 }
 
 /** Returns true if the game is overwriting the fog color with a fog-zone */

@@ -426,6 +426,12 @@ public:
     /** Returns true, if the game was paused */
     bool IsGamePaused();
 
+    /** Checks if a game is being saved now */
+    bool IsSavingGameNow();
+
+    /** Checks if a game is being saved or loaded now */
+    bool IsInSavingLoadingState();
+
     /** Returns total time */
     float GetTotalTime();
 

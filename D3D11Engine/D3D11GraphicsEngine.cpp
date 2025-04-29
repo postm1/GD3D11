@@ -1072,7 +1072,7 @@ XRESULT D3D11GraphicsEngine::OnEndFrame() {
     Present();
 
     Engine::GAPI->GetRendererState().RendererInfo.Timing.StopTotal();
-    if ( !Engine::GAPI->GetRendererState().RendererSettings.BinkVideoRunning ) {
+    if ( !Engine::GAPI->GetRendererState().RendererSettings.BinkVideoRunning && !Engine::GAPI->IsInSavingLoadingState() ) {
         m_FrameLimiter->Wait();
     }
     return XR_SUCCESS;
@@ -1287,6 +1287,9 @@ XRESULT D3D11GraphicsEngine::Present() {
     }
 
     bool vsync = Engine::GAPI->GetRendererState().RendererSettings.EnableVSync;
+    if ( Engine::GAPI->GetRendererState().RendererSettings.BinkVideoRunning || Engine::GAPI->IsInSavingLoadingState() ) {
+        vsync = false;
+    }
 
     HRESULT hr;
     if ( dxgi_1_5 ) {

@@ -170,5 +170,17 @@ public:
     XMFLOAT2 GetTexAniMapDelta() {
         return *reinterpret_cast<XMFLOAT2*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_TexAniMapDelta ));
     }
+
+    zTWaveAniMode GetWaveAniMode() {
+        return *reinterpret_cast<zTWaveAniMode*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveMode ));
+    }
+
+    zTFFT GetWaveAniSpeed() {
+        return *reinterpret_cast<zTFFT*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveSpeed ));
+    }
+
+    float GetWaveMaxAmplitude() {
+        return *reinterpret_cast<float*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveMaxAmplitude ));
+    }
 };
 

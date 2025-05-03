@@ -12,6 +12,27 @@ enum zTCam_ClipFlags {
     CLIP_FLAGS_NO_FAR = 15
 };
 
+// Water materials info
+enum zTWaveAniMode
+{
+    zWAVEANI_NONE = 0,
+    zWAVEANI_GROUND_AMBIENT,
+    zWAVEANI_GROUND,
+    zWAVEANI_WALL_AMBIENT,
+    zWAVEANI_WALL,
+    zWAVEANI_ENV,
+    zWAVEANI_WIND_AMBIENT,
+    zWAVEANI_WIND
+};
+
+enum zTFFT
+{
+    zTFFT_NONE,
+    zTFFT_SLOW,
+    zTFFT_NORMAL,
+    zTFFT_FAST
+};
+
 #pragma pack (push, 1)	
 struct zTBBox3D {
     XMFLOAT3	Min;

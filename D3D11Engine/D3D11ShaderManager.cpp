@@ -188,6 +188,9 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.push_back( ShaderInfo( "PS_Simple", "PS_Simple.hlsl", "p" ) );
     Shaders.push_back( ShaderInfo( "PS_SimpleAlphaTest", "PS_SimpleAlphaTest.hlsl", "p" ) );
 
+    Shaders.push_back( ShaderInfo( "PS_Decal", "PS_Decal.hlsl", "p" ) );
+    Shaders.back().cBufferSizes.push_back( sizeof( DecalBuffer ) );
+
     Shaders.push_back( ShaderInfo( "PS_Rain", "PS_Rain.hlsl", "p" ) );
 
     Shaders.push_back( ShaderInfo( "PS_Transparency", "PS_Transparency.hlsl", "p" ) );

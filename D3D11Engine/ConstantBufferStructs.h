@@ -95,6 +95,11 @@ struct PerObjectState {
     float OS_Pad;
 };
 
+struct DecalBuffer {
+    float materialAlpha;
+    float DB_Pad[3];
+};
+
 struct PFXVS_ConstantBuffer {
     XMFLOAT4X4 PFXVS_InvProj;
 };

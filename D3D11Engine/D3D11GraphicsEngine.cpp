@@ -5504,7 +5504,7 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
 
     // Set up alpha
     if ( !lighting ) {
-        SetActivePixelShader( "PS_Simple" );
+        SetActivePixelShader( "PS_Decal" );
         Engine::GAPI->GetRendererState().DepthState.DepthWriteEnabled = false;
         Engine::GAPI->GetRendererState().DepthState.SetDirty();
     } else {
@@ -5516,6 +5516,14 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
     XMFLOAT3 camPos = Engine::GAPI->GetCameraPosition();
+
+    DecalBuffer decalBuffer;
+
+    decalBuffer.materialAlpha = 1.0f;
+
+
+    ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &decalBuffer );
+    ActivePS->GetConstantBuffer()[0]->BindToPixelShader( 0 );
 
     int lastAlphaFunc = -1;
     for ( unsigned int i = 0; i < decals.size(); i++ ) {
@@ -5597,6 +5605,19 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
                 d->GetDecalSettings()->DecalMaterial->BindTexture( 0 );
             }
         }
+
+        // adding transparency (material alpha) for decals, not sure about lighting checking
+        if ( !lighting) {
+            if ( ActivePS ) {
+
+                decalBuffer.materialAlpha = d->GetDecalSettings()->DecalMaterial->GetAlpha() / 255.0f;
+
+                ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &decalBuffer );
+            }
+       
+        }
+       
+       
 
         DrawVertexBufferIndexed( QuadVertexBuffer, QuadIndexBuffer, 6 );
     }

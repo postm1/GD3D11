@@ -3864,7 +3864,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
     VS_ExConstantBuffer_Wind windBuff;
     windBuff.globalTime = Engine::GAPI->GetTotalTime();
-    windBuff.windDir = float3( 0.3, 0.15, 0.5f );
+    windBuff.windDir = float3( 0.3, 0.15, 0.5f ); //FIXME wind dir fro
     windBuff.windStrenth = 0;
     windBuff.windSpeed = 0;
 
@@ -3967,6 +3967,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                 windBuff.windSpeed = 1.5f; // wind frequency
 
                 // more wind if it is raining
+                // make smoother? FIXME
                 if ( Engine::GAPI->GetRainFXWeight() > 0.0f ) {
                     windBuff.windStrenth *= 3.5f;
                     windBuff.windSpeed *= 2.5f;

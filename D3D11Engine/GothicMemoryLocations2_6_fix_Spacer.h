@@ -404,6 +404,11 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_MatGroup = 0x40;
         static const unsigned int Offset_TexAniCtrl = 0x4C;
 
+        static const unsigned int Offset_WaveMode = 0x7C; //zTWaveAniMode, enum
+        static const unsigned int Offset_WaveSpeed = 0x80; //zTFFT, enum
+        static const unsigned int Offset_WaveMaxAmplitude = 0x84; //m_fWaveMaxAmplitude, float
+        static const unsigned int Offset_WaveGridSize = 0x88; //m_fWaveGridSize, float
+
         static const unsigned int InitValues = 0x006EF890;
         static const unsigned int Constructor = 0x006EF430;
         static const unsigned int Destructor = 0x006EF6A0;

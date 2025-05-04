@@ -292,6 +292,12 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_TexAniMapDelta = 0x7C;
         static const unsigned int Mask_FlagTexAniMap = 0x4;
 
+        // moved -4 bytes? Check this, please
+        static const unsigned int Offset_WaveMode = 0x78; //zTWaveAniMode, enum
+        static const unsigned int Offset_WaveSpeed = 0x7C; //zTFFT, enum
+        static const unsigned int Offset_WaveMaxAmplitude = 0x80; //m_fWaveMaxAmplitude, float
+        static const unsigned int Offset_WaveGridSize = 0x84; //m_fWaveGridSize, float
+
         static const unsigned int InitValues = 0x00565790;
         static const unsigned int Constructor = 0x00565370;
         static const unsigned int Destructor = 0x005655E0;

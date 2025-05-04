@@ -184,6 +184,11 @@ public:
         return *reinterpret_cast<float*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveMaxAmplitude ));
     }
 
+    /** Returns wave grid size of this material */
+    float GetWaveGridSize() {
+        return *reinterpret_cast<float*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveGridSize ));
+    }
+    
     /** Returns name of this material */
     const zSTRING& GetName() {
         return reinterpret_cast<zSTRING & (__fastcall*)(zCMaterial*)>(GothicMemoryLocations::zCObject::GetObjectName)(this);

@@ -179,8 +179,19 @@ public:
         return *reinterpret_cast<zTFFT*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveSpeed ));
     }
 
+    /** Returns wave height (amplitude) of this material */
     float GetWaveMaxAmplitude() {
         return *reinterpret_cast<float*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_WaveMaxAmplitude ));
+    }
+
+    /** Returns name of this material */
+    const zSTRING& GetName() {
+        return reinterpret_cast<zSTRING & (__fastcall*)(zCMaterial*)>(GothicMemoryLocations::zCObject::GetObjectName)(this);
+    }
+
+    /** Returns alpha of this material */
+    BYTE GetAlpha() const {
+        return *reinterpret_cast<BYTE*>(THISPTR_OFFSET( GothicMemoryLocations::zCMaterial::Offset_Color + 3 ));
     }
 };
 

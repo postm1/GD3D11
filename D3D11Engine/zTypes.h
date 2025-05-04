@@ -33,6 +33,12 @@ enum zTFFT
     zTFFT_FAST
 };
 
+enum zTAnimationMode {
+    zVISUAL_ANIMODE_NONE = 0,
+    zVISUAL_ANIMODE_WIND,
+    zVISUAL_ANIMODE_WIND2,
+};
+
 #pragma pack (push, 1)	
 struct zTBBox3D {
     XMFLOAT3	Min;

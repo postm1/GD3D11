@@ -582,6 +582,7 @@ void GothicAPI::ResetVobs() {
     DynamicallyAddedVobs.clear();
     DecalVobs.clear();
     VobsByVisual.clear();
+    WindStrengthByVisual.clear();
     SkeletalVobMap.clear();
 
     // Delete static mesh visuals
@@ -1396,6 +1397,14 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
         for ( auto const& it : list ) {
             OnRemovedVob( it->Vob, LoadedWorldInfo->MainWorld );
         }
+
+        if ( visual ) {
+            WindStrengthByVisual.erase( visual );
+
+           //LogInfo() << "Erase: " << visual->GetObjectName();
+        }
+        
+
     } else {
         // TODO: #8 - Figure out why exactly we don't get notified that a VOB is re-added after being removed.
         /*oCNPC* npcVob;
@@ -1408,6 +1417,7 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
             }
         }*/
     }
+
     if ( list.size() > 0 ) {
 #ifndef PUBLIC_RELEASE
         if ( RendererState.RendererSettings.EnableDebugLog )
@@ -1416,6 +1426,7 @@ void GothicAPI::OnVisualDeleted( zCVisual* visual ) {
 
         VobsByVisual[visual].clear();
         VobsByVisual.erase( visual );
+
     }
 }
 /** Draws a MeshInfo */
@@ -1717,6 +1728,12 @@ void GothicAPI::OnAddVob( zCVob* vob, zCWorld* world ) {
 
             // Add to map
             VobsByVisual[vob->GetVisual()].push_back( vi );
+
+            // if any vob with certain visual has WIND => all vobs with such visual will have WIND effect
+            if ( vob->GetVisualAniMode() != zTAnimationMode::zVISUAL_ANIMODE_NONE && vob->GetVisualAniModeStrength() > 0 ) {
+                WindStrengthByVisual[vob->GetVisual()] = vob->GetVisualAniModeStrength();
+            }
+            
 
             // Check for mainworld
             if ( world == oCGame::GetGame()->_zCSession_world ) {
@@ -4880,4 +4897,13 @@ void GothicAPI::ResetRenderStates() {
 /** Get sky timescale variable */
 float GothicAPI::GetSkyTimeScale() {
     return SkyRenderer->GetAtmoshpereSettings().SkyTimeScale;
+}
+
+void GothicAPI::FindWindStrengthByVisual( zCVisual* visual, float& value ) {
+
+    auto it = WindStrengthByVisual.find( visual );
+
+    if ( it != WindStrengthByVisual.end() ) {
+        value = it->second;
+    }
 }

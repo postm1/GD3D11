@@ -221,6 +221,15 @@ struct VS_ExConstantBuffer_PerFrame {
     XMFLOAT4X4 ViewProj;
 };
 
+struct VS_ExConstantBuffer_Wind {
+    float3 windDir;
+    float windStrenth;
+    float windSpeed; //frequency
+    float globalTime;
+    float  minHeight; //bbox min Y   
+    float  maxHeight; //bbox max Y
+};
+
 struct ParticlePointShadingConstantBuffer {
     XMFLOAT4X4 View;
     XMFLOAT4X4 Projection;

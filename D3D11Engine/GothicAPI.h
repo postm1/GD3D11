@@ -684,6 +684,8 @@ public:
     /** Get sky timescale variable */
     float GetSkyTimeScale();
 
+    void GothicAPI::FindWindStrengthByVisual( zCVisual*, float& value );
+
 private:
     /** Collects polygons in the given AABB */
     void CollectPolygonsInAABBRec( BspInfo* base, const zTBBox3D& bbox, std::vector<zCPolygon*>& list );
@@ -781,6 +783,9 @@ private:
 
     /** Maps visuals to vobs */
     std::unordered_map<zCVisual*, std::list<BaseVobInfo*>> VobsByVisual;
+
+    /** Maps wind strength for specific visual */
+    std::unordered_map<zCVisual*, float> WindStrengthByVisual;
 
     /** Map of textures */
     std::unordered_map<std::string, MyDirectDrawSurface7*> SurfacesByName;

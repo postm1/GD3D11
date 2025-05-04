@@ -330,6 +330,14 @@ public:
 
         return static_cast<EVisualCamAlignType>(flags);
     }
+
+    zTAnimationMode GetVisualAniMode()  const {
+        return *reinterpret_cast<zTAnimationMode*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_WindAniMode ));
+    };
+
+    float GetVisualAniModeStrength()  const {
+        return *reinterpret_cast<float*>(THISPTR_OFFSET( GothicMemoryLocations::zCVob::Offset_WindAniModeStrength ));
+    };
     
     /** Checks the inheritance chain and casts to T* if possible. Returns nullptr otherwise */
     template<class T>
@@ -355,4 +363,5 @@ protected:
     zSTRING& __GetObjectName() {
         return reinterpret_cast<zSTRING&( __fastcall* )( zCVob* )>( GothicMemoryLocations::zCObject::GetObjectName )( this );
     }
+   
 };

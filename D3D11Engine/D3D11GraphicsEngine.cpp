@@ -3861,6 +3861,18 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
 
+
+    VS_ExConstantBuffer_Wind windBuff;
+    windBuff.globalTime = Engine::GAPI->GetTotalTime();
+    windBuff.windDir = float3( 0.3, 0.15, 0.5f );
+    windBuff.windStrenth = 0;
+    windBuff.windSpeed = 0;
+
+    if ( ActiveVS ) {
+        ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &windBuff );
+        ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
+    }
+
     static std::vector<VobInfo*> vobs;
     static std::vector<VobLightInfo*> lights;
     static std::vector<SkeletalVobInfo*> mobs;
@@ -3936,6 +3948,40 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         0, 0, 0 ).toPtr() );
                 OutdoorVobsConstantBuffer->BindToPixelShader( 3 );
             }
+
+
+            
+            
+            
+
+            float windStrength = 0.0f;
+            
+            //Find if this Visual has WIND effect (by vob), precached map
+            Engine::GAPI->FindWindStrengthByVisual( staticMeshVisual.second->Visual, windStrength );
+
+            if ( windStrength > 0 ) {
+                windBuff.minHeight = staticMeshVisual.second->BBox.Min.y;
+                windBuff.maxHeight = staticMeshVisual.second->BBox.Max.y;
+
+                windBuff.windStrenth = windStrength;
+                windBuff.windSpeed = 1.5f; // wind frequency
+
+                // more wind if it is raining
+                if ( Engine::GAPI->GetRainFXWeight() > 0.0f ) {
+                    windBuff.windStrenth *= 3.5f;
+                    windBuff.windSpeed *= 2.5f;
+                }
+            }
+            else {
+                windBuff.windStrenth = 0.0f;
+            }
+
+            
+
+            if ( ActiveVS ) {
+                ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &windBuff );
+            }
+           
 
             bool doReset = true;  // Don't reset alpha-vobs here
             for ( auto const& itt : staticMeshVisual.second->MeshesByTexture ) {
@@ -4038,7 +4084,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                             info->Constantbuffer->BindToPixelShader( 2 );
                         }
                     }
-
+                   
                     // Draw batch
                     DrawInstanced( mi->MeshVertexBuffer, mi->MeshIndexBuffer,
                         mi->Indices.size(), DynamicInstancingBuffer.get(),

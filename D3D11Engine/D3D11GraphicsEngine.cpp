@@ -3963,15 +3963,21 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                 windBuff.minHeight = staticMeshVisual.second->BBox.Min.y;
                 windBuff.maxHeight = staticMeshVisual.second->BBox.Max.y;
 
-                windBuff.windStrenth = windStrength;
-                windBuff.windSpeed = 1.5f; // wind frequency
 
-                // more wind if it is raining
-                // make smoother? FIXME
-                if ( Engine::GAPI->GetRainFXWeight() > 0.0f ) {
-                    windBuff.windStrenth *= 3.5f;
-                    windBuff.windSpeed *= 2.5f;
-                }
+                float baseStrength = windStrength;
+                float baseSpeed = 1.5f;
+
+
+                float rainWeight = Engine::GAPI->GetRainFXWeight(); // 0..1
+
+                // max multiplayers when rain is 1.0 (max)
+                float rainMaxStrengthMultiplier = 3.5f;
+                float rainMaxSpeedMultiplier = 2.0f;
+
+                // smoothing effect with rain power
+                windBuff.windStrenth = baseStrength * (1.0f + rainWeight * (rainMaxStrengthMultiplier - 1.0f));
+                windBuff.windSpeed = baseSpeed * (1.0f + rainWeight * (rainMaxSpeedMultiplier - 1.0f));
+
             }
             else {
                 windBuff.windStrenth = 0.0f;

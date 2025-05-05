@@ -3864,7 +3864,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
     VS_ExConstantBuffer_Wind windBuff;
     windBuff.globalTime = Engine::GAPI->GetTotalTime();
-    windBuff.windDir = float3( 0.3, 0.15, 0.5f ); //FIXME wind dir fro
+    windBuff.windDir = float3( 0.3f, 0.15f, 0.5f ); //FIXME wind dir fro
     windBuff.windStrenth = 0;
     windBuff.windSpeed = 0;
 
@@ -5588,11 +5588,15 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
 
         if ( lighting && !d->GetAlphaTestEnabled() )
             continue;  // Only allow no alpha or alpha test
+      
+        if ( !lighting ) {           
 
-        if ( !lighting ) {
             int alphaFunc = d->GetDecalSettings()->DecalMaterial->GetAlphaFunc();
+
             switch ( alphaFunc ) {
-            case zMAT_ALPHA_FUNC_BLEND:
+
+            // MAT_DEFAULT in original render = BLEND (by comparing decals), with this change many decails will be rendered as expected
+            case zMAT_ALPHA_FUNC_BLEND: case zMAT_ALPHA_FUNC_MAT_DEFAULT: 
                 Engine::GAPI->GetRendererState().BlendState.SetAlphaBlending();
                 break;
 
@@ -5616,6 +5620,16 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
                 Engine::GAPI->GetRendererState().BlendState.SetDirty();
                 UpdateRenderStates();
                 lastAlphaFunc = alphaFunc;
+            }
+
+
+            // adding transparency (material alpha) for decals, not sure about lighting, check it please
+       
+            if ( ActivePS ) {
+
+                decalBuffer.materialAlpha = d->GetDecalSettings()->DecalMaterial->GetAlpha() / 255.0f;
+
+                ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &decalBuffer );
             }
         }
 
@@ -5658,18 +5672,6 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
                 d->GetDecalSettings()->DecalMaterial->BindTexture( 0 );
             }
         }
-
-        // adding transparency (material alpha) for decals, not sure about lighting checking
-        if ( !lighting) {
-            if ( ActivePS ) {
-
-                decalBuffer.materialAlpha = d->GetDecalSettings()->DecalMaterial->GetAlpha() / 255.0f;
-
-                ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &decalBuffer );
-            }
-       
-        }
-       
        
 
         DrawVertexBufferIndexed( QuadVertexBuffer, QuadIndexBuffer, 6 );

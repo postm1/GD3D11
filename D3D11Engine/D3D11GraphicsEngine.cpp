@@ -5574,9 +5574,10 @@ void D3D11GraphicsEngine::DrawDecalList( const std::vector<zCVob*>& decals,
 
     decalBuffer.materialAlpha = 1.0f;
 
-
-    ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &decalBuffer );
-    ActivePS->GetConstantBuffer()[0]->BindToPixelShader( 0 );
+    if ( !lighting ) {
+        ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &decalBuffer );
+        ActivePS->GetConstantBuffer()[0]->BindToPixelShader( 0 );
+    }
 
     int lastAlphaFunc = -1;
     for ( unsigned int i = 0; i < decals.size(); i++ ) {

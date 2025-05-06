@@ -1731,7 +1731,22 @@ void GothicAPI::OnAddVob( zCVob* vob, zCWorld* world ) {
 
             // if any vob with certain visual has WIND => all vobs with such visual will have WIND effect
             if ( vob->GetVisualAniMode() != zTAnimationMode::zVISUAL_ANIMODE_NONE && vob->GetVisualAniModeStrength() > 0 ) {
-                WindStrengthByVisual[vob->GetVisual()] = vob->GetVisualAniModeStrength();
+
+                auto it = WindStrengthByVisual.find( vob->GetVisual() );
+
+                float value = vob->GetVisualAniModeStrength();
+
+                // already found? Write the biggest GetVisualAniModeStrength() of all vobs with such visual
+                // because it can be in range 0.1..2 for the same visual, but we use the biggest value for our shader
+
+                if ( it != WindStrengthByVisual.end() ) {
+                    if ( value > it->second ) {
+                        WindStrengthByVisual[vob->GetVisual()] = value;
+                    }
+                // not found? Write GetVisualAniModeStrength() value from vob
+                } else {
+                    WindStrengthByVisual[vob->GetVisual()] = value;
+                }
             }
             
 

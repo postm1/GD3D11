@@ -3971,13 +3971,21 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                 float rainWeight = Engine::GAPI->GetRainFXWeight(); // 0..1
 
                 // max multiplayers when rain is 1.0 (max)
-                float rainMaxStrengthMultiplier = 3.5f;
-                float rainMaxSpeedMultiplier = 2.0f;
+                float rainMaxStrengthMultiplier = 3.0f;
+                float rainMaxSpeedMultiplier = 1.75f;
 
                 // smoothing effect with rain power
                 windBuff.windStrenth = baseStrength * (1.0f + rainWeight * (rainMaxStrengthMultiplier - 1.0f));
                 windBuff.windSpeed = baseSpeed * (1.0f + rainWeight * (rainMaxSpeedMultiplier - 1.0f));
 
+               /* LogInfo() 
+                    << " VisualName: " << staticMeshVisual.second->VisualName
+                    << " | MeshSize: " << staticMeshVisual.second->MeshSize
+                    << " | MidPoint: " << staticMeshVisual.second->MidPoint.x << " " << staticMeshVisual.second->MidPoint.y << " " << staticMeshVisual.second->MidPoint.z
+                    << " | windStrenth: " << windBuff.windStrenth
+                    << " | windSpeed: " << windBuff.windSpeed
+                    << " | rainWeight: " << rainWeight
+                    ;*/
             }
             else {
                 windBuff.windStrenth = 0.0f;

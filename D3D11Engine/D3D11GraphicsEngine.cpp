@@ -3931,6 +3931,19 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
             RenderedVobs.push_back( vobs[i] );
         }
 
+        // get rain weight
+        float rainWeight = Engine::GAPI->GetRainFXWeight(); // 0..1
+
+        // limit in 0..1 range
+        Clamp( rainWeight, 0.0f, 1.0f );
+
+        // max multiplayers when rain is 1.0 (max)
+        const float rainMaxStrengthMultiplier = 3.0f;
+        const float rainMaxSpeedMultiplier = 1.75f;
+
+
+        float windStrength = 0.0f;
+
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
 
@@ -3951,12 +3964,10 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
 
             
-            
-            
+            // Reset values while iterating visuals
+            windStrength = 0.0f;
 
-            float windStrength = 0.0f;
-            
-            //Find if this Visual has WIND effect (by vob), precached map
+            // Find if this Visual has WIND effect (by vob), precached map
             Engine::GAPI->FindWindStrengthByVisual( staticMeshVisual.second->Visual, windStrength );
 
             if ( windStrength > 0 ) {
@@ -3967,14 +3978,6 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                 float baseStrength = windStrength;
                 float baseSpeed = 1.5f;
 
-
-                float rainWeight = Engine::GAPI->GetRainFXWeight(); // 0..1
-
-                Clamp( rainWeight, 0.0f, 1.0f);
-
-                // max multiplayers when rain is 1.0 (max)
-                float rainMaxStrengthMultiplier = 3.0f;
-                float rainMaxSpeedMultiplier = 1.75f;
 
                 // smoothing effect with rain power
                 windBuff.windStrenth = baseStrength * (1.0f + rainWeight * (rainMaxStrengthMultiplier - 1.0f));
@@ -3990,9 +3993,9 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                     ;*/
             }
             else {
+                // if windStrenth is 0 => no vertex changes in the shader
                 windBuff.windStrenth = 0.0f;
             }
-
             
 
             if ( ActiveVS ) {

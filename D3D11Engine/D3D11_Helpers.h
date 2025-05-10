@@ -46,3 +46,10 @@ inline void SetDebugName( _In_  ID3D11Device1* resource, const std::string& debu
     if ( FAILED( nameSet ) ) LogError() << "Failed to set debug name";
 #endif
 }
+
+//limits value in a specific range
+template <typename T>
+T Clamp( const T& value, const T min, const T max ) {
+    static_assert(std::is_arithmetic<T>::value, "Clamp only works with numeric types");
+    return std::max( min, std::min( value, max ) );
+}

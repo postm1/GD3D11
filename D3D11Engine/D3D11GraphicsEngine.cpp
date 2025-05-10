@@ -3970,6 +3970,8 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
                 float rainWeight = Engine::GAPI->GetRainFXWeight(); // 0..1
 
+                Clamp( rainWeight, 0.0f, 1.0f);
+
                 // max multiplayers when rain is 1.0 (max)
                 float rainMaxStrengthMultiplier = 3.0f;
                 float rainMaxSpeedMultiplier = 1.75f;

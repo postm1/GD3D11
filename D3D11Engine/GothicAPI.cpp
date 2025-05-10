@@ -4914,6 +4914,7 @@ float GothicAPI::GetSkyTimeScale() {
     return SkyRenderer->GetAtmoshpereSettings().SkyTimeScale;
 }
 
+/** Get wind strength by visual, if found */
 void GothicAPI::FindWindStrengthByVisual( zCVisual* visual, float& value ) {
 
     auto it = WindStrengthByVisual.find( visual );

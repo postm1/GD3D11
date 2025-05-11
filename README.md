@@ -29,8 +29,7 @@ The new renderer is able to utilize more of the current GPU generation's power. 
 
 ## Bugs & Problems
 
-If you have problems with building GD3D11 after following these instructions or experience bugs/problems with GD3D11 itself, open an issue on this GitHub page or post in the D3D11 thread on ["World of Gothic" (WOG)](http://forum.worldofplayers.de/forum/forums/104-Editing).  
-But first take a look at the [KNOWN ISSUES](./known_issues.md)
+> **Note**: If you have problems with launching game after installing GD3D11 - for example getting Access Denied(0x45a), reinstall your Visual C++ Redistributable for Visual Studio 2015-2022 to latest version from Microsoft page, mod stopped working on older VCR due to some Microsoft changes in Platform Toolset.
 
 ## Building
 
@@ -45,6 +44,8 @@ Building the mod is currently only possible with windows, but should be easy to 
 
 To build GD3D11, open its solution file (.sln) with Visual Studio. It will the load all the required projects. There are multiple build targets, one for release and one for developing / testing, for both games each:
 
+* Gothic 2 Release using AVX2: "Release_AVX2"
+* Gothic 1 Release using AVX2: "Release_G1_AVX2"
 * Gothic 2 Release using AVX: "Release_AVX"
 * Gothic 1 Release using AVX: "Release_G1_AVX"
 * Gothic 2 Release using old SSE2: "Release"

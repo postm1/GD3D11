@@ -3983,10 +3983,13 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                 windBuff.windStrenth = baseStrength * (1.0f + rainWeight * (rainMaxStrengthMultiplier - 1.0f));
                 windBuff.windSpeed = baseSpeed * (1.0f + rainWeight * (rainMaxSpeedMultiplier - 1.0f));
 
-               /* LogInfo() 
+                /*LogInfo() 
                     << " VisualName: " << staticMeshVisual.second->VisualName
                     << " | MeshSize: " << staticMeshVisual.second->MeshSize
                     << " | MidPoint: " << staticMeshVisual.second->MidPoint.x << " " << staticMeshVisual.second->MidPoint.y << " " << staticMeshVisual.second->MidPoint.z
+                    << " | [ MinsY: " << staticMeshVisual.second->BBox.Min.y
+                    << " | MaxsY: " << staticMeshVisual.second->BBox.Max.y << " ] "
+                    << " | SizeBboxY: " << (staticMeshVisual.second->BBox.Max.y - staticMeshVisual.second->BBox.Min.y)
                     << " | windStrenth: " << windBuff.windStrenth
                     << " | windSpeed: " << windBuff.windSpeed
                     << " | rainWeight: " << rainWeight

@@ -114,6 +114,8 @@ D3D11GraphicsEngine::~D3D11GraphicsEngine() {
 
 void PrintD3DFeatureLevel( D3D_FEATURE_LEVEL lvl ) {
     std::map<D3D_FEATURE_LEVEL, std::string> dxFeatureLevelsMap = {
+        {D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1, "D3D_FEATURE_LEVEL_12_1"},
+        {D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_0, "D3D_FEATURE_LEVEL_12_0"},
         {D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1, "D3D_FEATURE_LEVEL_11_1"},
         {D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0, "D3D_FEATURE_LEVEL_11_0"},
         {D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_10_1, "D3D_FEATURE_LEVEL_10_1"},
@@ -246,6 +248,8 @@ XRESULT D3D11GraphicsEngine::Init() {
 
     D3D_FEATURE_LEVEL maxFeatureLevel = D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_9_1;
     D3D_FEATURE_LEVEL featureLevels[] = {
+        D3D_FEATURE_LEVEL_12_1,
+        D3D_FEATURE_LEVEL_12_0,
         D3D_FEATURE_LEVEL_11_1,
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_1,
@@ -263,14 +267,16 @@ XRESULT D3D11GraphicsEngine::Init() {
 
     Microsoft::WRL::ComPtr<ID3D11Device> Device11;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> Context11;
-    hr = D3D11CreateDeviceFunc( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, featureLevels, ARRAYSIZE( featureLevels ),
-        D3D11_SDK_VERSION, Device11.GetAddressOf(), &maxFeatureLevel, Context11.GetAddressOf() );
-    // Assume E_INVALIDARG occurs because D3D_FEATURE_LEVEL_11_1 is not supported on current platform
-    // retry with just 9.1-11.0
-    if ( hr == E_INVALIDARG ) {
-        hr = D3D11CreateDeviceFunc( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, &featureLevels[1], ARRAYSIZE( featureLevels ) - 1,
+    for ( int i = 0; i < sizeof( featureLevels ) / sizeof( &featureLevels[0] ); ++i ) {
+        hr = D3D11CreateDeviceFunc( DXGIAdapter2.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, flags, &featureLevels[i], 1,
             D3D11_SDK_VERSION, Device11.GetAddressOf(), &maxFeatureLevel, Context11.GetAddressOf() );
+        if ( SUCCEEDED( hr ) ) {
+            break;
+        }
+
+        maxFeatureLevel = D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_9_1;
     }
+
     if ( FAILED( hr ) ) {
         LogErrorBox() << "D3D11CreateDevice failed with code: " << hr << "!";
         exit( 2 );

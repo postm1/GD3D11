@@ -3322,6 +3322,14 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
             GetContext()->PSSetShader( nullptr, nullptr, 0 );
         }
 
+        VS_ExConstantBuffer_Wind windBuff;
+        windBuff.globalTime = Engine::GAPI->GetTotalTime();
+        windBuff.windDir = float3( 0.3f, 0.15f, 0.5f );
+
+        if ( ActiveVS ) {
+            ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
+        }
+
         // Static meshes should already be in buffer from main stage rendering
         /*size_t ByteWidth = DynamicInstancingBuffer->GetSizeInBytes();
         byte* data;
@@ -3345,6 +3353,13 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
         // Draw all vobs the player currently sees
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
+
+            windBuff.minHeight = staticMeshVisual.second->BBox.Min.y;
+            windBuff.maxHeight = staticMeshVisual.second->BBox.Max.y;
+
+            if ( ActiveVS ) {
+                ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &windBuff );
+            }
 
             bool doReset = true;
             for ( auto const& itt : staticMeshVisual.second->MeshesByTexture ) {
@@ -3472,6 +3487,14 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
 
+    VS_ExConstantBuffer_Wind windBuff;
+    windBuff.globalTime = Engine::GAPI->GetTotalTime();
+    windBuff.windDir = float3( 0.3f, 0.15f, 0.5f );
+
+    if ( ActiveVS ) {
+        ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
+    }
+
     static std::vector<VobInfo*> vobs;
     static std::vector<VobLightInfo*> lights;
     static std::vector<SkeletalVobInfo*> mobs;
@@ -3484,6 +3507,7 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
             Engine::GAPI->CollectVisibleVobs( vobs, lights, mobs );
         }
     }
+
     if ( Engine::GAPI->GetRendererState().RendererSettings.AnimateStaticVobs ) {
         UpdateMorphMeshVisual();
     }
@@ -3546,6 +3570,13 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
                         staticMeshVisual.second->MeshSize,
                         0, 0, 0 ).toPtr() );
                 OutdoorVobsConstantBuffer->BindToPixelShader( 3 );
+            }
+
+            windBuff.minHeight = staticMeshVisual.second->BBox.Min.y;
+            windBuff.maxHeight = staticMeshVisual.second->BBox.Max.y;
+
+            if ( ActiveVS ) {
+                ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &windBuff );
             }
 
             bool doReset = true;  // Don't reset alpha-vobs here
@@ -3767,6 +3798,13 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
             if ( !info->Constantbuffer ) info->UpdateConstantbuffer();
 
             info->Constantbuffer->BindToPixelShader( 2 );
+        }
+
+        windBuff.minHeight = vi->BBox.Min.y;
+        windBuff.maxHeight = vi->BBox.Max.y;
+
+        if ( ActiveVS ) {
+            ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &windBuff );
         }
 
         // Draw batch

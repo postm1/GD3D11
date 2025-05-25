@@ -512,6 +512,11 @@ struct GothicRendererSettings {
         ToneMap_Simple,
         ACESFittedTonemap,
     };
+    enum EWindQuality {
+        WIND_QUALITY_NONE = 0,
+        WIND_QUALITY_SIMPLE,
+        WIND_QUALITY_ADVANCED,
+    };
 
 
     /** Sets the default values for this struct */
@@ -616,6 +621,7 @@ struct GothicRendererSettings {
         SortRenderQueue = true;
         DrawThreaded = true;
 
+        WindQuality = WIND_QUALITY_SIMPLE;
         EnablePointlightShadows = PLS_UPDATE_DYNAMIC;
         MinLightShadowUpdateRange = 300.0f;
         PartialDynamicShadowUpdates = true;
@@ -713,6 +719,7 @@ struct GothicRendererSettings {
     bool DrawSky;
     bool DrawFog;
     int FogRange;
+    int WindQuality;
     bool DrawG1ForestPortals;
     bool EnableHDR;
     E_HDRToneMap HDRToneMap;

@@ -549,6 +549,26 @@ XRESULT D2DSettingsDialog::InitControls() {
 	contrastSlider->SetMinMax( 0.1f, 2.0f );
 	contrastSlider->SetValue( Engine::GAPI->GetRendererState().RendererSettings.GammaValue );
 
+#ifdef BUILD_GOTHIC_2_6_fix
+    SV_Label* windQualityLabel = new SV_Label( MainView, MainPanel );
+    windQualityLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
+    windQualityLabel->AlignUnder( contrastSlider, 16 );
+    switch ( userLanguage ) {
+    case LANGUAGE_POLISH: windQualityLabel->SetCaption( L"Jakość efektu wiatru [*]:" ); break;
+    default: windQualityLabel->SetCaption( L"Wind effect quality [*]:" ); break;
+    }
+
+    InitialSettings.WindQuality = Engine::GAPI->GetRendererState().RendererSettings.WindQuality;
+    SV_Slider* windQualitySlider = new SV_Slider( MainView, MainPanel );
+    windQualitySlider->SetPositionAndSize( D2D1::Point2F( 10, 22 ), D2D1::SizeF( 150, 15 ) );
+    windQualitySlider->AlignUnder( windQualityLabel, 5 );
+    windQualitySlider->SetDataToUpdate( &InitialSettings.WindQuality );
+    windQualitySlider->SetIsIntegralSlider( true );
+    windQualitySlider->SetMinMax( 0.0f, GothicRendererSettings::EWindQuality::WIND_QUALITY_ADVANCED );
+    windQualitySlider->SetDisplayValues( { "Disabled", "Simple", "Advanced" } );
+    windQualitySlider->SetValue( static_cast<float>(InitialSettings.WindQuality) );
+#endif //BUILD_GOTHIC_2_6_fix
+
     SV_Checkbox* rainCheckbox = new SV_Checkbox( MainView, MainPanel );
     rainCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
     rainCheckbox->AlignUnder( contrastSlider, 65 );
@@ -698,11 +718,22 @@ void D2DSettingsDialog::ApplyButtonPressed( SV_Button* sender, void* userdata ) 
 	D2DSettingsDialog* d = reinterpret_cast<D2DSettingsDialog*>(userdata);
 
 	// Check for shader reload
+    bool reloadShaders = false;
 	if ( d->InitialSettings.EnableShadows != settings.EnableShadows || d->InitialSettings.EnableSoftShadows != settings.EnableSoftShadows ) {
         settings.EnableShadows = d->InitialSettings.EnableShadows;
         settings.EnableSoftShadows = d->InitialSettings.EnableSoftShadows;
-		Engine::GraphicsEngine->ReloadShaders();
+        reloadShaders = true;
 	}
+
+    // Check for wind quality change
+    if ( d->InitialSettings.WindQuality != settings.WindQuality ) {
+        if ( d->InitialSettings.WindQuality == GothicRendererSettings::EWindQuality::WIND_QUALITY_ADVANCED
+            || settings.WindQuality == GothicRendererSettings::EWindQuality::WIND_QUALITY_ADVANCED ) {
+            reloadShaders = true;
+        }
+
+        settings.WindQuality = d->InitialSettings.WindQuality;
+    }
 
     // Check for normalmap change to purge texture cache
     if ( d->InitialSettings.AllowNormalmaps != settings.AllowNormalmaps ) {
@@ -720,6 +751,11 @@ void D2DSettingsDialog::ApplyButtonPressed( SV_Button* sender, void* userdata ) 
     if ( d->CurrentWindowMode != d->ActiveWindowMode ) {
         d->ActiveWindowMode = d->CurrentWindowMode;
         settings.ChangeWindowPreset = d->ActiveWindowMode;
+    }
+
+    // Reload shaders if necessary
+    if ( reloadShaders ) {
+        Engine::GraphicsEngine->ReloadShaders();
     }
 
 	// Check for resolution change

@@ -15,8 +15,6 @@
 #include <shlwapi.h>
 #include "GSky.h"
 
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Imagehlp.lib") // Used in VersionCheck.cpp to get Gothic.exe Checksum.
 #pragma comment(lib, "shlwapi.lib")
 

@@ -128,13 +128,8 @@ public:
     /** Puts the current world matrix into a CB and binds it to the given slot */
     void SetupPerInstanceConstantBuffer( int slot = 1 );
 
-    /**Colorspace for HDR-Monitors on Windows 10 */
-    /** HDR Support */
-    //DXGI_COLOR_SPACE_TYPE   m_colorSpace; //only used when access from other function required
-    //DXGI_COLOR_SPACE_TYPE   GetColorSpace() const noexcept { return m_colorSpace; } //only used when access from other function required
-
-    void UpdateColorSpace_SwapChain3();
-    void UpdateColorSpace_SwapChain4();
+    /** Colorspace for HDR-Monitors on Windows 10 */
+    void UpdateColorSpace_SwapChain();
 
     /** Sets up texture with normalmap and fxmap for rendering */
     bool BindTextureNRFX( zCTexture* tex, bool bindShader );
@@ -216,8 +211,6 @@ public:
 
     /** Draws a list of mesh infos */
     XRESULT DrawMeshInfoListAlphablended( const std::vector<std::pair<MeshKey, MeshInfo*>>& list );
-
-    XRESULT DrawWorldMeshW( bool noTextures = false );
 
     /** Draws the static VOBs */
     virtual XRESULT DrawVOBs( bool noTextures = false );

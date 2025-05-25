@@ -2,10 +2,18 @@
 #include <intrin.h>
 #include <shlwapi.h>
 #include <string>
+#include <map>
 
 #pragma comment(lib, "shlwapi.lib")
 
 enum { GOTHIC1_EXECUTABLE = 0, GOTHIC1A_EXECUTABLE = 1, GOTHIC2_EXECUTABLE = 2, GOTHIC2A_EXECUTABLE = 3, INVALID_EXECUTABLE = -1 };
+
+std::map<int, std::string> dllBinFiles = {
+    { GOTHIC1_EXECUTABLE, "\\GD3D11\\bin\\g1" },
+    { GOTHIC1A_EXECUTABLE, "\\GD3D11\\bin\\g1a" },
+    { GOTHIC2_EXECUTABLE, "\\GD3D11\\bin\\g2" },
+    { GOTHIC2A_EXECUTABLE, "\\GD3D11\\bin\\g2a" }
+};
 
 struct ddraw_dll {
     HMODULE dll = NULL;
@@ -191,105 +199,49 @@ BOOL APIENTRY DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
 
         std::string dllPath;
         bool showLoadingInfo = true;
-        switch ( foundExecutable ) {
-            case GOTHIC2A_EXECUTABLE: {
-                if ( haveAVX2 && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g2a_avx2.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( haveAVX && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g2a_avx.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g2a.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
+        auto it = dllBinFiles.find( foundExecutable );
+        if ( it != dllBinFiles.end() ) {
+            if ( haveAVX2 && !ddraw.dll ) {
+                dllPath = std::string( executablePath ) + it->second + "_avx2.dll";
+                ddraw.dll = LoadLibraryA( dllPath.c_str() );
             }
-            break;
-
-            case GOTHIC2_EXECUTABLE: {
-                if ( haveAVX2 && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g2_avx2.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( haveAVX && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g2_avx.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g2.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
+            if ( haveAVX && !ddraw.dll ) {
+                dllPath = std::string( executablePath ) + it->second + "_avx.dll";
+                ddraw.dll = LoadLibraryA( dllPath.c_str() );
             }
-            break;
-
-            case GOTHIC1_EXECUTABLE: {
-                if ( haveAVX2 && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g1_avx2.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( haveAVX && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g1_avx.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g1.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
+            if ( !ddraw.dll ) {
+                dllPath = std::string( executablePath ) + it->second + ".dll";
+                ddraw.dll = LoadLibraryA( dllPath.c_str() );
             }
-            break;
-
-            case GOTHIC1A_EXECUTABLE: {
-                if ( haveAVX2 && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g1a_avx2.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( haveAVX && !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g1a_avx.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-                if ( !ddraw.dll ) {
-                    dllPath = std::string( executablePath ) + "\\GD3D11\\bin\\g1a.dll";
-                    ddraw.dll = LoadLibraryA( dllPath.c_str() );
-                }
-            }
-            break;
-
-            default: {
-                MessageBoxA( nullptr, "GD3D11 Renderer doesn't work with your game version.\nIt requires report version of the game. Same as System Pack or Union.", "Gothic GD3D11", MB_ICONERROR );
-                showLoadingInfo = false;
-            }
-            break;
+        } else {
+            MessageBoxA( nullptr, "GD3D11 Renderer doesn't work with your game version.\nIt requires report version of the game. Same as System Pack or Union.", "Gothic GD3D11", MB_ICONERROR );
+            showLoadingInfo = false;
         }
 
         if ( !ddraw.dll ) {
             if ( showLoadingInfo ) {
                 if ( !CheckFileExists( dllPath.c_str() ) ) {
-                    switch ( foundExecutable ) {
-                        case GOTHIC2A_EXECUTABLE:
-                            MessageBoxA( nullptr, "GD3D11 Renderer couldn't be loaded.\nUnable to load DLL 'GD3D11\\bin\\g2a.dll'. The specified module could not be found.", "Gothic GD3D11", MB_ICONERROR );
-                            break;
-
-                        case GOTHIC2_EXECUTABLE:
-                            MessageBoxA( nullptr, "GD3D11 Renderer couldn't be loaded.\nUnable to load DLL 'GD3D11\\bin\\g2.dll'. The specified module could not be found.", "Gothic GD3D11", MB_ICONERROR );
-                            break;
-
-                        case GOTHIC1_EXECUTABLE:
-                            MessageBoxA( nullptr, "GD3D11 Renderer couldn't be loaded.\nUnable to load DLL 'GD3D11\\bin\\g1.dll'. The specified module could not be found.", "Gothic GD3D11", MB_ICONERROR );
-                            break;
-
-                        case GOTHIC1A_EXECUTABLE:
-                            MessageBoxA( nullptr, "GD3D11 Renderer couldn't be loaded.\nUnable to load DLL 'GD3D11\\bin\\g1a.dll'. The specified module could not be found.", "Gothic GD3D11", MB_ICONERROR );
-                            break;
-
-                        default:
-                            break;
-                    }
+                    std::string errorMessage( "GD3D11 Renderer couldn't be loaded.\nUnable to load DLL '" );
+                    errorMessage.append( it->second );
+                    errorMessage.append( ".dll'. The specified module could not be found." );
+                    MessageBoxA( nullptr, errorMessage.c_str(), "Gothic GD3D11", MB_ICONERROR );
                 } else {
-                    char buffer[32];
-                    sprintf_s( buffer, "0x%x", GetLastError() );
-                    MessageBoxA( nullptr, (std::string( "GD3D11 Renderer couldn't be loaded.\nAccess Denied(" ) + buffer + ")." ).c_str(), "Gothic GD3D11", MB_ICONERROR );
+                    DWORD errorCode = GetLastError();
+                    std::wstring errorMessage( L"GD3D11 Renderer couldn't be loaded.\n" );
+
+                    LPWSTR messageBuffer = nullptr;
+                    size_t size = FormatMessageW( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                 NULL, errorCode, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), (LPWSTR)&messageBuffer, 0, NULL );
+                    if ( size > 0 ) {
+                        errorMessage.append( messageBuffer );
+                    } else {
+                        wchar_t buffer[32];
+                        wprintf_s( buffer, "0x%x", errorCode );
+                        errorMessage.append( L"Access Denied(" + std::wstring( buffer ) + L")."  );
+                    }
+
+                    LocalFree( messageBuffer );
+                    MessageBoxW( nullptr, errorMessage.c_str(), L"Gothic GD3D11", MB_ICONERROR );
                 }
             }
             

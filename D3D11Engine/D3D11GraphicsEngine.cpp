@@ -3328,8 +3328,9 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
             GetContext()->PSSetShader( nullptr, nullptr, 0 );
         }
 
+        // timer range is between 0 and 100000, for now having bugs with huge values for sin/cos
         VS_ExConstantBuffer_Wind windBuff;
-        windBuff.globalTime = Engine::GAPI->GetTotalTime();
+        windBuff.globalTime = static_cast<float>( Engine::GAPI->GetTotalTimeDW() % 100000 );
         windBuff.windDir = float3( 0.3f, 0.15f, 0.5f );
 
         if ( ActiveVS ) {
@@ -3493,8 +3494,9 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
     SetupVS_ExMeshDrawCall();
     SetupVS_ExConstantBuffer();
 
+    // timer range is between 0 and 100000, for now having bugs with huge values for sin/cos
     VS_ExConstantBuffer_Wind windBuff;
-    windBuff.globalTime = Engine::GAPI->GetTotalTime();
+    windBuff.globalTime = static_cast<float>( Engine::GAPI->GetTotalTimeDW() % 100000 );
     windBuff.windDir = float3( 0.3f, 0.15f, 0.5f );
 
     if ( ActiveVS ) {

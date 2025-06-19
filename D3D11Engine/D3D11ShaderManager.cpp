@@ -114,10 +114,6 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.push_back( ShaderInfo( "VS_AdvanceRain", "VS_AdvanceRain.hlsl", "v", 13 ) );
     Shaders.back().cBufferSizes.push_back( sizeof( AdvanceRainConstantBuffer ) );
 
-    Shaders.push_back( ShaderInfo( "VS_Ocean", "VS_Ocean.hlsl", "v", 1 ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstance ) );
-
     Shaders.push_back( ShaderInfo( "VS_ExWS", "VS_ExWS.hlsl", "v", 1 ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerFrame ) );
     Shaders.back().cBufferSizes.push_back( sizeof( VS_ExConstantBuffer_PerInstance ) );
@@ -194,13 +190,6 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.back().cBufferSizes.push_back( sizeof( AtmosphereConstantBuffer ) );
     Shaders.back().cBufferSizes.push_back( sizeof( MaterialInfo::Buffer ) );
     Shaders.back().cBufferSizes.push_back( sizeof( PerObjectState ) );
-
-    Shaders.push_back( ShaderInfo( "PS_Ocean", "PS_Ocean.hlsl", "p" ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( GothicGraphicsState ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( AtmosphereConstantBuffer ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( OceanSettingsConstantBuffer ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( OceanPerPatchConstantBuffer ) );
-    Shaders.back().cBufferSizes.push_back( sizeof( RefractionInfoConstantBuffer ) );
 
 
     Shaders.push_back( ShaderInfo( "PS_Water", "PS_Water.hlsl", "p" ) );
@@ -503,15 +492,9 @@ XRESULT D3D11ShaderManager::Init() {
     Shaders.back().cBufferSizes.push_back( sizeof( MaterialInfo::Buffer ) );
     Shaders.back().cBufferSizes.push_back( sizeof( PerObjectState ) );
 
-    if ( !FeatureLevel10Compatibility ) {
-        // UNUSED
-        //Shaders.push_back( ShaderInfo( "DefaultTess", "DefaultTess.hlsl", "hd" ) );
-        //Shaders.back().cBufferSizes.push_back( sizeof( DefaultHullShaderConstantBuffer ) );
-
-        Shaders.push_back( ShaderInfo( "OceanTess", "OceanTess.hlsl", "hd" ) );
-        Shaders.back().cBufferSizes.push_back( sizeof( DefaultHullShaderConstantBuffer ) );
-        Shaders.back().cBufferSizes.push_back( sizeof( OceanSettingsConstantBuffer ) );
-    }
+    // UNUSED
+    //Shaders.push_back( ShaderInfo( "DefaultTess", "DefaultTess.hlsl", "hd" ) );
+    //Shaders.back().cBufferSizes.push_back( sizeof( DefaultHullShaderConstantBuffer ) );
 
     return XR_SUCCESS;
 }

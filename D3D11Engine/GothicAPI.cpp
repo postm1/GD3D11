@@ -35,7 +35,6 @@
 #include "oCNPC.h"
 #include "oCVisFX.h"
 #include "zCMeshSoftSkin.h"
-#include "GOcean.h"
 #include "zCVobLight.h"
 #include "zCQuadMark.h"
 #include "zCOption.h"
@@ -118,7 +117,6 @@ GothicAPI::GothicAPI() {
 
     CameraReplacementPtr = nullptr;
     WrappedWorldMesh = nullptr;
-    Ocean = nullptr;
     CurrentCamera = nullptr;
 
     MainThreadID = GetCurrentThreadId();
@@ -3014,26 +3012,6 @@ LRESULT GothicAPI::OnWindowMessage( HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
             if ( !Engine::AntTweakBar->GetActive() && !GMPModeActive && Engine::GAPI->GetRendererState().RendererSettings.AllowNumpadKeys )
                 SpawnVegetationBoxAt( GetCameraPosition() );
             break;
-
-        case VK_NUMPAD2:
-#ifdef PUBLIC_RELEASE
-            if ( !Engine::AntTweakBar->GetActive() && !GMPModeActive && Engine::GAPI->GetRendererState().RendererSettings.AllowNumpadKeys )
-#endif
-                Ocean->AddWaterPatchAt( static_cast<unsigned int>(GetCameraPosition().x / OCEAN_PATCH_SIZE), static_cast<unsigned int>(GetCameraPosition().z / OCEAN_PATCH_SIZE) );
-            break;
-
-        case VK_NUMPAD3:
-#ifdef PUBLIC_RELEASE
-            if ( !Engine::AntTweakBar->GetActive() && !GMPModeActive && Engine::GAPI->GetRendererState().RendererSettings.AllowNumpadKeys )
-#endif
-            {
-                for ( int x = -1; x <= 1; x++ ) {
-                    for ( int y = -1; y <= 1; y++ ) {
-                        Ocean->AddWaterPatchAt( static_cast<unsigned int>((GetCameraPosition().x / OCEAN_PATCH_SIZE) + x), static_cast<unsigned int>((GetCameraPosition().z / OCEAN_PATCH_SIZE) + y) );
-                    }
-                }
-            }
-            break;
         }
         break;
 
@@ -4838,11 +4816,6 @@ void GothicAPI::CollectPolygonsInAABBRec( BspInfo* base, const zTBBox3D& bbox, s
             break;
         }
     }
-}
-
-/** Returns the current ocean-object */
-GOcean* GothicAPI::GetOcean() {
-    return Ocean.get();
 }
 
 /** Returns our bsp-root-node */

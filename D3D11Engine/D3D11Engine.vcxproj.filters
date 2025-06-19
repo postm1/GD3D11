@@ -58,9 +58,6 @@
     <Filter Include="Librarys\StackWalker">
       <UniqueIdentifier>{e45daa27-5530-477e-a17c-9778bd2dfcaf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Librarys\Ocean">
-      <UniqueIdentifier>{c785e8ae-b3cf-484f-a21b-448b1a0deee3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\D2D\Views\Editor">
       <UniqueIdentifier>{bbb9a900-54fc-4e56-9cb6-9b7d93f6b1e6}</UniqueIdentifier>
     </Filter>
@@ -360,15 +357,6 @@
     </ClInclude>
     <ClInclude Include="win32ClipboardWrapper.h">
       <Filter>Librarys</Filter>
-    </ClInclude>
-    <ClInclude Include="GOcean.h">
-      <Filter>Engine\GAPI\Objects</Filter>
-    </ClInclude>
-    <ClInclude Include="CSFFT\fft_512x512.h">
-      <Filter>Librarys\Ocean</Filter>
-    </ClInclude>
-    <ClInclude Include="ocean_simulator.h">
-      <Filter>Librarys\Ocean</Filter>
     </ClInclude>
     <ClInclude Include="GFSDK_SSAO.h">
       <Filter>Librarys</Filter>
@@ -868,15 +856,6 @@
     </ClCompile>
     <ClCompile Include="win32ClipboardWrapper.cpp">
       <Filter>Librarys</Filter>
-    </ClCompile>
-    <ClCompile Include="GOcean.cpp">
-      <Filter>Engine\GAPI\Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="CSFFT\fft_512x512_c2c.cpp">
-      <Filter>Librarys\Ocean</Filter>
-    </ClCompile>
-    <ClCompile Include="ocean_simulator.cpp">
-      <Filter>Librarys\Ocean</Filter>
     </ClCompile>
     <ClCompile Include="D2DDialog.cpp">
       <Filter>Engine\D2D\Views</Filter>

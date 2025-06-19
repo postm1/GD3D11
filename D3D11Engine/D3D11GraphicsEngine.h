@@ -38,7 +38,6 @@ class zCVob;
 class D2DView;
 struct VobLightInfo;
 class GMesh;
-class GOcean;
 class D3D11HDShader;
 class D3D11OcclusionQuerry;
 struct MeshInfo;
@@ -170,9 +169,6 @@ public:
     /** Draws quadmarks in a simple way */
     void DrawQuadMarks();
     void DrawMQuadMarks();
-
-    /** Draws the ocean */
-    XRESULT DrawOcean( GOcean* ocean );
 
     /** Gets the depthbuffer */
     RenderToDepthStencilBuffer* GetDepthBuffer() { return DepthStencilBuffer.get(); }

@@ -160,7 +160,6 @@ class GInventory;
 class zCVobLight;
 class MyDirectDrawSurface7;
 class GVegetationBox;
-class GOcean;
 class zCMorphMesh;
 class zCDecal;
 
@@ -661,9 +660,6 @@ public:
     /** Collects polygons in the given AABB */
     void CollectPolygonsInAABB( const zTBBox3D& bbox, zCPolygon**& polyList, int& numFound );
 
-    /** Returns the current ocean-object */
-    GOcean* GetOcean();
-
     /** Loads the data out of a zCModel and stores it in the cache */
     SkeletalMeshVisualInfo* LoadzCModelData( zCModel* model );
     SkeletalMeshVisualInfo* LoadzCModelData( oCNPC* npc );
@@ -816,9 +812,6 @@ private:
 
     /** Gothics output window */
     HWND OutputWindow;
-
-    /** Ocean */
-    std::unique_ptr<GOcean> Ocean;
 
     /** Suppressed textures for the sections */
     std::map<WorldMeshSectionInfo*, std::vector<std::string>> SuppressedTexturesBySection;

@@ -16,7 +16,6 @@
 #include "D3D11ShaderManager.h"
 #include "D3D11VShader.h"
 #include "GMesh.h"
-#include "GOcean.h"
 #include "GSky.h"
 #include "RenderToTextureBuffer.h"
 #include "zCParticleFX.h"
@@ -2841,9 +2840,6 @@ void D3D11GraphicsEngine::DrawWaterSurfaces() {
         }
     }
 
-    // Draw Ocean
-    if ( !FeatureLevel10Compatibility && Engine::GAPI->GetOcean() ) Engine::GAPI->GetOcean()->Draw();
-
     GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(),
         DepthStencilBuffer->GetDepthStencilView().Get() );
 }
@@ -4851,150 +4847,6 @@ LRESULT D3D11GraphicsEngine::OnWindowMessage( HWND hWnd, UINT msg, WPARAM wParam
         UIView->OnWindowMessage( hWnd, msg, wParam, lParam );
     }
     return 0;
-}
-
-/** Draws the ocean */
-XRESULT D3D11GraphicsEngine::DrawOcean( GOcean* ocean ) {
-    SetDefaultStates();
-
-    // Then draw the ocean
-    SetActivePixelShader( "PS_Ocean" );
-    SetActiveVertexShader( "VS_ExDisplace" );
-
-    // Set constant buffer
-    ActivePS->GetConstantBuffer()[0]->UpdateBuffer(
-        &Engine::GAPI->GetRendererState().GraphicsState );
-    ActivePS->GetConstantBuffer()[0]->BindToPixelShader( 0 );
-
-    GSky* sky = Engine::GAPI->GetSky();
-    ActivePS->GetConstantBuffer()[1]->UpdateBuffer( &sky->GetAtmosphereCB() );
-    ActivePS->GetConstantBuffer()[1]->BindToPixelShader( 1 );
-
-    Engine::GAPI->GetRendererState().RasterizerState.CullMode =
-        GothicRasterizerStateInfo::CM_CULL_NONE;
-    Engine::GAPI->GetRendererState().RasterizerState.FrontCounterClockwise =
-        !Engine::GAPI->GetRendererState().RasterizerState.FrontCounterClockwise;
-    if ( Engine::GAPI->GetRendererState().RendererSettings.WireframeWorld ) {
-        Engine::GAPI->GetRendererState().RasterizerState.Wireframe = true;
-    }
-    Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
-
-    // Init drawcalls
-    SetupVS_ExMeshDrawCall();
-    SetupVS_ExConstantBuffer();
-
-    GetContext()->IASetPrimitiveTopology(
-        D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST );
-
-    auto hd = ShaderManager->GetHDShader( "OceanTess" );
-    if ( hd ) hd->Apply();
-
-    DefaultHullShaderConstantBuffer hscb = {};
-
-    // convert to EdgesPerScreenHeight
-    hscb.H_EdgesPerScreenHeight =
-        GetResolution().y /
-        Engine::GAPI->GetRendererState().RendererSettings.TesselationFactor;
-    hscb.H_Proj11 =
-        Engine::GAPI->GetRendererState().TransformState.TransformProj._22;
-    hscb.H_GlobalTessFactor =
-        Engine::GAPI->GetRendererState().RendererSettings.TesselationFactor;
-    hscb.H_ScreenResolution = float2( GetResolution().x, GetResolution().y );
-    hscb.H_FarPlane = Engine::GAPI->GetFarPlane();
-    hd->GetConstantBuffer()[0]->UpdateBuffer( &hscb );
-    hd->GetConstantBuffer()[0]->BindToHullShader( 1 );
-
-    wrl::ComPtr<ID3D11ShaderResourceView> tex_displacement;
-    wrl::ComPtr<ID3D11ShaderResourceView> tex_gradient;
-    wrl::ComPtr<ID3D11ShaderResourceView> tex_fresnel;
-    wrl::ComPtr<ID3D11ShaderResourceView> cube_reflect = ReflectionCube.Get();
-    OceanSettingsConstantBuffer ocb = {};
-    ocean->GetFFTResources( tex_displacement.GetAddressOf(), tex_gradient.GetAddressOf(), tex_fresnel.GetAddressOf(), &ocb );
-    ocb.OS_SunColor = Engine::GAPI->GetSky()->GetSunColor();
-
-    if ( tex_gradient.Get() ) GetContext()->PSSetShaderResources( 0, 1, tex_gradient.GetAddressOf() );
-
-    if ( tex_displacement.Get() ) {
-        GetContext()->DSSetShaderResources( 0, 1, tex_displacement.GetAddressOf() );
-    }
-
-    GetContext()->PSSetShaderResources( 1, 1, tex_fresnel.GetAddressOf() );
-    GetContext()->PSSetShaderResources( 3, 1, cube_reflect.GetAddressOf() );
-
-    // Scene information is still bound from rendering water surfaces
-
-    GetContext()->PSSetSamplers( 1, 1, ClampSamplerState.GetAddressOf() );
-    GetContext()->PSSetSamplers( 2, 1, CubeSamplerState.GetAddressOf() );
-
-    // Update constantbuffer
-    ActivePS->GetConstantBuffer()[2]->UpdateBuffer( &ocb );
-    ActivePS->GetConstantBuffer()[2]->BindToPixelShader( 4 );
-
-    // DistortionTexture->BindToPixelShader(0);
-
-    RefractionInfoConstantBuffer ricb;
-    ricb.RI_Projection = Engine::GAPI->GetProjectionMatrix();
-    ricb.RI_ViewportSize = float2( Resolution.x, Resolution.y );
-    ricb.RI_Time = Engine::GAPI->GetTimeSeconds();
-    ricb.RI_CameraPosition = Engine::GAPI->GetCameraPosition();
-
-    ActivePS->GetConstantBuffer()[4]->UpdateBuffer( &ricb );
-    ActivePS->GetConstantBuffer()[4]->BindToPixelShader( 2 );
-
-    // Bind distortion texture
-    DistortionTexture->BindToPixelShader( 4 );
-
-    // Bind copied backbuffer
-    GetContext()->PSSetShaderResources(
-        5, 1, PfxRenderer->GetTempBuffer().GetShaderResView().GetAddressOf() );
-
-    // Bind depth to the shader
-    DepthStencilBufferCopy->BindToPixelShader( GetContext().Get(), 2 );
-
-    std::vector<XMFLOAT3> patches;
-    ocean->GetPatchLocations( patches );
-
-    XMMATRIX viewMatrix = XMMatrixTranspose( Engine::GAPI->GetViewMatrixXM() );
-
-    XMMATRIX scale = XMMatrixScaling( OCEAN_PATCH_SIZE, OCEAN_PATCH_SIZE, OCEAN_PATCH_SIZE );
-    for ( auto const& patch : patches ) {
-        XMMATRIX world = XMMatrixTranspose( scale * XMMatrixTranslation( patch.x, patch.y, patch.z ) );
-        ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &world );
-        ActiveVS->GetConstantBuffer()[1]->BindToVertexShader( 1 );
-
-        XMVECTOR localEye = XMVectorZero();
-
-        localEye = XMVector3TransformCoord( localEye, XMMatrixInverse( nullptr, XMMatrixTranspose( world ) * viewMatrix ) );
-
-        OceanPerPatchConstantBuffer opp;
-        XMFLOAT3 localEye3; XMStoreFloat3( &localEye3, localEye );
-        opp.OPP_LocalEye = localEye3;
-        opp.OPP_PatchPosition = patch;
-        ActivePS->GetConstantBuffer()[3]->UpdateBuffer( &opp );
-        ActivePS->GetConstantBuffer()[3]->BindToPixelShader( 3 );
-
-        ocean->GetPlaneMesh()->DrawMesh();
-    }
-
-    if ( Engine::GAPI->GetRendererState().RendererSettings.WireframeWorld ) {
-        Engine::GAPI->GetRendererState().RasterizerState.Wireframe = false;
-    }
-
-    Engine::GAPI->GetRendererState().RasterizerState.FrontCounterClockwise =
-        !Engine::GAPI->GetRendererState().RasterizerState.FrontCounterClockwise;
-    Engine::GAPI->GetRendererState().RasterizerState.CullMode = GothicRasterizerStateInfo::CM_CULL_BACK;
-    Engine::GAPI->GetRendererState().RasterizerState.SetDirty();
-
-    GetContext()->PSSetSamplers( 2, 1, ShadowmapSamplerState.GetAddressOf() );
-
-    SetActivePixelShader( "PS_World" );
-    SetActiveVertexShader( "VS_Ex" );
-
-    GetContext()->HSSetShader( nullptr, nullptr, 0 );
-    GetContext()->DSSetShader( nullptr, nullptr, 0 );
-    GetContext()->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-
-    return XR_SUCCESS;
 }
 
 /** Handles an UI-Event */

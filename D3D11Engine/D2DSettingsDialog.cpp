@@ -591,7 +591,7 @@ XRESULT D2DSettingsDialog::InitControls() {
 
     SV_Checkbox* rainCheckbox = new SV_Checkbox( MainView, MainPanel );
     rainCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
-    rainCheckbox->AlignUnder( windStrengthSlider, 8 );
+    rainCheckbox->AlignUnder( contrastSlider, 93 );
     switch ( userLanguage ) {
     case LANGUAGE_POLISH: rainCheckbox->SetCaption( L"Włącz Deszcz" ); break;
     default: rainCheckbox->SetCaption( L"Enable Rain" ); break;

@@ -391,8 +391,8 @@ float4 PSMain( PS_INPUT Input ) : SV_TARGET
 							diffuse.rgb * lightColor.rgb * lightColor.a * worldAO, sun) 
 				  + specColored;
 	
-	//float fresnel = pow(1.0f - max(0.0f, dot(normal, V)), 10.0f);
-    //litPixel += lerp(fresnel * litPixel * 0.5f, 0.0f, sun);
+    float fresnel = pow(1.0f - saturate(dot(normal, V)), 10.0f);
+    litPixel += lerp(fresnel * litPixel * 0.5f, 0.0f, sun);
 	
 	// Run scattering
 	litPixel = ApplyAtmosphericScatteringGround(wsPosition, litPixel.rgb);

@@ -129,6 +129,8 @@ public:
 
     void ResetPresentPending() { PresentPending = false; }
 
+    HWND GetOutputWindow() { return OutputWindow; }
+
 protected:
     /** Updates the transformsCB with new values from the GAPI */
     void UpdateTransformsCB();

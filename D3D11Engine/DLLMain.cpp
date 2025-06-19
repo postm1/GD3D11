@@ -434,6 +434,23 @@ int WINAPI hooked_WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR l
 }
 #endif
 
+[[noreturn]] void badAllocationHandler()
+{
+    D3D11GraphicsEngine* engine = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
+    while ( ShowCursor( true ) < 0 );
+    if ( engine ) {
+        if ( HWND outputWindow = engine->GetOutputWindow() ) {
+            ShowWindow( outputWindow, SW_HIDE );
+        }
+    }
+
+    LogErrorBox() << "Allocation failed due to running out of memory!\n"
+        "You might experience random crashes when saving game due"
+        " to heavy memory overhead caused by AMD drivers.\n"
+        "It is recommended to use 32-bit DXVK on top of GD3D11 for AMD users.";
+    exit( -1 );
+}
+
 BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
     if ( DetourIsHelperProcess() ) {
         return TRUE;
@@ -442,6 +459,9 @@ BOOL WINAPI DllMain( HINSTANCE hInst, DWORD reason, LPVOID ) {
     if ( reason == DLL_PROCESS_ATTACH ) {
         DetourRestoreAfterWith();
         DetourTransactionBegin();
+
+        // Setup bad allocation handler
+        std::set_new_handler( badAllocationHandler );
 
         //DebugWrite_i("DDRAW Proxy DLL starting.\n", 0);
         hLThis = hInst;

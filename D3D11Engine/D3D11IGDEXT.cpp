@@ -56,17 +56,15 @@ bool D3D11IGDEXT::InitIGDEXT( ID3D11Device* device ) {
         if ( INTC_D3D11_GetSupportedVersions && INTC_D3D11_CreateDeviceExtensionContext && INTC_DestroyDeviceExtensionContext ) {
             INTCExtensionVersion requiredVersion = { 1, 2, 0 };
 
-            INTCExtensionVersion* pSupportedExtVersions = nullptr;
             unsigned int supportedExtVersionCount = 0;
-            INTC_D3D11_GetSupportedVersions( device, pSupportedExtVersions, &supportedExtVersionCount );
+            INTC_D3D11_GetSupportedVersions( device, nullptr, &supportedExtVersionCount );
 
             INTCExtensionInfo intcExtensionInfo = {};
-            pSupportedExtVersions = new INTCExtensionVersion[supportedExtVersionCount];
-            memset( pSupportedExtVersions, 0, sizeof( INTCExtensionVersion ) * supportedExtVersionCount );
-            INTC_D3D11_GetSupportedVersions( device, pSupportedExtVersions, &supportedExtVersionCount );
+            std::vector<INTCExtensionVersion> pSupportedExtVersions( supportedExtVersionCount );
+            INTC_D3D11_GetSupportedVersions( device, pSupportedExtVersions.data(), &supportedExtVersionCount);
 
             bool haveRequestedExtension = false;
-            for ( unsigned int i = 0; i < supportedExtVersionCount; ++i ) {
+            for ( size_t i = 0; i < pSupportedExtVersions.size(); ++i ) {
                 if ( pSupportedExtVersions[i].HWFeatureLevel >= requiredVersion.HWFeatureLevel &&
                     pSupportedExtVersions[i].APIVersion >= requiredVersion.APIVersion &&
                     pSupportedExtVersions[i].Revision >= requiredVersion.Revision ) {
@@ -75,7 +73,7 @@ bool D3D11IGDEXT::InitIGDEXT( ID3D11Device* device ) {
                     break;
                 }
             }
-
+            
             if ( haveRequestedExtension ) {
                 if ( SUCCEEDED( INTC_D3D11_CreateDeviceExtensionContext( device, &ExtensionContext, &intcExtensionInfo, nullptr ) ) ) {
                     IsInitialized = true;

@@ -43,6 +43,9 @@
 #include "zCSoundSystem.h"
 #include "zCView.h"
 
+// TODO: REMOVE THIS!
+#include "D3D11GraphicsEngine.h"
+
 // Duration how long the scene will stay wet, in MS
 const DWORD SCENE_WETNESS_DURATION_MS = 30 * 1000;
 
@@ -955,7 +958,11 @@ void GothicAPI::DrawWorldMeshNaive() {
     FrameMeshInstances.clear();
 
     START_TIMING();
-    Engine::GraphicsEngine->DrawWorldMesh();
+    if ( FeatureLevel10Compatibility ) {
+        Engine::GraphicsEngine->DrawWorldMesh();
+    } else {
+        Engine::GraphicsEngine->DrawWorldMesh_Indirect();
+    }
     STOP_TIMING( GothicRendererTiming::TT_WorldMesh );
 
     for ( auto const& vegetationBox : VegetationBoxes ) {
@@ -1430,6 +1437,24 @@ void GothicAPI::DrawMeshInfo( zCMaterial* mat, MeshInfo* msh ) {
         Engine::GraphicsEngine->DrawVertexBuffer( msh->MeshVertexBuffer, msh->Vertices.size() );
     } else {
         Engine::GraphicsEngine->DrawVertexBufferIndexed( msh->MeshVertexBuffer, msh->MeshIndexBuffer, msh->Indices.size() );
+    }
+}
+
+void GothicAPI::DrawMeshInfo_Layered( zCMaterial* mat, MeshInfo* msh ) {
+    // Check for material and bind the texture if it exists
+    if ( mat ) {
+        // Setup alphatest //TODO: This has to be done earlier!
+        if ( mat->GetAlphaFunc() == zRND_ALPHA_FUNC_TEST )
+            RendererState.GraphicsState.FF_GSwitches |= GSWITCH_ALPHAREF;
+        else
+            RendererState.GraphicsState.FF_GSwitches &= ~GSWITCH_ALPHAREF;
+    }
+
+    D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
+    if ( !msh->MeshIndexBuffer ) {
+        g->DrawVertexBufferInstanced( msh->MeshVertexBuffer, msh->Vertices.size(), 6 );
+    } else {
+        g->DrawVertexBufferInstancedIndexed( msh->MeshVertexBuffer, msh->MeshIndexBuffer, msh->Indices.size(), 6 );
     }
 }
 
@@ -1953,9 +1978,6 @@ float3* GothicAPI::GetLowestLODPoly_SkeletalMesh( zCModel* model, const int poly
     return returnPositions;
 }
 
-// TODO: REMOVE THIS!
-#include "D3D11GraphicsEngine.h"
-
 /** Called to update the compress backbuffer state */
 void GothicAPI::UpdateCompressBackBuffer() {
     reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine)->OnResetBackBuffer();
@@ -2166,6 +2188,215 @@ void GothicAPI::DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool u
                     // Go through all meshes using that material
                     for ( unsigned int m = 0; m < itm.second.size(); m++ ) {
                         DrawMeshInfo( itm.first, itm.second[m] );
+                    }
+                }
+            }
+        }
+    }
+
+    RendererState.RendererInfo.FrameDrawnVobs++;
+}
+
+void GothicAPI::DrawSkeletalMeshVob_Layered( SkeletalVobInfo* vi, float distance, bool updateState ) {
+    // TODO: Put this into the renderer!!
+    D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
+
+    zCModel* model = static_cast<zCModel*>(vi->Vob->GetVisual());
+    SkeletalMeshVisualInfo* visual = static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo);
+
+    if ( !model || !vi->VisualInfo )
+        return; // Gothic fortunately sets this to 0 when it throws the model out of the cache
+
+    model->SetIsVisible( true );
+    if ( !vi->Vob->GetShowVisual() )
+        return;
+
+    float4 modelColor;
+    if ( Engine::GAPI->GetRendererState().RendererSettings.EnableShadows ) {
+        // Let shadows do the work
+        modelColor = 0xFFFFFFFF;
+    } else {
+        if ( vi->Vob->IsIndoorVob() ) {
+            // All lightmapped polys have this color, so just use it
+            modelColor = DEFAULT_LIGHTMAP_POLY_COLOR;
+        } else {
+            // Get the color from vob position of the ground poly
+            if ( zCPolygon* polygon = vi->Vob->GetGroundPoly() ) {
+                static const float inv255f = (1.0f / 255.0f);
+                float3 vobPos = vi->Vob->GetPositionWorld();
+                float3 polyLightStat = polygon->GetLightStatAtPos( vobPos );
+                modelColor.x = polyLightStat.z * inv255f;
+                modelColor.y = polyLightStat.y * inv255f;
+                modelColor.z = polyLightStat.x * inv255f;
+                modelColor.w = 1.f;
+            } else {
+                modelColor = 0xFFFFFFFF;
+            }
+        }
+    }
+
+    XMMATRIX scale = XMMatrixScalingFromVector( model->GetModelScaleXM() );
+
+    XMMATRIX world = vi->Vob->GetWorldMatrixXM() * scale;
+
+    zCCamera::GetCamera()->SetTransformXM( zCCamera::TT_WORLD, world );
+
+    XMMATRIX view = GetViewMatrixXM();
+    SetWorldViewTransform( world, view );
+
+    float fatness = model->GetModelFatness();
+
+    // Get the bone transforms
+    std::vector<XMFLOAT4X4> transforms;
+    model->GetBoneTransforms( &transforms );
+
+    if ( updateState ) {
+        // Update attachments
+        model->UpdateAttachedVobs();
+        model->UpdateMeshLibTexAniState();
+    }
+
+    if ( !static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo)->SkeletalMeshes.empty() ) {
+#ifdef BUILD_GOTHIC_2_6_fix
+        if ( !model->GetDrawHandVisualsOnly() || *reinterpret_cast<BYTE*>(0x57A694) == 0x90 ) {
+#else
+        if ( !model->GetDrawHandVisualsOnly() ) {
+#endif
+            g->DrawSkeletalMesh_Layered( vi, transforms, modelColor, fatness );
+        }
+    } else {
+        if ( model->GetMeshSoftSkinList()->NumInArray > 0 ) {
+            // Just in case somehow we end up without skeletal meshes and they are available
+            WorldConverter::ExtractSkeletalMeshFromVob( model, static_cast<SkeletalMeshVisualInfo*>(vi->VisualInfo) );
+        }
+    }
+    g->SetActiveVertexShader( "VS_ExNodeLayered" );
+
+    // Set up instance info
+    VS_ExConstantBuffer_PerInstanceNode instanceInfo;
+    instanceInfo.Color = modelColor;
+
+    // Init the constantbuffer if not already done
+    if ( !vi->VobConstantBuffer )
+        vi->UpdateVobConstantBuffer();
+
+    g->SetupVS_ExMeshDrawCall();
+    g->SetupVS_ExConstantBuffer();
+
+    std::map<int, std::vector<MeshVisualInfo*>>& nodeAttachments = vi->NodeAttachments;
+    for ( unsigned int i = 0; i < transforms.size(); i++ ) {
+        // Check for new visual
+        zCModel* mvis = static_cast<zCModel*>(vi->Vob->GetVisual());
+        zCModelNodeInst* node = mvis->GetNodeList()->Array[i];
+
+        if ( !node->NodeVisual )
+            continue; // Happens when you pull your sword for example
+
+        // Check if this is loaded
+        if ( node->NodeVisual && nodeAttachments.find( i ) == nodeAttachments.end() ) {
+            // It's not, extract it
+            WorldConverter::ExtractNodeVisual( i, node, nodeAttachments );
+        }
+
+        // Check for changed visual
+        if ( nodeAttachments[i].size() && node->NodeVisual != nodeAttachments[i][0]->Visual ) {
+            // Check for deleted attachment
+            if ( !node->NodeVisual ) {
+                // Remove attachment
+                delete nodeAttachments[i][0];
+                nodeAttachments[i].clear();
+
+                LogInfo() << "Removed attachment from model " << vi->VisualInfo->VisualName;
+
+                continue; // Go to next attachment
+            }
+            // Load the new one
+            WorldConverter::ExtractNodeVisual( i, node, nodeAttachments );
+        }
+
+        if ( model->GetDrawHandVisualsOnly() ) {
+            std::string NodeName = node->ProtoNode->NodeName.ToChar();
+#ifdef BUILD_GOTHIC_2_6_fix
+            if ( NodeName.find( "HAND" ) == std::string::npos && (*reinterpret_cast<BYTE*>(0x57A694) != 0x90 || NodeName.find( "ARM" ) == std::string::npos) ) {
+#else
+            if ( NodeName.find( "HAND" ) == std::string::npos ) {
+#endif
+                continue;
+            }
+        }
+
+        if ( nodeAttachments.find( i ) != nodeAttachments.end() ) {
+            // Go through all attachments this node has
+            for ( MeshVisualInfo* mvi : nodeAttachments[i] ) {
+                XMMATRIX curTransform = XMLoadFloat4x4( &transforms[i] );
+                SetWorldViewTransform( world * curTransform, view );
+
+                if ( !mvi->Visual ) {
+                    LogWarn() << "Attachment without visual on model: " << model->GetVisualName();
+                    continue;
+                }
+
+                // Setup pixel shader here so that we get correct normals
+                // Somehow BindShaderForTexture make normals to be inversed
+                if ( g->GetRenderingStage() == DES_MAIN ) {
+                    g->SetActivePixelShader( "PS_DiffuseAlphaTest" );
+                    g->BindActivePixelShader();
+                }
+
+                // Update animated textures
+                bool isMMS = std::string( mvi->Visual->GetFileExtension( 0 ) ) == ".MMS";
+                if ( updateState ) {
+                    node->TexAniState.UpdateTexList();
+                    if ( isMMS ) {
+                        zCMorphMesh* mm = reinterpret_cast<zCMorphMesh*>(mvi->Visual);
+                        mm->GetTexAniState()->UpdateTexList();
+                    }
+                }
+
+                if ( isMMS ) {
+                    // Only 0.35f of the fatness wanted by gothic.
+                    // They seem to compensate for that with the scaling.
+                    instanceInfo.Fatness = std::max<float>( 0.f, fatness * 0.35f );
+                    instanceInfo.Scaling = fatness * 0.02f + 1.f;
+                } else {
+                    instanceInfo.Fatness = 0.f;
+                    instanceInfo.Scaling = 1.f;
+                }
+
+                auto& VShader = g->GetActiveVS();
+                if ( distance < 1000 && isMMS ) {
+                    zCMorphMesh* mm = reinterpret_cast<zCMorphMesh*>(mvi->Visual);
+                    // Only draw this as a morphmesh when rendering the main scene or when rendering as ghost
+                    if ( g->GetRenderingStage() == DES_MAIN || g->GetRenderingStage() == DES_GHOST ) {
+                        // Update constantbuffer
+                        instanceInfo.World = RendererState.TransformState.TransformWorld;
+                        VShader->GetConstantBuffer()[1]->UpdateBuffer( &instanceInfo );
+                        VShader->GetConstantBuffer()[1]->BindToVertexShader( 1 );
+
+                        if ( updateState ) {
+                            mm->AdvanceAnis();
+                            mm->CalcVertexPositions();
+                        }
+                        DrawMorphMesh_Layered( mm, mvi->Meshes );
+                        continue;
+                    }
+                }
+
+                instanceInfo.World = RendererState.TransformState.TransformWorld;
+                VShader->GetConstantBuffer()[1]->UpdateBuffer( &instanceInfo );
+                VShader->GetConstantBuffer()[1]->BindToVertexShader( 1 );
+
+                // Go through all materials registered here
+                for ( auto const& itm : mvi->Meshes ) {
+                    zCTexture* texture;
+                    if ( itm.first && (texture = itm.first->GetAniTexture()) != nullptr ) {
+                        if ( !g->BindTextureNRFX( texture, (g->GetRenderingStage() == DES_MAIN) ) )
+                            continue;
+                    }
+
+                    // Go through all meshes using that material
+                    for ( unsigned int m = 0; m < itm.second.size(); m++ ) {
+                        DrawMeshInfo_Layered( itm.first, itm.second[m] );
                     }
                 }
             }
@@ -4492,10 +4723,6 @@ void GothicAPI::SetFrameProcessedTexturesReady() {
 
 /** Draws a morphmesh */
 void GothicAPI::DrawMorphMesh( zCMorphMesh* msh, std::map<zCMaterial*, std::vector<MeshInfo*>>& meshes ) {
-    XMFLOAT3 bbmin, bbmax;
-    bbmin = XMFLOAT3( FLT_MAX, FLT_MAX, FLT_MAX );
-    bbmax = XMFLOAT3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
-
     zCProgMeshProto* morphMesh = msh->GetMorphMesh();
     if ( !morphMesh )
         return;
@@ -4527,6 +4754,46 @@ void GothicAPI::DrawMorphMesh( zCMorphMesh* msh, std::map<zCMaterial*, std::vect
                 if ( mi->MeshIndex == i ) {
                     mi->MeshVertexBuffer->UpdateBuffer( &vertices[0], vertices.size() * sizeof( ExVertexStruct ) );
                     Engine::GraphicsEngine->DrawVertexBufferIndexed( mi->MeshVertexBuffer, mi->MeshIndexBuffer, mi->Indices.size() );
+                    goto Out_Of_Nested_Loop;
+                }
+            }
+        }
+        Out_Of_Nested_Loop:;
+    }
+}
+
+void GothicAPI::DrawMorphMesh_Layered( zCMorphMesh* msh, std::map<zCMaterial*, std::vector<MeshInfo*>>& meshes ) {
+    zCProgMeshProto* morphMesh = msh->GetMorphMesh();
+    if ( !morphMesh )
+        return;
+
+    D3D11GraphicsEngine* g = reinterpret_cast<D3D11GraphicsEngine*>(Engine::GraphicsEngine);
+    XMFLOAT3* posList = morphMesh->GetPositionList()->Array->toXMFLOAT3();
+    for ( int i = 0; i < morphMesh->GetNumSubmeshes(); i++ ) {
+        std::vector<ExVertexStruct> vertices;
+
+        zCSubMesh* s = morphMesh->GetSubmesh( i );
+        vertices.reserve( s->WedgeList.NumInArray );
+        for ( int v = 0; v < s->WedgeList.NumInArray; v++ ) {
+            zTPMWedge& wedge = s->WedgeList.Array[v];
+            vertices.emplace_back();
+            ExVertexStruct& vx = vertices.back();
+            vx.Position = posList[wedge.position];
+            vx.Normal = wedge.normal;
+            vx.TexCoord = wedge.texUV;
+            vx.Color = 0xFFFFFFFF;
+        }
+
+        if ( zCTexture* texture = s->Material->GetAniTexture() ) {
+            if ( !g->BindTextureNRFX( texture, (g->GetRenderingStage() == DES_MAIN) ) )
+                continue;
+        }
+
+        for ( auto const& it : meshes ) {
+            for ( MeshInfo* mi : it.second ) {
+                if ( mi->MeshIndex == i ) {
+                    mi->MeshVertexBuffer->UpdateBuffer( &vertices[0], vertices.size() * sizeof( ExVertexStruct ) );
+                    g->DrawVertexBufferInstancedIndexed( mi->MeshVertexBuffer, mi->MeshIndexBuffer, mi->Indices.size(), 6 );
                     goto Out_Of_Nested_Loop;
                 }
             }

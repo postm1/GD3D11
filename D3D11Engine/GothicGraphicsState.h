@@ -643,7 +643,7 @@ struct GothicRendererSettings {
         RainSceneWettness = 0.0f;
         RainSunLightStrength = 0.50f;
         RainFogColor = XMFLOAT3( 0.28f, 0.28f, 0.28f );
-        RainFogDensity = 0.00500f;
+        RainFogDensity = 0.00050f;
 
         EnableRain = true;
         EnableRainEffects = true;

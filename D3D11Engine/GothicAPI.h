@@ -271,6 +271,7 @@ public:
 
     /** Draws a skeletal mesh-vob */
     void DrawSkeletalMeshVob( SkeletalVobInfo* vi, float distance, bool updateState = true );
+    void DrawSkeletalMeshVob_Layered( SkeletalVobInfo* vi, float distance, bool updateState = true );
     void DrawTransparencyVobs();
     void DrawSkeletalVN();
 
@@ -279,6 +280,7 @@ public:
 
     /** Draws a morphmesh */
     void DrawMorphMesh( zCMorphMesh* msh, std::map<zCMaterial*, std::vector<MeshInfo*>>& meshes );
+    void DrawMorphMesh_Layered( zCMorphMesh* msh, std::map<zCMaterial*, std::vector<MeshInfo*>>& meshes );
 
     /** Locks the resource CriticalSection */
     void EnterResourceCriticalSection();
@@ -294,6 +296,7 @@ public:
 
     /** Draws a MeshInfo */
     void DrawMeshInfo( zCMaterial* mat, MeshInfo* msh );
+    void DrawMeshInfo_Layered( zCMaterial* mat, MeshInfo* msh );
 
     /** Draws a zCParticleFX */
     void DrawParticleFX( zCVob* source, zCParticleFX* fx, ParticleFrameData& data );

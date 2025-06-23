@@ -12,6 +12,7 @@
 static const char* MENU_SETTINGS_FILE = "system\\GD3D11\\UserSettings.ini";
 const float INDOOR_LIGHT_DISTANCE_SCALE_FACTOR = 0.5f;
 
+class zCFlash;
 class zCBspBase;
 class zCModelPrototype;
 struct ScreenSpaceLine;
@@ -359,6 +360,12 @@ public:
     /** Returns all quad marks */
     const std::unordered_map<zCQuadMark*, QuadMarkInfo>& GetQuadMarks();
 
+    /** Add new zCFlash object */
+    void GothicAPI::AddFlash( zCFlash* flash, zCVob* vob );
+
+    /** Remove zCFlash object */
+    void GothicAPI::RemoveFlash( zCFlash* flash );
+
     /** Returns the loaded sections */
     std::map<int, std::map<int, WorldMeshSectionInfo>>& GetWorldSections();
 
@@ -461,6 +468,7 @@ public:
 
     /** Prepares poly strips for feeding into renderer (weapon and effect trails) */
     void CalcPolyStripMeshes();
+    void CalcFlashMeshes();
 
     /** Moves the given vob from a BSP-Node to the dynamic vob list */
     void MoveVobFromBspToDynamic( VobInfo* vob );
@@ -748,6 +756,9 @@ private:
 
     /** Poly strip Visuals */
     std::set<zCPolyStrip*> PolyStripVisuals;
+
+    /** Flash Visuals */
+    std::unordered_map<zCFlash*, zCVob*> FlashVisuals;
 
     /** Set of Materials */
     std::set<zCMaterial*> LoadedMaterials;

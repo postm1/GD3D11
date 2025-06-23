@@ -2619,6 +2619,8 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
 #if (defined BUILD_GOTHIC_2_6_fix || defined BUILD_GOTHIC_1_08k)
     // Calc weapon/effect trail mesh data
     Engine::GAPI->CalcPolyStripMeshes();
+    // Calc lightning flashes mesh data
+    Engine::GAPI->CalcFlashMeshes();
     // Draw those
     DrawPolyStrips();
 #endif

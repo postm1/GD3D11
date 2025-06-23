@@ -37,6 +37,7 @@
 #include "zCMeshSoftSkin.h"
 #include "zCVobLight.h"
 #include "zCQuadMark.h"
+#include "zCFlash.h"
 #include "zCOption.h"
 #include "zCRndD3D.h"
 #include "win32ClipboardWrapper.h"
@@ -585,6 +586,7 @@ void GothicAPI::ResetVobs() {
         DestroyParticleEffect( vob );
     }
 
+    FlashVisuals.clear();
     ParticleEffectVobs.clear();
     RegisteredVobs.clear();
     BspLeafVobLists.clear();
@@ -1050,12 +1052,10 @@ void GothicAPI::DrawParticlesSimple() {
 
 // Converts poly strip visuals to render ready geometry
 void GothicAPI::CalcPolyStripMeshes() {
-
     ExVertexStruct polyFan[4];
     PolyStripInfos.clear();
 
     for ( const auto& pStrip : PolyStripVisuals ) {
-
         if ( !pStrip ) return;
 
         //Pointer passed is a placeholder, it'll not be used inside the function.
@@ -1137,9 +1137,117 @@ void GothicAPI::CalcPolyStripMeshes() {
             WorldConverter::TriangleFanToList( &polyFan[0], 4, &PolyStripInfos[tx].vertices );
             PolyStripInfos[tx].material = mat;
         }
-
     }
 };
+
+void GothicAPI::CalcFlashMeshes() {
+    if ( !RendererState.RendererSettings.DrawParticleEffects || FlashVisuals.empty() ) {
+        return;
+    }
+
+    FXMVECTOR camPos = GetCameraPositionXM();
+    static std::vector<zCPolyStrip*> polyStrips; polyStrips.clear();
+    for ( auto it = FlashVisuals.begin(); it != FlashVisuals.end();) {
+        zCFlash* flash = it->first;
+        float dist1, dist2;
+        XMStoreFloat( &dist1, XMVector3Length( flash->GetStartPositionWorld() - camPos ) );
+        XMStoreFloat( &dist2, XMVector3Length( flash->GetEndPositionWorld() - camPos ) );
+        if ( dist1 > RendererState.RendererSettings.VisualFXDrawRadius &&
+            dist2 > RendererState.RendererSettings.VisualFXDrawRadius )
+            continue;
+
+        if ( flash->RenderFlash( polyStrips ) ) {
+            zCVob* connectedVob = it->second;
+            it = FlashVisuals.erase( it );
+            if ( connectedVob ) {
+                connectedVob->GetHomeWorld()->RemoveVob( connectedVob );
+            }
+            continue;
+        }
+        ++it;
+    }
+
+    ExVertexStruct polyFan[4];
+    for ( const auto& pStrip : polyStrips ) {
+        //Pointer passed is a placeholder, it'll not be used inside the function.
+        //We need gothic engine to only execute relevant calculations inside native Render()
+        //without actually rendering polygons. Inside Render() polygons are rendered
+        //with zCRnd_D3D::DrawPoly(). Hook created inside zCRndD3D.h prevents native rendering.
+        pStrip->Render( pStrip );
+
+        zCPolyStripInstance* pStripInst = pStrip->GetInstanceData();
+        zCMaterial* mat = pStripInst->material;
+        zCTexture* tx = mat->GetAniTexture();
+        if ( !tx ) {
+            tx = mat->GetTextureSingle();
+        }
+        if ( !tx ) {
+            continue;
+        }
+
+        //These values go back to 0 after reaching maxSegAmount
+        int firstSeg = pStripInst->firstSeg;
+        int lastSeg = pStripInst->lastSeg;
+        int maxSegAmount = pStripInst->numVert / 2;
+
+        float* alphaList = pStripInst->alphaList;
+        zCVertex* vertList = pStripInst->vertList;
+        zCPolygon* poly = &(pStripInst->polyList[0]);
+
+        //order of vertex indeces that make up a single poly
+        int vertOrder[4] = { 0, 1, 3, 2 };
+
+        //Loop though segment while allowing segment index to overflow maxSegAmount
+        for ( int i = firstSeg; ; i++ ) {
+            int segIndex = i % maxSegAmount;
+
+            if ( segIndex == lastSeg ) {
+                //Triangles for the last segment are created during previous iteration, so break here.
+                break;
+            }
+
+#ifdef BUILD_GOTHIC_1_08k
+            //For G1 vertices are taken from polygons in polyList
+            poly = &pStripInst->polyList[segIndex];
+            zCVertex** polyVertices = poly->getVertices();
+
+            for ( int n = 0; n < 4; n++ ) {
+                ExVertexStruct& vert = polyFan[n];
+                vert.Position = polyVertices[n]->Position;
+                vert.TexCoord = poly->getFeatures()[n]->texCoord;
+                vert.Normal = poly->getFeatures()[n]->normal;
+                vert.Color = poly->getFeatures()[n]->lightStatic;
+            }
+#endif
+#ifdef BUILD_GOTHIC_2_6_fix
+            //For G2 polyList only contains a single polygon (supposed to be kind of a reference it seems) 
+            //and vertices should be taken from vertList, while preserving a correct order making up a
+            //properly winded polygon
+            for ( int n = 0; n < 4; n++ ) {
+                //In similar fashion to segment index - vertex index should overflow numVert.
+                int vInd = ((segIndex << 1) + vertOrder[n]) % pStripInst->numVert;
+                //Segment index of the current vertex (it's not always equals `i` since we loop through next segment's vertices as well).
+                int vSegInd = (((segIndex << 1) + vertOrder[n]) >> 1) % maxSegAmount;
+
+                ExVertexStruct& vert = polyFan[n];
+                vert.Position = vertList[vInd].Position;
+                //Vertex features are hooked up from reference polygon's vertices
+                vert.TexCoord = poly->getFeatures()[n]->texCoord;
+                vert.Normal = poly->getFeatures()[n]->normal;
+                vert.Color = poly->getFeatures()[n]->lightStatic;
+
+                float alpha = alphaList[vSegInd];
+                if ( alpha < 0.f ) alpha = 0.f;
+                reinterpret_cast<uint8_t*>( &vert.Color )[3] = alpha;
+            }
+#endif
+
+            //Convert list of quads to list of triangles
+            WorldConverter::TriangleFanToList( &polyFan[0], 4, &PolyStripInfos[tx].vertices );
+            PolyStripInfos[tx].material = mat;
+        }
+    }
+}
 
 /** Returns a list of visible particle-effects */
 void GothicAPI::GetVisibleParticleEffectsList( std::vector<zCVob*>& pfxList ) {
@@ -4844,11 +4952,19 @@ QuadMarkInfo* GothicAPI::GetQuadMarkInfo( zCQuadMark* mark ) {
     return &QuadMarks[mark];
 }
 
-
-
 /** Returns all quad marks */
 const std::unordered_map<zCQuadMark*, QuadMarkInfo>& GothicAPI::GetQuadMarks() {
     return QuadMarks;
+}
+
+/** Add new zCFlash object */
+void GothicAPI::AddFlash( zCFlash* flash, zCVob* vob ) {
+    FlashVisuals[flash] = vob;
+}
+
+/** Remove zCFlash object */
+void GothicAPI::RemoveFlash( zCFlash* flash ) {
+    FlashVisuals.erase( flash );
 }
 
 /** Returns wether the camera is underwater or not */

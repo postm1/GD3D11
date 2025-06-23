@@ -746,6 +746,9 @@
     <ClInclude Include="D3D11CShader.h">
       <Filter>Engine\D3D11</Filter>
     </ClInclude>
+    <ClInclude Include="zCFlash.h">
+      <Filter>ZenGin\Classes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

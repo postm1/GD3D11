@@ -586,6 +586,7 @@ void GothicAPI::ResetVobs() {
         DestroyParticleEffect( vob );
     }
 
+    FrameThunderPolyStrips.clear();
     FlashVisuals.clear();
     ParticleEffectVobs.clear();
     RegisteredVobs.clear();
@@ -1141,7 +1142,7 @@ void GothicAPI::CalcPolyStripMeshes() {
 };
 
 void GothicAPI::CalcFlashMeshes() {
-    if ( !RendererState.RendererSettings.DrawParticleEffects || FlashVisuals.empty() ) {
+    if ( !RendererState.RendererSettings.DrawParticleEffects || (FlashVisuals.empty() && FrameThunderPolyStrips.empty()) ) {
         return;
     }
 
@@ -1165,6 +1166,11 @@ void GothicAPI::CalcFlashMeshes() {
             continue;
         }
         ++it;
+    }
+
+    if ( !FrameThunderPolyStrips.empty() ) {
+        polyStrips.insert( polyStrips.end(), FrameThunderPolyStrips.begin(), FrameThunderPolyStrips.end() );
+        FrameThunderPolyStrips.clear();
     }
 
     ExVertexStruct polyFan[4];
@@ -4965,6 +4971,11 @@ void GothicAPI::AddFlash( zCFlash* flash, zCVob* vob ) {
 /** Remove zCFlash object */
 void GothicAPI::RemoveFlash( zCFlash* flash ) {
     FlashVisuals.erase( flash );
+}
+
+/** Add this frame thunder poly strip */
+void GothicAPI::AddThunderPolyStrip( zCPolyStrip* polyStrip ) {
+    FrameThunderPolyStrips.emplace_back(polyStrip);
 }
 
 /** Returns wether the camera is underwater or not */

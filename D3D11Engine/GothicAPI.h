@@ -361,10 +361,13 @@ public:
     const std::unordered_map<zCQuadMark*, QuadMarkInfo>& GetQuadMarks();
 
     /** Add new zCFlash object */
-    void GothicAPI::AddFlash( zCFlash* flash, zCVob* vob );
+    void AddFlash( zCFlash* flash, zCVob* vob );
 
     /** Remove zCFlash object */
-    void GothicAPI::RemoveFlash( zCFlash* flash );
+    void RemoveFlash( zCFlash* flash );
+
+    /** Add this frame thunder poly strip */
+    void AddThunderPolyStrip( zCPolyStrip* polyStrip );
 
     /** Returns the loaded sections */
     std::map<int, std::map<int, WorldMeshSectionInfo>>& GetWorldSections();
@@ -759,6 +762,7 @@ private:
 
     /** Flash Visuals */
     std::unordered_map<zCFlash*, zCVob*> FlashVisuals;
+    std::vector<zCPolyStrip*> FrameThunderPolyStrips;
 
     /** Set of Materials */
     std::set<zCMaterial*> LoadedMaterials;

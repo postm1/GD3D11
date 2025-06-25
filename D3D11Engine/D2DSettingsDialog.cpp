@@ -553,28 +553,21 @@ XRESULT D2DSettingsDialog::InitControls() {
 	contrastSlider->SetValue( Engine::GAPI->GetRendererState().RendererSettings.GammaValue );
 
 #ifdef BUILD_GOTHIC_2_6_fix
-    SV_Label* windQualityLabel = new SV_Label( MainView, MainPanel );
-    windQualityLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
-    windQualityLabel->AlignUnder( contrastSlider, 8 );
-    switch ( userLanguage ) {
-    case LANGUAGE_POLISH: windQualityLabel->SetCaption( L"Jakość efektu wiatru [*]:" ); break;
-    default: windQualityLabel->SetCaption( L"Wind effect quality [*]:" ); break;
-    }
-
     InitialSettings.WindQuality = Engine::GAPI->GetRendererState().RendererSettings.WindQuality;
-    SV_Slider* windQualitySlider = new SV_Slider( MainView, MainPanel );
-    windQualitySlider->SetPositionAndSize( D2D1::Point2F( 10, 22 ), D2D1::SizeF( 150, 15 ) );
-    windQualitySlider->AlignUnder( windQualityLabel, 5 );
-    windQualitySlider->SetDataToUpdate( &InitialSettings.WindQuality );
-    windQualitySlider->SetIsIntegralSlider( true );
-    windQualitySlider->SetMinMax( 0.0f, GothicRendererSettings::EWindQuality::WIND_QUALITY_ADVANCED );
-    windQualitySlider->SetDisplayValues( { "Disabled", "Simple", "Advanced" } );
-    windQualitySlider->SetValue( static_cast<float>(InitialSettings.WindQuality) );
+    SV_Checkbox* windQualityCheckbox = new SV_Checkbox( MainView, MainPanel );
+    windQualityCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
+    windQualityCheckbox->AlignUnder( contrastSlider, 20 );
+    switch ( userLanguage ) {
+    case LANGUAGE_POLISH: windQualityCheckbox->SetCaption( L"Włącz Efekt Wiatru [*]" ); break;
+    default: windQualityCheckbox->SetCaption( L"Enable Wind Effects [*]" ); break;
+    }
+    windQualityCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&InitialSettings.WindQuality) );
+    windQualityCheckbox->SetChecked( InitialSettings.WindQuality );
 
     // Wind strength
     SV_Label* windStrengthLabel = new SV_Label( MainView, MainPanel );
     windStrengthLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
-    windStrengthLabel->AlignUnder( windQualitySlider, 8 );
+    windStrengthLabel->AlignUnder( windQualityCheckbox, 8 );
     switch ( userLanguage ) {
     case LANGUAGE_POLISH: windStrengthLabel->SetCaption( L"Siła wiatru:" ); break;
     default: windStrengthLabel->SetCaption( L"Wind strength:" ); break;

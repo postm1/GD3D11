@@ -3695,39 +3695,6 @@ static void ProcessVobAnimation( zCVob* vob, zTAnimationMode aniMode, VobInstanc
 
         vobInstance.windStrenth = std::max<float>( 0.1f, vob->GetVisualAniModeStrength() ) * (1.0f + rainWeight * (rainMaxStrengthMultiplier - 1.0f)) * Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength;
         vobInstance.windSpeed = 1.5f * (1.0f + rainWeight * (rainMaxSpeedMultiplier - 1.0f));
-    } else if ( Engine::GAPI->GetRendererState().RendererSettings.WindQuality == GothicRendererSettings::EWindQuality::WIND_QUALITY_SIMPLE ) {
-        const DWORD windCycleTime = 6000;
-        const DWORD totalTime = Engine::GAPI->GetTotalTimeDW();
-
-        float angleTime = static_cast<float>( totalTime % windCycleTime ) / static_cast<float>( windCycleTime );
-        angleTime = angleTime * 2.f - 1.f;
-
-        float windDirX;
-        float windDirY;
-        float windDirZ;
-        float aniStrength = vob->GetVisualAniModeStrength() * 0.1f;
-        if ( aniMode == zVISUAL_ANIMODE_WIND ) {
-            // trees
-            if ( aniStrength < 0.03f ) aniStrength = 0.03f;
-
-            windDirX = 0.6f;
-            windDirY = 0.15f;
-            windDirZ = 1.f;
-        } else {
-            // grass
-            if ( aniStrength < 0.02f ) aniStrength = 0.02f;
-
-            windDirX = 0.5f;
-            windDirY = 0.15f;
-            windDirZ = 0.5f;
-        }
-
-        const float shift = vobInstance.world.m[3][0] * windDirX + vobInstance.world.m[3][1] * windDirY + vobInstance.world.m[3][2] * windDirZ;
-        const float anim = aniStrength * cos( angleTime * XM_PI + shift * 0.0001f );
-
-        vobInstance.world.m[0][2] += windDirX * anim;
-        vobInstance.world.m[1][2] += windDirY * anim;
-        vobInstance.world.m[2][2] += windDirZ * anim;
     }
 }
 

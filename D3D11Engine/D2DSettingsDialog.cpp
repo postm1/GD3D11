@@ -14,7 +14,7 @@
 #include <locale>
 
 constexpr int UI_WIN_SIZE_X = 540;
-constexpr int UI_WIN_SIZE_Y = 400;
+constexpr int UI_WIN_SIZE_Y = 410;
 
 Languages getUserLanguage() {
     char locale[8] = { 0 };
@@ -603,9 +603,20 @@ XRESULT D2DSettingsDialog::InitControls() {
     rainEffectsCheckbox->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.EnableRainEffects );
     rainEffectsCheckbox->SetChecked( Engine::GAPI->GetRendererState().RendererSettings.EnableRainEffects );
 
+    InitialSettings.EnableWaterAnimation = Engine::GAPI->GetRendererState().RendererSettings.EnableWaterAnimation;
+    SV_Checkbox* waterWaveCheckbox = new SV_Checkbox( MainView, MainPanel );
+    waterWaveCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
+    waterWaveCheckbox->AlignUnder( rainEffectsCheckbox, 5 );
+    switch ( userLanguage ) {
+    case LANGUAGE_POLISH: waterWaveCheckbox->SetCaption( L"Włącz Efekty Fali [*]" ); break;
+    default: waterWaveCheckbox->SetCaption( L"Enable Water Waves [*]" ); break;
+    }
+    waterWaveCheckbox->SetDataToUpdate( &InitialSettings.EnableWaterAnimation );
+    waterWaveCheckbox->SetChecked( InitialSettings.EnableWaterAnimation );
+
     SV_Checkbox* lightCheckbox = new SV_Checkbox( MainView, MainPanel );
     lightCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
-    lightCheckbox->AlignUnder( rainEffectsCheckbox, 15 );
+    lightCheckbox->AlignUnder( waterWaveCheckbox, 15 );
     switch ( userLanguage ) {
     case LANGUAGE_POLISH: lightCheckbox->SetCaption( L"Ogranicz Natężenie Światła" ); break;
     default: lightCheckbox->SetCaption( L"Limit Light Intensity" ); break;
@@ -746,6 +757,12 @@ void D2DSettingsDialog::ApplyButtonPressed( SV_Button* sender, void* userdata ) 
         }
 
         settings.WindQuality = d->InitialSettings.WindQuality;
+    }
+
+    // Check for water wave animation change
+    if ( d->InitialSettings.EnableWaterAnimation != settings.EnableWaterAnimation ) {
+        reloadShaders = true;
+        settings.EnableWaterAnimation = d->InitialSettings.EnableWaterAnimation;
     }
 
     // Check for normalmap change to purge texture cache

@@ -3518,7 +3518,7 @@ void GothicAPI::CollectVisibleVobs( std::vector<VobInfo*>& vobs, std::vector<Vob
                 vii.windSpeed = 0.0f;
 
                 zTAnimationMode aniMode = it->Vob->GetVisualAniMode();
-                if ( aniMode != zVISUAL_ANIMODE_NONE ) {
+                if ( aniMode != zVISUAL_ANIMODE_NONE && !Engine::GAPI->IsGamePaused() ) {
                     ProcessVobAnimation( it->Vob, aniMode, vii );
                 }
 

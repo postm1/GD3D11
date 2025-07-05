@@ -259,7 +259,7 @@ void GothicAPI::OnWorldUpdate() {
     if ( !root->OriginalNode )
         Engine::GAPI->OnWorldLoaded();
 #endif
-#if BUILD_SPACER_NET
+#ifdef BUILD_SPACER_NET
     if ( RendererState.RendererSettings.RunInSpacerNet ) {
         zCBspBase* rootBsp = oCGame::GetGame()->_zCSession_world->GetBspTree()->GetRootNode();
         BspInfo* root = &BspLeafVobLists[rootBsp];
@@ -634,8 +634,14 @@ void GothicAPI::ResetVobs() {
 }
 
 /** Called when the game loaded a new level */
-void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) {
+void GothicAPI::OnGeometryLoaded( zCBspTree* tree ) {
+    LogInfo() << "World loaded, getting Levelmesh now!";
+    LogInfo() << " - Found " << tree->GetNumPolys() << " polygons";
     LogInfo() << "Extracting world";
+
+    std::vector<zCPolygon*> polys;
+    tree->GetLOD0Polygons( polys );
+    GetLoadedWorldInfo()->BspTree = tree;
 
     ResetWorld();
     ResetMaterialInfo();
@@ -644,13 +650,13 @@ void GothicAPI::OnGeometryLoaded( zCPolygon** polys, unsigned int numPolygons ) 
     std::string worldStr = "system\\GD3D11\\meshes\\WLD_" + LoadedWorldInfo->WorldName + ".obj";
     // Convert world to our own format
 #ifdef BUILD_GOTHIC_2_6_fix
-    WorldConverter::ConvertWorldMesh( polys, numPolygons, &WorldSections, LoadedWorldInfo.get(), &WrappedWorldMesh, indoorLocation );
+    WorldConverter::ConvertWorldMesh( &polys[0], polys.size(), &WorldSections, LoadedWorldInfo.get(), &WrappedWorldMesh, indoorLocation );
 #else
     if ( Toolbox::FileExists( worldStr ) ) {
         WorldConverter::LoadWorldMeshFromFile( worldStr, &WorldSections, LoadedWorldInfo.get(), &WrappedWorldMesh );
         LoadedWorldInfo->CustomWorldLoaded = true;
     } else {
-        WorldConverter::ConvertWorldMesh( polys, numPolygons, &WorldSections, LoadedWorldInfo.get(), &WrappedWorldMesh, indoorLocation );
+        WorldConverter::ConvertWorldMesh( &polys[0], polys.size(), &WorldSections, LoadedWorldInfo.get(), &WrappedWorldMesh, indoorLocation );
     }
 #endif
     LogInfo() << "Done extracting world!";
@@ -4687,7 +4693,7 @@ XRESULT GothicAPI::LoadMenuSettings( const std::string& file ) {
         if ( gameIni != "GOTHICGAME.INI" && nLastDot != std::string::npos ) {
             Engine::GAPI->SetGameName( gameIni.substr( 0, nLastDot ) );
             LogInfo() << "-> Game: " << Engine::GAPI->GetGameName();
-#if BUILD_SPACER_NET
+#ifdef BUILD_SPACER_NET
             if ( Engine::GAPI->GetGameName() == "SPACER_NET" ) {
                 LogInfo() << "-> Running in Spacer.NET";
                 s.RunInSpacerNet = true;

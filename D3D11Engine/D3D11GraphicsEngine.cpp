@@ -1,4 +1,4 @@
-﻿#include "D3D11GraphicsEngine.h"
+#include "D3D11GraphicsEngine.h"
 
 #include "AlignedAllocator.h"
 #include "BaseAntTweakBar.h"
@@ -1033,7 +1033,7 @@ XRESULT D3D11GraphicsEngine::OnResize( INT2 newSize ) {
 XRESULT D3D11GraphicsEngine::OnBeginFrame() {
     Engine::GAPI->GetRendererState().RendererInfo.Timing.StartTotal();
 
-#if BUILD_SPACER_NET
+#ifdef BUILD_SPACER_NET
     Engine::GAPI->GetRendererState().RendererSettings.EnableInactiveFpsLock = false;
 #endif //  BUILD_SPACERNET
 

@@ -2486,7 +2486,6 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
     Engine::GAPI->GetRendererState().RendererSettings.DrawMobs = bDrawVobsGlobal;
     Engine::GAPI->GetRendererState().RendererSettings.DrawParticleEffects = bDrawVobsGlobal;
     Engine::GAPI->GetRendererState().RendererSettings.DrawSkeletalMeshes = bDrawVobsGlobal;
-    Engine::GAPI->GetRendererState().RendererSettings.DrawFog = false;
 #endif 
 
     ID3D11RenderTargetView* rtvs[] = {

@@ -16,6 +16,10 @@
 constexpr int UI_WIN_SIZE_X = 540;
 constexpr int UI_WIN_SIZE_Y = 410;
 
+#if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
+extern bool haveWindAnimations;
+#endif
+
 Languages getUserLanguage() {
     char locale[8] = { 0 };
     GetLocaleInfoA( GetUserDefaultLangID(), LOCALE_SISO639LANGNAME, locale, sizeof( locale ) );
@@ -552,34 +556,38 @@ XRESULT D2DSettingsDialog::InitControls() {
 	contrastSlider->SetMinMax( 0.1f, 2.0f );
 	contrastSlider->SetValue( Engine::GAPI->GetRendererState().RendererSettings.GammaValue );
 
-#ifdef BUILD_GOTHIC_2_6_fix
-    InitialSettings.WindQuality = Engine::GAPI->GetRendererState().RendererSettings.WindQuality;
-    SV_Checkbox* windQualityCheckbox = new SV_Checkbox( MainView, MainPanel );
-    windQualityCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
-    windQualityCheckbox->AlignUnder( contrastSlider, 20 );
-    switch ( userLanguage ) {
-    case LANGUAGE_POLISH: windQualityCheckbox->SetCaption( L"Włącz Efekt Wiatru [*]" ); break;
-    default: windQualityCheckbox->SetCaption( L"Enable Wind Effects [*]" ); break;
+#if defined(BUILD_GOTHIC_2_6_fix) || (defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F))
+#if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
+    if ( haveWindAnimations )
+#endif
+    {
+        InitialSettings.WindQuality = Engine::GAPI->GetRendererState().RendererSettings.WindQuality;
+        SV_Checkbox* windQualityCheckbox = new SV_Checkbox( MainView, MainPanel );
+        windQualityCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
+        windQualityCheckbox->AlignUnder( contrastSlider, 20 );
+        switch ( userLanguage ) {
+        case LANGUAGE_POLISH: windQualityCheckbox->SetCaption( L"Włącz Efekt Wiatru [*]" ); break;
+        default: windQualityCheckbox->SetCaption( L"Enable Wind Effects [*]" ); break;
+        }
+        windQualityCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&InitialSettings.WindQuality) );
+        windQualityCheckbox->SetChecked( InitialSettings.WindQuality );
+
+        // Wind strength
+        SV_Label* windStrengthLabel = new SV_Label( MainView, MainPanel );
+        windStrengthLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
+        windStrengthLabel->AlignUnder( windQualityCheckbox, 8 );
+        switch ( userLanguage ) {
+        case LANGUAGE_POLISH: windStrengthLabel->SetCaption( L"Siła wiatru:" ); break;
+        default: windStrengthLabel->SetCaption( L"Wind strength:" ); break;
+        }
+
+        SV_Slider* windStrengthSlider = new SV_Slider( MainView, MainPanel );
+        windStrengthSlider->SetPositionAndSize( D2D1::Point2F( 10, 22 ), D2D1::SizeF( 150, 15 ) );
+        windStrengthSlider->AlignUnder( windStrengthLabel, 5 );
+        windStrengthSlider->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength );
+        windStrengthSlider->SetMinMax( 0.1f, 5.0f );
+        windStrengthSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength) );
     }
-    windQualityCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&InitialSettings.WindQuality) );
-    windQualityCheckbox->SetChecked( InitialSettings.WindQuality );
-
-    // Wind strength
-    SV_Label* windStrengthLabel = new SV_Label( MainView, MainPanel );
-    windStrengthLabel->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 150, 12 ) );
-    windStrengthLabel->AlignUnder( windQualityCheckbox, 8 );
-    switch ( userLanguage ) {
-    case LANGUAGE_POLISH: windStrengthLabel->SetCaption( L"Siła wiatru:" ); break;
-    default: windStrengthLabel->SetCaption( L"Wind strength:" ); break;
-    }
-
-    SV_Slider* windStrengthSlider = new SV_Slider( MainView, MainPanel );
-    windStrengthSlider->SetPositionAndSize( D2D1::Point2F( 10, 22 ), D2D1::SizeF( 150, 15 ) );
-    windStrengthSlider->AlignUnder( windStrengthLabel, 5 );
-    windStrengthSlider->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength );
-    windStrengthSlider->SetMinMax( 0.1f, 5.0f );
-    windStrengthSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength) );
-
 #endif //BUILD_GOTHIC_2_6_fix
 
     SV_Checkbox* rainCheckbox = new SV_Checkbox( MainView, MainPanel );

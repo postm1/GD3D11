@@ -221,6 +221,9 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_HomeWorld = 0x0A8;
         static const unsigned int Offset_Type = 0x0A0;
 
+        static const unsigned int Offset_WindAniMode = 0xCC; // Hack into lightdirection variable unused in GD3D11 rendering pipeline
+        static const unsigned int Offset_WindAniModeStrength = 0xD0; // Hack into lightdirection variable unused in GD3D11 rendering pipeline
+
         static const unsigned int Offset_Flags = 0xE4;
         static const unsigned int Offset_VobTree = 0x24;
         static const unsigned int Offset_VobAlpha = 0xBC;

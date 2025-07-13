@@ -682,7 +682,7 @@ struct GothicRendererSettings {
         AnimateStaticVobs = true;
         RunInSpacerNet = false;
         BinkVideoRunning = false;
-        EnableWaterAnimation = true;
+        EnableWaterAnimation = false;
     }
 
     void SetupOldWorldSpecificValues() {

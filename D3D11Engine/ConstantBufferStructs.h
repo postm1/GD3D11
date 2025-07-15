@@ -8,7 +8,7 @@ struct VobInstanceInfo {
     DWORD color;
     float windStrenth;
     float windSpeed;
-
+    UINT canBeAffectedByPlayer;
     // General purpose slot
     DWORD GP_Slot;
 };
@@ -180,7 +180,9 @@ struct VS_ExConstantBuffer_Wind {
     float globalTime;
     float minHeight;
     float maxHeight;
-    float Pad[2];
+    float2 padding1;
+    float3 playerPos;
+    UINT vobAffectedByPlayer;
 };
 
 struct ParticlePointShadingConstantBuffer {

@@ -4260,12 +4260,20 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
         }
         DynamicInstancingBuffer->Unmap();*/
 
+        XMFLOAT3 vPlayerPosition = Engine::GAPI->GetPlayerVob() ? Engine::GAPI->GetPlayerVob()->GetPositionWorld() : XMFLOAT3( 0, 0, 0 );
+        g_windBuffer.playerPos = float3( vPlayerPosition.x, vPlayerPosition.y, vPlayerPosition.z );
+
         // Draw all vobs the player currently sees
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
 
             g_windBuffer.minHeight = staticMeshVisual.second->BBox.Min.y;
             g_windBuffer.maxHeight = staticMeshVisual.second->BBox.Max.y;
+
+            
+
+            // // check only 1 object in Instances, 0 index??? CHECK_DX11_NEW
+            g_windBuffer.vobAffectedByPlayer = staticMeshVisual.second->Instances[0].canBeAffectedByPlayer;
 
             if ( ActiveVS ) {
                 ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &g_windBuffer );
@@ -4510,6 +4518,9 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
             RenderedVobs.push_back( vobs[i] );
         }
 
+        XMFLOAT3 vPlayerPosition = Engine::GAPI->GetPlayerVob() ? Engine::GAPI->GetPlayerVob()->GetPositionWorld() : XMFLOAT3( 0, 0, 0 );
+        g_windBuffer.playerPos = float3( vPlayerPosition.x, vPlayerPosition.y, vPlayerPosition.z );
+
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
 
@@ -4530,6 +4541,10 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
             g_windBuffer.minHeight = staticMeshVisual.second->BBox.Min.y;
             g_windBuffer.maxHeight = staticMeshVisual.second->BBox.Max.y;
+
+            // check only 1 object in Instances, 0 index??? CHECK_DX11_NEW
+            g_windBuffer.vobAffectedByPlayer = staticMeshVisual.second->Instances[0].canBeAffectedByPlayer;
+
 
             if ( ActiveVS ) {
                 ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &g_windBuffer );
@@ -4704,6 +4719,9 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
 
     GetContext()->OMSetRenderTargets( 1, HDRBackBuffer->GetRenderTargetView().GetAddressOf(),
         DepthStencilBuffer->GetDepthStencilView().Get() );
+
+    // No player affects on alpha vobs
+    g_windBuffer.vobAffectedByPlayer = 0;
 
     for ( auto const& alphaMesh : AlphaMeshes ) {
         const MeshKey& mk = std::get<0>( alphaMesh );

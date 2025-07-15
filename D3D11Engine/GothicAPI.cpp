@@ -3516,9 +3516,11 @@ void GothicAPI::CollectVisibleVobs( std::vector<VobInfo*>& vobs, std::vector<Vob
                 vii.color = it->GroundColor;
                 vii.windStrenth = 0.0f;
                 vii.windSpeed = 0.0f;
+                vii.canBeAffectedByPlayer = 0;
 
                 zTAnimationMode aniMode = it->Vob->GetVisualAniMode();
                 if ( aniMode != zVISUAL_ANIMODE_NONE && !Engine::GAPI->IsGamePaused() ) {
+                    vii.canBeAffectedByPlayer = !it->Vob->GetDynColl();
                     ProcessVobAnimation( it->Vob, aniMode, vii );
                 }
 
@@ -3725,9 +3727,11 @@ static void CVVH_AddNotDrawnVobToList( std::vector<VobInfo*>& target, std::vecto
                 vii.color = it->GroundColor;
                 vii.windStrenth = 0.0f;
                 vii.windSpeed = 0.0f;
+                vii.canBeAffectedByPlayer = 0;
 
                 zTAnimationMode aniMode = it->Vob->GetVisualAniMode();
                 if ( aniMode != zVISUAL_ANIMODE_NONE && !Engine::GAPI->IsGamePaused() ) {
+                    vii.canBeAffectedByPlayer = !it->Vob->GetDynColl();
                     ProcessVobAnimation( it->Vob, aniMode, vii );
                 }
 

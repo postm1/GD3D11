@@ -461,6 +461,7 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_VobAlpha = 0xCC;
         static const unsigned int MASK_ShowVisual = 0x1;
         static const unsigned int MASK_VisualAlpha = 0x4;
+        static const unsigned int MASK_DynColl = 0x80; // (1 << 7) collDetectionDynamic
         static const unsigned int Offset_CameraAlignment = 0x110;
         static const unsigned int SHIFTLR_CameraAlignment = 0x1E;
 

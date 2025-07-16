@@ -587,12 +587,24 @@ XRESULT D2DSettingsDialog::InitControls() {
         windStrengthSlider->SetDataToUpdate( &Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength );
         windStrengthSlider->SetMinMax( 0.1f, 5.0f );
         windStrengthSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength) );
+
+
+        InitialSettings.HeroAffectsObjects = Engine::GAPI->GetRendererState().RendererSettings.HeroAffectsObjects;
+        SV_Checkbox* heroAffectsObjectsCheckbox = new SV_Checkbox( MainView, MainPanel );
+        heroAffectsObjectsCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
+        heroAffectsObjectsCheckbox->AlignUnder( windStrengthSlider, 12 );
+        switch ( userLanguage ) {
+        case LANGUAGE_POLISH: heroAffectsObjectsCheckbox->SetCaption( L"TranslateThis*" ); break; //FIXME translate into Polish
+        default: heroAffectsObjectsCheckbox->SetCaption( L"Hero affects objects" ); break;
+        }
+        heroAffectsObjectsCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&Engine::GAPI->GetRendererState().RendererSettings.HeroAffectsObjects) );
+        heroAffectsObjectsCheckbox->SetChecked( InitialSettings.HeroAffectsObjects );
     }
 #endif //BUILD_GOTHIC_2_6_fix
 
     SV_Checkbox* rainCheckbox = new SV_Checkbox( MainView, MainPanel );
     rainCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
-    rainCheckbox->AlignUnder( contrastSlider, 93 );
+    rainCheckbox->AlignUnder( contrastSlider, 104 );
     switch ( userLanguage ) {
     case LANGUAGE_POLISH: rainCheckbox->SetCaption( L"Włącz Deszcz" ); break;
     default: rainCheckbox->SetCaption( L"Enable Rain" ); break;

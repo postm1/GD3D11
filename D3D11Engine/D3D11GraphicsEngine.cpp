@@ -4263,6 +4263,8 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
         XMFLOAT3 vPlayerPosition = Engine::GAPI->GetPlayerVob() ? Engine::GAPI->GetPlayerVob()->GetPositionWorld() : XMFLOAT3( 0, 0, 0 );
         g_windBuffer.playerPos = float3( vPlayerPosition.x, vPlayerPosition.y, vPlayerPosition.z );
 
+        bool heroAffectsObjects = Engine::GAPI->GetRendererState().RendererSettings.HeroAffectsObjects;
+
         // Draw all vobs the player currently sees
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
@@ -4272,8 +4274,8 @@ void XM_CALLCONV D3D11GraphicsEngine::DrawWorldAround( FXMVECTOR position,
 
             
 
-            // // check only 1 object in Instances, 0 index??? CHECK_DX11_NEW
-            g_windBuffer.vobAffectedByPlayer = staticMeshVisual.second->Instances[0].canBeAffectedByPlayer;
+            // // check only 1 object in Instances, 0 index???
+            g_windBuffer.vobAffectedByPlayer = heroAffectsObjects && staticMeshVisual.second->Instances[0].canBeAffectedByPlayer;
 
             if ( ActiveVS ) {
                 ActiveVS->GetConstantBuffer()[1]->UpdateBuffer( &g_windBuffer );
@@ -4521,6 +4523,8 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
         XMFLOAT3 vPlayerPosition = Engine::GAPI->GetPlayerVob() ? Engine::GAPI->GetPlayerVob()->GetPositionWorld() : XMFLOAT3( 0, 0, 0 );
         g_windBuffer.playerPos = float3( vPlayerPosition.x, vPlayerPosition.y, vPlayerPosition.z );
 
+        bool heroAffectsObjects = Engine::GAPI->GetRendererState().RendererSettings.HeroAffectsObjects;
+
         for ( auto const& staticMeshVisual : staticMeshVisuals ) {
             if ( staticMeshVisual.second->Instances.empty() ) continue;
 
@@ -4542,8 +4546,8 @@ XRESULT D3D11GraphicsEngine::DrawVOBsInstanced() {
             g_windBuffer.minHeight = staticMeshVisual.second->BBox.Min.y;
             g_windBuffer.maxHeight = staticMeshVisual.second->BBox.Max.y;
 
-            // check only 1 object in Instances, 0 index??? CHECK_DX11_NEW
-            g_windBuffer.vobAffectedByPlayer = staticMeshVisual.second->Instances[0].canBeAffectedByPlayer;
+            // check only 1 object in Instances, 0 index???
+            g_windBuffer.vobAffectedByPlayer = heroAffectsObjects && staticMeshVisual.second->Instances[0].canBeAffectedByPlayer;
 
 
             if ( ActiveVS ) {

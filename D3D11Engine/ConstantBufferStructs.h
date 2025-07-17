@@ -177,12 +177,17 @@ struct VS_ExConstantBuffer_PerFrame {
 
 struct VS_ExConstantBuffer_Wind {
     float3 windDir;
-    float globalTime;
-    float minHeight;
-    float maxHeight;
-    float2 padding1;
-    float3 playerPos;
-    UINT vobAffectedByPlayer;
+    float globalTime;            
+
+    float minHeight;            
+    float maxHeight;           
+    float2 padding0;            
+
+    float3 playerPos;           
+    float padding1;             
+
+    UINT vobAffectedByPlayer;    
+    float3 padding2;             
 };
 
 struct ParticlePointShadingConstantBuffer {

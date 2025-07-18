@@ -9,8 +9,6 @@ struct VobInstanceInfo {
     float windStrenth;
     float windSpeed;
     UINT canBeAffectedByPlayer;
-    // General purpose slot
-    DWORD GP_Slot;
 };
 
 /** Remap-index for the static vobs */
@@ -177,17 +175,14 @@ struct VS_ExConstantBuffer_PerFrame {
 
 struct VS_ExConstantBuffer_Wind {
     float3 windDir;
-    float globalTime;            
+    float globalTime;
 
-    float minHeight;            
-    float maxHeight;           
-    float2 padding0;            
+    float minHeight;
+    float maxHeight;
+    float2 padding0;
 
-    float3 playerPos;           
-    float padding1;             
-
-    UINT vobAffectedByPlayer;    
-    float3 padding2;             
+    float3 playerPos;
+    float padding1;
 };
 
 struct ParticlePointShadingConstantBuffer {

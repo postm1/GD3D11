@@ -588,16 +588,15 @@ XRESULT D2DSettingsDialog::InitControls() {
         windStrengthSlider->SetMinMax( 0.1f, 5.0f );
         windStrengthSlider->SetValue( static_cast<float>(Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength) );
 
-
         InitialSettings.HeroAffectsObjects = Engine::GAPI->GetRendererState().RendererSettings.HeroAffectsObjects;
         SV_Checkbox* heroAffectsObjectsCheckbox = new SV_Checkbox( MainView, MainPanel );
         heroAffectsObjectsCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
         heroAffectsObjectsCheckbox->AlignUnder( windStrengthSlider, 12 );
         switch ( userLanguage ) {
-        case LANGUAGE_POLISH: heroAffectsObjectsCheckbox->SetCaption( L"TranslateThis*" ); break; //FIXME translate into Polish
+        case LANGUAGE_POLISH: heroAffectsObjectsCheckbox->SetCaption( L"Bohater oddziałowuje na obiekty" ); break;
         default: heroAffectsObjectsCheckbox->SetCaption( L"Hero affects objects" ); break;
         }
-        heroAffectsObjectsCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&Engine::GAPI->GetRendererState().RendererSettings.HeroAffectsObjects) );
+        heroAffectsObjectsCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&InitialSettings.HeroAffectsObjects) );
         heroAffectsObjectsCheckbox->SetChecked( InitialSettings.HeroAffectsObjects );
     }
 #endif //BUILD_GOTHIC_2_6_fix
@@ -785,6 +784,12 @@ void D2DSettingsDialog::ApplyButtonPressed( SV_Button* sender, void* userdata ) 
         }
 
         settings.WindQuality = d->InitialSettings.WindQuality;
+    }
+
+    // Check for whether hero can affects objects
+    if ( d->InitialSettings.HeroAffectsObjects != settings.HeroAffectsObjects ) {
+        reloadShaders = true;
+        settings.HeroAffectsObjects = d->InitialSettings.HeroAffectsObjects;
     }
 
     // Check for water wave animation change

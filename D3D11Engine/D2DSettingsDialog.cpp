@@ -593,8 +593,8 @@ XRESULT D2DSettingsDialog::InitControls() {
         heroAffectsObjectsCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
         heroAffectsObjectsCheckbox->AlignUnder( windStrengthSlider, 12 );
         switch ( userLanguage ) {
-        case LANGUAGE_POLISH: heroAffectsObjectsCheckbox->SetCaption( L"Bohater oddziałowuje na obiekty" ); break;
-        default: heroAffectsObjectsCheckbox->SetCaption( L"Hero affects objects" ); break;
+        case LANGUAGE_POLISH: heroAffectsObjectsCheckbox->SetCaption( L"Bohater oddziałowuje na obiekty[*]" ); break;
+        default: heroAffectsObjectsCheckbox->SetCaption( L"Hero affects objects[*]" ); break;
         }
         heroAffectsObjectsCheckbox->SetDataToUpdate( reinterpret_cast<bool*>(&InitialSettings.HeroAffectsObjects) );
         heroAffectsObjectsCheckbox->SetChecked( InitialSettings.HeroAffectsObjects );
@@ -627,8 +627,8 @@ XRESULT D2DSettingsDialog::InitControls() {
     waterWaveCheckbox->SetPositionAndSize( D2D1::Point2F( 10, 10 ), D2D1::SizeF( 160, 20 ) );
     waterWaveCheckbox->AlignUnder( rainEffectsCheckbox, 5 );
     switch ( userLanguage ) {
-    case LANGUAGE_POLISH: waterWaveCheckbox->SetCaption( L"Włącz Efekty Fali [***]" ); break;
-    default: waterWaveCheckbox->SetCaption( L"Enable Water Waves [***]" ); break;
+    case LANGUAGE_POLISH: waterWaveCheckbox->SetCaption( L"Włącz Efekty Fali [*]" ); break;
+    default: waterWaveCheckbox->SetCaption( L"Enable Water Waves [*]" ); break;
     }
     waterWaveCheckbox->SetDataToUpdate( &InitialSettings.EnableWaterAnimation );
     waterWaveCheckbox->SetChecked( InitialSettings.EnableWaterAnimation );
@@ -645,18 +645,10 @@ XRESULT D2DSettingsDialog::InitControls() {
 
     // Mode changing label
     SV_Label* modeChangingLabel = new SV_Label( MainView, MainPanel );
-    modeChangingLabel->SetPositionAndSize( D2D1::Point2F( 5, GetSize().height - 5 - 48 ), D2D1::SizeF( 320, 12 ) );
+    modeChangingLabel->SetPositionAndSize( D2D1::Point2F( 5, GetSize().height - 5 - 30 ), D2D1::SizeF( 320, 12 ) );
     switch ( userLanguage ) {
     case LANGUAGE_POLISH: modeChangingLabel->SetCaption( L"[**] -> Musisz zrestartować grę żeby zmiany zadziałały" ); break;
     default: modeChangingLabel->SetCaption( L"[**] -> You must restart game for the changes to take effect" ); break;
-    }
-
-    // Water waves label
-    SV_Label* waterWavesLabel = new SV_Label( MainView, MainPanel );
-    waterWavesLabel->SetPositionAndSize( D2D1::Point2F( 5, GetSize().height - 5 - 30 ), D2D1::SizeF( 320, 12 ) );
-    switch ( userLanguage ) {
-    case LANGUAGE_POLISH: waterWavesLabel->SetCaption( L"[***] -> Włączasz na własną odpowiedzialność" ); break;
-    default: waterWavesLabel->SetCaption( L"[***] -> You're enabling it at your own risk" ); break;
     }
 
 	// Advanced settings label

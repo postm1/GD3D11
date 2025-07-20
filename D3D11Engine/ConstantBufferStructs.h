@@ -7,8 +7,9 @@ struct VobInstanceInfo {
     XMFLOAT4X4 world;
     DWORD color;
     float windStrenth;
-    float windSpeed;
-    UINT canBeAffectedByPlayer;
+    float canBeAffectedByPlayer;
+    // General purpose slot
+    DWORD GP_Slot;
 };
 
 /** Remap-index for the static vobs */

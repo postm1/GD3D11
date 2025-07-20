@@ -32,8 +32,7 @@ struct VS_INPUT
 	float4 vDiffuse		: DIFFUSE;
 	float4x4 InstanceWorldMatrix : INSTANCE_WORLD_MATRIX;
     float4 InstanceColor : INSTANCE_COLOR;
-    float2 InstanceWind : INSTANCE_SCALE;
-	uint InsstanceCanBeAffectedByPlayer : INSTANCE_INFLUENCE;
+    float2 InstanceWind : INSTANCE_WINDFLUENCE;
 };
 
 struct VS_OUTPUT
@@ -63,7 +62,7 @@ float GetInstancePhaseOffset(float4x4 objMatrix)
     return frac(sin(seed) * 43758.5453) * phaseVariation;
 }
 
-float3 ApplyTreeWind(float3 vertexPos, float3 direction, float heightNorm, float timeMs, float4x4 instMatrix, float windStrength, float windSpeed)
+float3 ApplyTreeWind(float3 vertexPos, float3 direction, float heightNorm, float timeSec, float4x4 instMatrix, float windStrength)
 {
 	// Calculate if vertex should be affected (1 if heightNorm >= trunkStiffness, 0 otherwise)
     float shouldAffect = saturate(sign(heightNorm - trunkStiffness + 0.0001f));
@@ -73,8 +72,6 @@ float3 ApplyTreeWind(float3 vertexPos, float3 direction, float heightNorm, float
     // Smooth height factor with more natural falloff
     float adjustedHeight = saturate((heightNorm - trunkStiffness) / (1.0 - trunkStiffness)) * shouldAffect;
     float heightFactor = pow(adjustedHeight, 2.6f);
-    
-    float timeSec = timeMs * 0.001 * windSpeed;
     
     // Main wave
     float mainWave = sin(timeSec * 1.0 + heightNorm * 3.0 + instancePhase) * 0.8;
@@ -153,7 +150,7 @@ VS_OUTPUT VSMain( VS_INPUT Input )
 
 #if SHD_INFLUENCE
 	
-    if (Input.InsstanceCanBeAffectedByPlayer > 0)
+    if (Input.InstanceWind.y > 0)
     {
 		// HERO MOVING BUSHES SHADER
 		position += CalculatePlayerInfluence(playerPos, position, minHeight, maxHeight, Input.InstanceWorldMatrix);
@@ -176,8 +173,7 @@ VS_OUTPUT VSMain( VS_INPUT Input )
             vertexHeightNorm,
             globalTime,
             Input.InstanceWorldMatrix,
-            Input.InstanceWind.x,
-            Input.InstanceWind.y
+            Input.InstanceWind.x
         );
     }
 #endif

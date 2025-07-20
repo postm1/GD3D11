@@ -67,6 +67,7 @@ const int NUM_MIN_FRAME_SHADOW_UPDATES =
 const int MAX_IMPORTANT_LIGHT_UPDATES = 1;
 
 constexpr float inv255f = (1.f / 255.f);
+float vobAnimation_WindStrength = 1.0f;
 
 bool FeatureLevel10Compatibility = false;
 bool FeatureRTArrayIndexFromAnyShader = false;
@@ -2471,8 +2472,10 @@ XRESULT D3D11GraphicsEngine::OnStartWorldRendering() {
 
     // return XR_SUCCESS;
     if ( PresentPending ) return XR_SUCCESS;
+    if ( !Engine::GAPI->IsGamePaused() ) {
+        ApplyWindProps( g_windBuffer );
+    }
 
-    ApplyWindProps( g_windBuffer );
     if ( FeatureLevel10Compatibility ) {
         // Disable here what we can't draw in feature level 10 compatibility
         Engine::GAPI->GetRendererState().RendererSettings.HbaoSettings.Enabled = false;
@@ -4403,11 +4406,23 @@ void D3D11GraphicsEngine::ApplyWindProps( VS_ExConstantBuffer_Wind& windBuff ) {
     
     //LogInfo() << windBuff.windDir.x << " " << windBuff.windDir.y << " " << windBuff.windDir.z;
 
-    // 36 million ms = 10 hours of playing, no wind animation breaking in 10 hours
-    // when globalTime is 0, it resets shader (vertex position)
-    // so globalTime perios must be long
-    windBuff.globalTime = static_cast<float>((Engine::GAPI->GetTotalTimeDW()) % 36000000);
+    static float WindGlobalTime = 0.0f;
 
+    // get rain weight
+    float rainWeight = Engine::GAPI->GetRainFXWeight();
+
+    // limit in 0..1 range
+    rainWeight = std::max<float>( 0.0f, std::min<float>( 1.0f, rainWeight ) );
+
+    // max multiplayers when rain is 1.0 (max)
+    constexpr float rainMaxStrengthMultiplier = 2.75f;
+    constexpr float rainMaxSpeedMultiplier = 2.15f;
+
+    vobAnimation_WindStrength = (1.0f + rainWeight * (rainMaxStrengthMultiplier - 1.0f))
+        * Engine::GAPI->GetRendererState().RendererSettings.GlobalWindStrength;
+
+    WindGlobalTime += dt * (1.5f * (1.0f + rainWeight * (rainMaxSpeedMultiplier - 1.0f)));
+    windBuff.globalTime = WindGlobalTime;
 }
 
 /** Draws the static vobs instanced */

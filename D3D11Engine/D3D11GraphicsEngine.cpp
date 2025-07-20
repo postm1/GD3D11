@@ -4403,10 +4403,8 @@ void D3D11GraphicsEngine::ApplyWindProps( VS_ExConstantBuffer_Wind& windBuff ) {
     
     //LogInfo() << windBuff.windDir.x << " " << windBuff.windDir.y << " " << windBuff.windDir.z;
 
-    // 36 million ms = 10 hours of playing, no wind animation breaking in 10 hours
-    // when globalTime is 0, it resets shader (vertex position)
-    // so globalTime perios must be long
-    windBuff.globalTime = static_cast<float>((Engine::GAPI->GetTotalTimeDW()) % 36000000);
+    // Period of global time MUST be small (2-4 minutes) because higher values will cause shader problem with time
+    windBuff.globalTime = static_cast<float>((Engine::GAPI->GetTotalTimeDW()) % 240000);
 
 }
 

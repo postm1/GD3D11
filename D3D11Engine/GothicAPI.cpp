@@ -2691,7 +2691,7 @@ void GothicAPI::DrawParticleFX( zCVob* source, zCParticleFX* fx, ParticleFrameDa
             if ( emitter->GetVisShpType() == 5 && ParticleEffectProgMeshes.find(source) == ParticleEffectProgMeshes.end() ) {
                 AddParticleEffect( source );
             }
-            if ( (texture = emitter->GetVisTexture()) != nullptr ) {
+            if ( (texture = emitter->GetVisTexture( pfx )) != nullptr ) {
                 // Check if it's loaded
                 if ( texture->CacheIn( 0.6f ) != zRES_CACHED_IN ) {
                     return;

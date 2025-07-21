@@ -241,6 +241,7 @@ struct GothicMemoryLocations {
         static const unsigned int Offset_VisAlphaBlendFunc = 0x340;
         static const unsigned int Offset_AlphaDist = 0x35C;
         static const unsigned int Offset_VisAlphaStart = 0x1F0;
+        static const unsigned int Offset_VisTexAniFPS = 0x194;
         static const unsigned int Offset_VisTexAniIsLooping = 0x198;
         static const unsigned int Offset_VisIsQuadPoly = 0x190;
 

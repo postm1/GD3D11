@@ -462,7 +462,7 @@ int WINAPI hooked_WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR l
         if ( nt_header->Signature == IMAGE_NT_SIGNATURE ) {
             if ( !(nt_header->FileHeader.Characteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE) ) {
                 LogErrorBox() << "Allocation failed due to running out of memory or virtual address space!\n"
-                    "Large Adress Aware flag in executable is missing.\n"
+                    "Large Address Aware flag in executable is missing.\n"
                     "You might want to patch your game with 4gb patch so that the game can use more memory.";
                 exit( -1 );
             }

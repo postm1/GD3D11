@@ -5873,9 +5873,13 @@ void D3D11GraphicsEngine::OnUIEvent( EUIEvent uiEvent ) {
 }
 
 /** Returns the data of the backbuffer */
-void D3D11GraphicsEngine::GetBackbufferData( byte** data, INT2& buffersize, int& pixelsize ) {
-    buffersize = Resolution;
-    byte* d = new byte[Resolution.x * Resolution.y * 4];
+void D3D11GraphicsEngine::GetBackbufferData( bool thumbnail, byte** data, INT2& buffersize, int& pixelsize ) {
+    if ( thumbnail ) {
+        buffersize = INT2( 256, 256 );
+    } else {
+        buffersize = Resolution;
+    }
+    byte* d = new byte[buffersize.x * buffersize.y * 4];
 
     // Copy HDR scene to backbuffer
     SetDefaultStates();
@@ -5886,7 +5890,7 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, INT2& buffersize, int&
     GammaCorrectConstantBuffer gcb;
     gcb.G_Gamma = Engine::GAPI->GetGammaValue();
     gcb.G_Brightness = Engine::GAPI->GetBrightnessValue();
-    gcb.G_TextureSize = GetResolution();
+    gcb.G_TextureSize = buffersize;
     gcb.G_SharpenStrength = Engine::GAPI->GetRendererState().RendererSettings.SharpenFactor;
 
     ActivePS->GetConstantBuffer()[0]->UpdateBuffer( &gcb );
@@ -5895,8 +5899,7 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, INT2& buffersize, int&
     HRESULT hr;
     auto rt = std::make_unique<RenderToTextureBuffer>(
         GetDevice().Get(), buffersize.x, buffersize.y, DXGI_FORMAT_B8G8R8A8_UNORM );
-    PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), INT2( buffersize.x, buffersize.y ),
-        true );
+    PfxRenderer->CopyTextureToRTV( HDRBackBuffer->GetShaderResView(), rt->GetRenderTargetView(), buffersize, true );
     GetContext()->Flush();
 
     D3D11_TEXTURE2D_DESC texDesc;
@@ -5915,7 +5918,11 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, INT2& buffersize, int&
     wrl::ComPtr<ID3D11Texture2D> texture;
     LE( GetDevice()->CreateTexture2D( &texDesc, 0, texture.GetAddressOf() ) );
     if ( !texture.Get() ) {
-        LogInfo() << "Thumbnail failed. Texture could not be created";
+        if ( thumbnail ) {
+            LogInfo() << "Thumbnail failed. Texture could not be created";
+        } else {
+            LogInfo() << "GetBackbufferData failed. Texture could not be created";
+        }
         return;
     }
     GetContext()->CopyResource( texture.Get(), rt->GetTexture().Get() );
@@ -5942,7 +5949,11 @@ void D3D11GraphicsEngine::GetBackbufferData( byte** data, INT2& buffersize, int&
         }
         GetContext()->Unmap( texture.Get(), 0 );
     } else {
-        LogInfo() << "Thumbnail failed";
+        if ( thumbnail ) {
+            LogInfo() << "Thumbnail failed";
+        } else {
+            LogInfo() << "GetBackbufferData failed";
+        }
     }
     
     pixelsize = 4;

@@ -29,6 +29,7 @@ static bool comInitialized = false;
 #if defined(BUILD_GOTHIC_1_08k) && !defined(BUILD_1_12F)
 bool haveWindAnimations = false;
 #endif
+bool userHaveAMDGPU = false;
 
 typedef void (WINAPI* DirectDrawSimple)();
 typedef HRESULT( WINAPI* DirectDrawCreateEx_type )(GUID FAR*, LPVOID*, REFIID, IUnknown FAR*);
@@ -454,10 +455,14 @@ int WINAPI hooked_WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR l
         }
     }
 
-    LogErrorBox() << "Allocation failed due to running out of memory!\n"
-        "You might experience random crashes when saving game due"
-        " to heavy memory overhead caused by AMD drivers.\n"
-        "It is recommended to use 32-bit DXVK on top of GD3D11 for AMD users.";
+    if ( userHaveAMDGPU ) {
+        LogErrorBox() << "Allocation failed due to running out of memory or virtual address space!\n"
+            "You might experience random crashes when saving game due"
+            " to heavy memory overhead caused by AMD drivers.\n"
+            "It is recommended to use 32-bit DXVK on top of GD3D11 for AMD users.";
+    } else {
+        LogErrorBox() << "Allocation failed due to running out of memory or virtual address space!";
+    }
     exit( -1 );
 }
 

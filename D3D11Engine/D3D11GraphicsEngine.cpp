@@ -87,6 +87,8 @@ static std::unique_ptr<D3D11NVAPI> nvapiDevice;
 static std::unique_ptr<D3D11IGDEXT> igdextDevice;
 static std::unique_ptr<D3D11AGS> agsDevice;
 
+extern bool userHaveAMDGPU;
+
 D3D11GraphicsEngine::D3D11GraphicsEngine() {
     DebugPointlight = nullptr;
     OutputWindow = nullptr;
@@ -263,7 +265,8 @@ XRESULT D3D11GraphicsEngine::Init() {
 #ifdef DEBUG_D3D11
     factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
-    hr = (CreateDXGIFactory2Func ? CreateDXGIFactory2Func( factoryFlags, __uuidof(IDXGIFactory2), &DXGIFactory2 ) : CreateDXGIFactoryFunc( __uuidof(IDXGIFactory2), &DXGIFactory2 ));
+    hr = (CreateDXGIFactory2Func ? CreateDXGIFactory2Func( factoryFlags, __uuidof(IDXGIFactory2), reinterpret_cast<void**>( DXGIFactory2.ReleaseAndGetAddressOf() ) )
+        : CreateDXGIFactoryFunc( __uuidof(IDXGIFactory2), reinterpret_cast<void**>( DXGIFactory2.ReleaseAndGetAddressOf() ) ));
     if ( FAILED( hr ) ) {
         LogErrorBox() << "CreateDXGIFactory failed with code: " << hr << "!\n"
             "Minimum supported Operating System by GD3D11 is Windows 7 SP1 with Platform Update.";
@@ -365,6 +368,7 @@ XRESULT D3D11GraphicsEngine::Init() {
             if ( !agsDevice->InitAGS() ) {
                 agsDevice.reset();
             }
+            userHaveAMDGPU = true;
         }
     }
 

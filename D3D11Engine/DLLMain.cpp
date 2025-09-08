@@ -455,6 +455,20 @@ int WINAPI hooked_WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR l
         }
     }
 
+    BYTE* codeBase = reinterpret_cast<BYTE*>(GetModuleHandleA( nullptr ));
+    PIMAGE_DOS_HEADER dos_header = reinterpret_cast<PIMAGE_DOS_HEADER>(codeBase);
+    if ( dos_header->e_magic == IMAGE_DOS_SIGNATURE ) {
+        PIMAGE_NT_HEADERS nt_header = reinterpret_cast<PIMAGE_NT_HEADERS>(&codeBase[dos_header->e_lfanew]);
+        if ( nt_header->Signature == IMAGE_NT_SIGNATURE ) {
+            if ( !(nt_header->FileHeader.Characteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE) ) {
+                LogErrorBox() << "Allocation failed due to running out of memory or virtual address space!\n"
+                    "Large Adress Aware flag in executable is missing.\n"
+                    "You might want to patch your game with 4gb patch so that the game can use more memory.";
+                exit( -1 );
+            }
+        }
+    }
+
     if ( userHaveAMDGPU ) {
         LogErrorBox() << "Allocation failed due to running out of memory or virtual address space!\n"
             "You might experience random crashes when saving game due"

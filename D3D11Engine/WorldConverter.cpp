@@ -475,6 +475,22 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
         }
 
         TriangleFanToList( &polyVertices[0], polyVertices.size(), &it->second->Vertices );
+
+
+        // Don't use specular light for EARTH or STONE materials (world mesh)
+        if ( matGroup == zMAT_GROUP_EARTH || matGroup == zMAT_GROUP_STONE ) {
+
+            MaterialInfo* info = Engine::GAPI->GetMaterialInfoFrom( mat->GetTextureSingle() );
+
+            if ( info ) {
+
+                //LogInfo() << "Skip material: " << (mat->GetTexture() ? mat->GetTexture()->GetName() : " NULL");
+                info->buffer.SpecularIntensity = 0.0f;
+                info->buffer.SpecularPower = 0.0f;
+            }
+
+        }
+
         if ( matGroup == zMAT_GROUP_WATER && !mat->HasAlphaTest() ) {
 #ifdef BUILD_GOTHIC_1_08k
             MaterialInfo* info = Engine::GAPI->GetMaterialInfoFrom( key.Texture );

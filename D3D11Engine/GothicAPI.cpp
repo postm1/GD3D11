@@ -967,11 +967,14 @@ void GothicAPI::DrawWorldMeshNaive() {
     FrameMeshInstances.clear();
 
     START_TIMING();
+    /*
     if ( FeatureLevel10Compatibility ) {
         Engine::GraphicsEngine->DrawWorldMesh();
     } else {
         Engine::GraphicsEngine->DrawWorldMesh_Indirect();
     }
+    */
+    Engine::GraphicsEngine->DrawWorldMesh();
     STOP_TIMING( GothicRendererTiming::TT_WorldMesh );
 
     for ( auto const& vegetationBox : VegetationBoxes ) {

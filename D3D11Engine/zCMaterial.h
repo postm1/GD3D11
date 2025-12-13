@@ -6,16 +6,8 @@
 #include "GothicAPI.h"
 #include "zCTexture.h"
 
-enum zTMat_Group {
-    zMAT_GROUP_UNDEF,
-    zMAT_GROUP_METAL,
-    zMAT_GROUP_STONE,
-    zMAT_GROUP_WOOD,
-    zMAT_GROUP_EARTH,
-    zMAT_GROUP_WATER,
-    zMAT_GROUP_SNOW,
-    zMAT_NUM_MAT_GROUP
-};
+const int zMAT_GROUP_WATER = 5;
+const int zMAT_GROUP_SNOW = 6;
 
 const int zMAT_ALPHA_FUNC_MAT_DEFAULT = 0;
 const int zMAT_ALPHA_FUNC_NONE = 1;

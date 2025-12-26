@@ -6168,7 +6168,10 @@ void D3D11GraphicsEngine::DrawQuadMarks() {
         if ( len > Engine::GAPI->GetRendererState().RendererSettings.VisualFXDrawRadius )
             continue;
 
-        zCMaterial* mat = it.first->GetMaterial();
+        zCMesh* mesh = it.first->GetQuadMesh();
+        int numPolys = mesh->GetNumPolygons();
+        zCPolygon** polys = mesh->GetPolygons();
+        zCMaterial* mat = (numPolys > 0 ? polys[0]->GetMaterial() : it.first->GetMaterial());
         if ( mat ) mat->BindTexture( 0 );
 
         if ( alphaFunc != mat->GetAlphaFunc() ) {
@@ -6231,7 +6234,10 @@ void D3D11GraphicsEngine::DrawMQuadMarks() {
 
     int alphaFunc = 0;
     for ( auto const& it : MulQuadMarks ) {
-        zCMaterial* mat = it.first->GetMaterial();
+        zCMesh* mesh = it.first->GetQuadMesh();
+        int numPolys = mesh->GetNumPolygons();
+        zCPolygon** polys = mesh->GetPolygons();
+        zCMaterial* mat = (numPolys > 0 ? polys[0]->GetMaterial() : it.first->GetMaterial());
         if ( mat ) mat->BindTexture( 0 );
 
         if ( alphaFunc != mat->GetAlphaFunc() ) {

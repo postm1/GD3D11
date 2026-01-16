@@ -69,6 +69,7 @@ const int MAX_IMPORTANT_LIGHT_UPDATES = 1;
 constexpr float inv255f = (1.f / 255.f);
 float vobAnimation_WindStrength = 1.0f;
 
+bool NativeSupport16BitTextures = false;
 bool FeatureLevel10Compatibility = false;
 bool FeatureRTArrayIndexFromAnyShader = false;
 
@@ -450,12 +451,12 @@ XRESULT D3D11GraphicsEngine::Init() {
         nvapiDevice->RegisterDevice( Device11.Get() );
     } else if ( agsDevice ) {
         if ( agsDevice->IsDrawMultiIndexedInstancedIndirectAvailable() ) {
-            DrawMultiIndexedInstancedIndirect = IGDEXT_DrawMultiIndexedInstancedIndirect;
+            DrawMultiIndexedInstancedIndirect = AGS_DrawMultiIndexedInstancedIndirect;
         }
 
         if ( agsDevice->IsUAVOverlapAvailable() ) {
-            BeginUAVOverlap = IGDEXT_BeginUAVOverlap;
-            EndUAVOverlap = IGDEXT_EndUAVOverlap;
+            BeginUAVOverlap = AGS_BeginUAVOverlap;
+            EndUAVOverlap = AGS_EndUAVOverlap;
         }
     } else if ( adpDesc.VendorId == 0x8086 ) {
         // Intel extension is initialized late
@@ -478,6 +479,9 @@ XRESULT D3D11GraphicsEngine::Init() {
     Device11.As( &Device );
     Context11.As( &Context );
 
+    // Check for windows 10 - pretend 8 doesn't exist because I can't verify if they actually works on windows 8
+    // and you can't trust Microsoft feature level documentation
+    NativeSupport16BitTextures = Toolbox::IsWindowsVersionOrGreater( HIBYTE( _WIN32_WINNT_WIN10 ), LOBYTE( _WIN32_WINNT_WIN10 ), 0 );
     FeatureLevel10Compatibility = (maxFeatureLevel < D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0);
     FetchDisplayModeList();
 
@@ -6164,7 +6168,10 @@ void D3D11GraphicsEngine::DrawQuadMarks() {
         if ( len > Engine::GAPI->GetRendererState().RendererSettings.VisualFXDrawRadius )
             continue;
 
-        zCMaterial* mat = it.first->GetMaterial();
+        zCMesh* mesh = it.first->GetQuadMesh();
+        int numPolys = mesh->GetNumPolygons();
+        zCPolygon** polys = mesh->GetPolygons();
+        zCMaterial* mat = (numPolys > 0 ? polys[0]->GetMaterial() : it.first->GetMaterial());
         if ( mat ) mat->BindTexture( 0 );
 
         if ( alphaFunc != mat->GetAlphaFunc() ) {
@@ -6227,7 +6234,10 @@ void D3D11GraphicsEngine::DrawMQuadMarks() {
 
     int alphaFunc = 0;
     for ( auto const& it : MulQuadMarks ) {
-        zCMaterial* mat = it.first->GetMaterial();
+        zCMesh* mesh = it.first->GetQuadMesh();
+        int numPolys = mesh->GetNumPolygons();
+        zCPolygon** polys = mesh->GetPolygons();
+        zCMaterial* mat = (numPolys > 0 ? polys[0]->GetMaterial() : it.first->GetMaterial());
         if ( mat ) mat->BindTexture( 0 );
 
         if ( alphaFunc != mat->GetAlphaFunc() ) {

@@ -330,12 +330,55 @@ XRESULT WorldConverter::LoadWorldMeshFromFile( const std::string& file, std::map
     return XR_SUCCESS;
 }
 
+
+static thread_local std::unordered_map<zCTexture*, bool> g_waterfallCache;
+
+
+/** Cleans textures map when a new location is loading */
+void ClearWaterfallCache() {
+    g_waterfallCache.clear();
+}
+
 bool AdditionalCheckWaterFall(zCTexture* texture)
 {
     if ( !texture ) {
         return false;
     }
 
+    auto it = g_waterfallCache.find( texture );
+    if ( it != g_waterfallCache.end() ) {
+        return it->second;
+    }
+
+    std::string textureName = texture->GetName();
+
+    std::transform( textureName.begin(), textureName.end(), textureName.begin(), ::toupper );
+
+    bool isWaterfall = false;
+
+
+    if ( textureName.find( "FALL" ) != std::string::npos ) {
+#ifdef BUILD_GOTHIC_2_6_fix
+        if ( textureName.find( "A0" ) != std::string::npos &&        // Сначала проверяем наличие (быстрее отсечь)
+             textureName.find( "SURFACE" ) == std::string::npos &&   // Затем отсутствие
+             textureName.find( "STONE" ) == std::string::npos ) {
+            isWaterfall = true;
+        }
+#else
+        // Логика 1.08k: ЕСТЬ "FALL" И (ЕСТЬ "SURFACE" ИЛИ ЕСТЬ "STONE")
+        if ( textureName.find( "SURFACE" ) != std::string::npos ||
+             textureName.find( "STONE" ) != std::string::npos ) {
+            isWaterfall = true;
+        }
+#endif
+    }
+
+  
+    g_waterfallCache[texture] = isWaterfall;
+
+    return isWaterfall;
+
+    /*
     std::string textureName = texture->GetName();
     std::transform( textureName.begin(), textureName.end(), textureName.begin(), toupper );
 #ifdef BUILD_GOTHIC_2_6_fix
@@ -348,10 +391,14 @@ bool AdditionalCheckWaterFall(zCTexture* texture)
         return true;
     }
     return false;
+    */
 }
 
 /** Converts the worldmesh into a more usable format */
 HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPolygons, std::map<int, std::map<int, WorldMeshSectionInfo>>* outSections, WorldInfo* info, MeshInfo** outWrappedMesh, bool indoorLocation ) {
+    
+    ClearWaterfallCache();
+
     // Go through every polygon and put it into its section
     for ( unsigned int i = 0; i < numPolygons; i++ ) {
         zCPolygon* poly = polys[i];

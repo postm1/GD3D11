@@ -23,6 +23,38 @@
 #include "D3D7\MyDirectDrawSurface7.h"
 #include "zCQuadMark.h"
 
+
+struct ScopedTimer {
+    std::string name;
+    std::chrono::high_resolution_clock::time_point start;
+
+    ScopedTimer( const std::string& name ) : name( name ) {
+        start = std::chrono::high_resolution_clock::now();
+    }
+
+    void ScopedStop()
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        LogInfo() << "[PROFILE] " << name << ": " << (duration / 1000.0f) << " ms";
+    }
+
+    void ScopedStopSum( double& sum )
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        sum += duration / 1000.0f;
+        LogInfo() << "[PROFILE] " << name << ": " << (duration / 1000.0f) << " ms";
+    }
+
+    ~ScopedTimer() {
+        ScopedStop();
+    }
+};
+
+
 WorldConverter::WorldConverter() {}
 
 WorldConverter::~WorldConverter() {}
@@ -396,6 +428,8 @@ bool AdditionalCheckWaterFall(zCTexture* texture)
 /** Converts the worldmesh into a more usable format */
 HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPolygons, std::map<int, std::map<int, WorldMeshSectionInfo>>* outSections, WorldInfo* info, MeshInfo** outWrappedMesh, bool indoorLocation ) {
     
+
+    ScopedTimer timerCheck1( "ConvertWorldMesh #1: " );
     ClearWaterfallCache();
 
     std::vector<ExVertexStruct> polyVertices;
@@ -558,6 +592,9 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
 #endif
         }
     }
+
+    timerCheck1.ScopedStop();
+
 
     XMVECTOR avgSections = XMVectorZero();
     int numSections = 0;
@@ -1252,6 +1289,10 @@ void WorldConverter::UpdateMorphMeshVisual( void* v, MeshVisualInfo* meshInfo ) 
 
 /** Extracts a 3DS-Mesh from a zCVisual */
 void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVisualInfo* meshInfo ) {
+
+    ScopedTimer timerCheck1( "3DS Extract: " + std::string( visual->GetObjectName() ) );
+    static double totalTime = 0;
+
     XMFLOAT3 bbmin = XMFLOAT3( FLT_MAX, FLT_MAX, FLT_MAX );
     XMFLOAT3 bbmax = XMFLOAT3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
 
@@ -1393,6 +1434,11 @@ void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVis
 
     meshInfo->Visual = visual;
     meshInfo->VisualName = visual->GetObjectName();
+
+    timerCheck1.ScopedStopSum( totalTime );
+
+    LogInfo() << "Total: " << totalTime << " ms";
+    
 }
 
 const float eps = 0.001f;

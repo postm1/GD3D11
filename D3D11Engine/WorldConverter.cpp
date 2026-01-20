@@ -365,7 +365,6 @@ bool AdditionalCheckWaterFall(zCTexture* texture)
             isWaterfall = true;
         }
 #else
-        // ÀÓ„ËÍ‡ 1.08k: ≈—“‹ "FALL" » (≈—“‹ "SURFACE" »À» ≈—“‹ "STONE")
         if ( textureName.find( "SURFACE" ) != std::string::npos ||
              textureName.find( "STONE" ) != std::string::npos ) {
             isWaterfall = true;
@@ -399,9 +398,15 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
     
     ClearWaterfallCache();
 
+    std::vector<ExVertexStruct> polyVertices;
+    polyVertices.reserve( 16 );
+
+
     // Go through every polygon and put it into its section
     for ( unsigned int i = 0; i < numPolygons; i++ ) {
         zCPolygon* poly = polys[i];
+
+        polyVertices.clear();
 
         // Check if we even need this polygon
         if ( poly->GetPolyFlags()->GhostOccluder ) {
@@ -468,9 +473,13 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
         }
 #endif
 
+        
         // Extract poly vertices
+        /*
         std::vector<ExVertexStruct> polyVertices;
         polyVertices.reserve( poly->GetNumPolyVertices() );
+        */
+
         for ( int v = 0; v < poly->GetNumPolyVertices(); v++ ) {
             zCVertex* vertex = poly->getVertices()[v];
             zCVertFeature* feature = poly->getFeatures()[v];

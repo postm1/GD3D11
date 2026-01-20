@@ -49,9 +49,6 @@ struct ScopedTimer {
         LogInfo() << "[PROFILE] " << name << ": " << (duration / 1000.0f) << " ms";
     }
 
-    ~ScopedTimer() {
-        ScopedStop();
-    }
 };
 
 
@@ -430,6 +427,9 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
     
 
     ScopedTimer timerCheck1( "ConvertWorldMesh #1: " );
+
+    LogInfo() << "PolysCount: " << numPolygons << " | " << info->WorldName << " LowestVertex: " << info->LowestVertex << " | HighestVertex: " << info->HighestVertex;
+
     ClearWaterfallCache();
 
     std::vector<ExVertexStruct> polyVertices;
@@ -594,7 +594,7 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
     }
 
     timerCheck1.ScopedStop();
-
+    ScopedTimer timerCheck2( "ConvertWorldMesh #2: " );
 
     XMVECTOR avgSections = XMVectorZero();
     int numSections = 0;
@@ -694,6 +694,8 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
         info->HighestVertex = 0;
     }
     //SaveSectionsToObjUnindexed("Test.obj", (*outSections));
+
+    timerCheck2.ScopedStop();
 
     return XR_SUCCESS;
 }
@@ -1290,9 +1292,6 @@ void WorldConverter::UpdateMorphMeshVisual( void* v, MeshVisualInfo* meshInfo ) 
 /** Extracts a 3DS-Mesh from a zCVisual */
 void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVisualInfo* meshInfo ) {
 
-    ScopedTimer timerCheck1( "3DS Extract: " + std::string( visual->GetObjectName() ) );
-    static double totalTime = 0;
-
     XMFLOAT3 bbmin = XMFLOAT3( FLT_MAX, FLT_MAX, FLT_MAX );
     XMFLOAT3 bbmax = XMFLOAT3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
 
@@ -1435,9 +1434,6 @@ void WorldConverter::Extract3DSMeshFromVisual2( zCProgMeshProto* visual, MeshVis
     meshInfo->Visual = visual;
     meshInfo->VisualName = visual->GetObjectName();
 
-    timerCheck1.ScopedStopSum( totalTime );
-
-    LogInfo() << "Total: " << totalTime << " ms";
     
 }
 
@@ -1574,6 +1570,7 @@ void WorldConverter::MarkEdges( std::vector<ExVertexStruct>& vertices, std::vect
 }
 
 /** Builds a big vertexbuffer from the world sections */
+/*
 void WorldConverter::WrapVertexBuffers( const std::list<std::vector<ExVertexStruct>*>& vertexBuffers,
     const std::list<std::vector<VERTEX_INDEX>*>& indexBuffers,
     std::vector<ExVertexStruct>& outVertices,
@@ -1601,6 +1598,74 @@ void WorldConverter::WrapVertexBuffers( const std::list<std::vector<ExVertexStru
         outOffsets.emplace_back( outOffsets.back() + iti->size() );
     }
 }
+*/
+
+/** Builds a big vertexbuffer from the world sections, new OPTIMIZED */
+void WorldConverter::WrapVertexBuffers( const std::list<std::vector<ExVertexStruct>*>& vertexBuffers,
+    const std::list<std::vector<VERTEX_INDEX>*>& indexBuffers,
+    std::vector<ExVertexStruct>& outVertices,
+    std::vector<unsigned int>& outIndices,
+    std::vector<unsigned int>& outOffsets ) {
+
+    // 1. Preliminary size calculation, no realloc
+    size_t totalVerts = 0;
+    for ( const auto* vec : vertexBuffers ) totalVerts += vec->size();
+
+    size_t totalIndices = 0;
+    for ( const auto* vec : indexBuffers ) totalIndices += vec->size();
+
+    // 2. Allocate memory once
+    outVertices.resize( totalVerts );
+    outIndices.resize( totalIndices );
+
+    outOffsets.clear();
+    outOffsets.reserve( indexBuffers.size() + 1 );
+    outOffsets.push_back( 0 );
+
+    // 3. Direct memory access
+    ExVertexStruct* destVertsPtr = outVertices.data();
+    unsigned int* destIndicesPtr = outIndices.data();
+
+    unsigned int currentVertexOffset = 0;
+    unsigned int currentIndexOffset = 0;
+
+    // 4. Combined pass for cache locality
+    auto itV = vertexBuffers.begin();
+    auto itI = indexBuffers.begin();
+    auto endV = vertexBuffers.end();
+
+    while ( itV != endV ) {
+        const std::vector<ExVertexStruct>* vSrc = *itV;
+        const std::vector<VERTEX_INDEX>* iSrc = *itI;
+
+        size_t vSize = vSrc->size();
+        size_t iSize = iSrc->size();
+
+        // A. Fast Vertex Copying (ExVertexStruct Safe)
+        if ( vSize > 0 ) {
+            memcpy( destVertsPtr, vSrc->data(), vSize * sizeof( ExVertexStruct ) );
+            destVertsPtr += vSize;
+        }
+
+        // B. Copying indexes with offset
+        if ( iSize > 0 ) {
+            const VERTEX_INDEX* srcIndices = iSrc->data();
+            for ( size_t k = 0; k < iSize; ++k ) {
+                destIndicesPtr[k] = srcIndices[k] + currentVertexOffset;
+            }
+            destIndicesPtr += iSize;
+        }
+
+        currentVertexOffset += static_cast<unsigned int>( vSize );
+        currentIndexOffset += static_cast<unsigned int>( iSize );
+        outOffsets.push_back( currentIndexOffset );
+
+        ++itV;
+        ++itI;
+    }
+
+}
+
 
 /** Caches a mesh */
 void WorldConverter::CacheMesh( const std::map<std::string, std::vector<std::pair<std::vector<ExVertexStruct>, std::vector<VERTEX_INDEX>>>> geometry, const std::string& file ) {

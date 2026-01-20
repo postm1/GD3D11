@@ -46,11 +46,10 @@ struct ScopedTimer {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
         sum += duration / 1000.0f;
-        LogInfo() << "[PROFILE] " << name << ": " << (duration / 1000.0f) << " ms";
+        LogInfo() << "[PROFILE_SUM] " << name << ": " << (duration / 1000.0f) << "ms | Sum: " << sum << " ms";
     }
 
 };
-
 
 WorldConverter::WorldConverter() {}
 

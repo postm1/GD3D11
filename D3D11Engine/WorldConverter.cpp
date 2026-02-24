@@ -387,8 +387,8 @@ bool AdditionalCheckWaterFall(zCTexture* texture)
 
     if ( textureName.find( "FALL" ) != std::string::npos ) {
 #ifdef BUILD_GOTHIC_2_6_fix
-        if ( textureName.find( "A0" ) != std::string::npos &&        // Сначала проверяем наличие (быстрее отсечь)
-             textureName.find( "SURFACE" ) == std::string::npos &&   // Затем отсутствие
+        if ( textureName.find( "A0" ) != std::string::npos &&
+             textureName.find( "SURFACE" ) == std::string::npos &&
              textureName.find( "STONE" ) == std::string::npos ) {
             isWaterfall = true;
         }
@@ -596,7 +596,7 @@ HRESULT WorldConverter::ConvertWorldMesh( zCPolygon** polys, unsigned int numPol
     ScopedTimer timerCheck2( "ConvertWorldMesh #2: " );
     ScopedTimer timerCheck21( "ConvertWorldMesh #2-1 (Multithreaded): " );
 
-    // --- 1. Подготовка данных (как и раньше) ---
+    // --- 1. Preparing data ---
     std::vector<std::vector<ExVertexStruct>*> vertexBuffers;
     std::vector<std::vector<VERTEX_INDEX>*> indexBuffers;
     vertexBuffers.reserve( 2500 );
